@@ -58,20 +58,32 @@ async def get_user_photo_url(user_id: int) -> Optional[str]:
 
 async def send_message(chat_id: int, text: str, parse_mode: str = "HTML", *, premium_emojis: bool = True) -> Optional[dict]:
     payload = {"chat_id": chat_id, "text": text, "parse_mode": parse_mode, "disable_web_page_preview": True}
+    used_custom_emoji = False
     if premium_emojis:
         try:
             from services.custom_emojis import build_entities
             entities = build_entities(text)
             if entities:
                 payload["entities"] = entities
+                used_custom_emoji = True
         except Exception as e:
             log.warning("custom-emoji entity build failed: %s", e)
-    return await _post("sendMessage", payload)
+    res = await _post("sendMessage", payload)
+    # Custom-emoji entities only work when the bot is allowed to send those exact
+    # custom_emoji_ids (premium/owned sticker pack). If the IDs are invalid the
+    # WHOLE message is 400-rejected and nothing is delivered. Retry once without
+    # the entities so the notification always goes through as plain text.
+    if res is None and used_custom_emoji:
+        log.warning("sendMessage failed with custom_emoji entities — retrying without them")
+        payload.pop("entities", None)
+        res = await _post("sendMessage", payload)
+    return res
 
 
 async def send_photo(chat_id: int, photo_bytes: bytes, caption: str, parse_mode: str = "HTML", *, premium_emojis: bool = True) -> Optional[dict]:
     files = {"photo": ("hit.jpg", photo_bytes, "image/jpeg")}
     data = {"chat_id": str(chat_id), "caption": caption, "parse_mode": parse_mode}
+    used_custom_emoji = False
     if premium_emojis:
         try:
             from services.custom_emojis import build_entities
@@ -80,9 +92,17 @@ async def send_photo(chat_id: int, photo_bytes: bytes, caption: str, parse_mode:
                 # multipart uses caption_entities as a JSON string
                 import json as _j
                 data["caption_entities"] = _j.dumps(entities)
+                used_custom_emoji = True
         except Exception as e:
             log.warning("custom-emoji caption entity build failed: %s", e)
-    return await _post("sendPhoto", data, files=files)
+    res = await _post("sendPhoto", data, files=files)
+    # Same fallback as send_message: invalid custom_emoji_ids 400-reject the
+    # entire photo (screenshot never arrives). Retry once without entities.
+    if res is None and used_custom_emoji:
+        log.warning("sendPhoto failed with custom_emoji caption entities — retrying without them")
+        data.pop("caption_entities", None)
+        res = await _post("sendPhoto", data, files=files)
+    return res
 
 
 async def send_document(chat_id: int, doc_bytes: bytes, filename: str, caption: str = "", parse_mode: str = "HTML") -> Optional[dict]:

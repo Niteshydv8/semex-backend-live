@@ -1,0 +1,1 @@
+- [Telegram custom-emoji delivery](telegram-custom-emoji.md) — invalid custom_emoji_id entities 400-reject the WHOLE message; hit notifications/screenshots silently fail while plain OTP works.
