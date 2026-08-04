@@ -1,0 +1,39 @@
+{
+  "summary": "Verified both iteration_14 fixes end-to-end. (1) admin.html '[object Object]' fix: confirmed backend serves updated admin.html at localhost:8001/admin with the new detail-stringification block (lines 436-455); curl reproduced the exact 422 payload (detail=array-of-dicts) from /api/auth/request-otp with non-integer telegramId; ran the JS logic against the live 422 payload via browser evaluate — output is 'Input should be a valid integer, unable to parse string as an integer' with NO '[object Object]'. Also verified the object-shape branch against the 426 EXTENSION_OUTDATED response (used by /api/admin/stats when middleware blocks). (2) DM-spam defense: all 11 DM tests in test_outdated_extension_dm.py pass, including the new test_dm_skipped_when_sent_version_at_or_above_fallback_floor. Regression suite (version-gate + honeypot + self-heal + paywall-loop + global-gate) 34/34 still passes. New /api/admin/stats shape test confirms exact keys consumed by loadStats() (users.total/active/banned, hits.total/charged, codes.unused/used). Total: 41 passed, 1 skipped, 0 failed.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "GET /admin (public preview URL)", "issue": "External preview URL https://<host>/admin returns the React frontend (blank SPA), NOT /app/backend/static/admin.html. K8s ingress only proxies /api/* to backend port 8001. Admin panel is only reachable at localhost:8001/admin from inside the container. If the user is expected to open /admin in a browser from the internet, ingress needs an explicit rule for /admin (and probably / or /static) → 8001. NOT caused by iteration_14 changes."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_outdated_extension_dm.py",
+    "/app/backend/tests/test_admin_stats_shape.py",
+    "/app/test_reports/pytest/iteration_14.xml"
+  ],
+  "action_items": [
+    "OPTIONAL/UNRELATED: Add K8s ingress rule to route /admin (and / GET) to backend port 8001 so admin panel is reachable from the external preview URL. Currently /admin resolves to the React frontend and yields a blank page. Users must hit the backend origin directly. If this is intentional (admin panel only reachable via port-forward / bastion), ignore.",
+    "OPTIONAL: Move the '_FALLBACK_MIN_VERSION' constant + _is_valid_semver helper into a shared module (still duplicated across routes/data.py, routes/public.py, routes/admin.py). Pointed out in iteration_13; still not addressed."
+  ],
+  "critical_code_review_comments": [
+    "admin.html detail-stringification fix (lines 436-455) is defensive and correct: handles all three FastAPI detail shapes (string, array of validation dicts, plain error object). Fallback to JSON.stringify guarantees no '[object Object]' can leak. Good.",
+    "server.py DM-spam defense: skipping DM when sent_version >= _FALLBACK_MIN_VERSION is the right call — prevents mass DM storm during future DB corruption episodes. Tuple-compare across '2.3.9' vs '3' still triggers 426 middleware (as it must, so client shows paywall), but the DM helper is gated separately. Clean separation.",
+    "Consider also gating the client-side 426 toast on the extension side to fetch fresh /api/public/version and self-recover if a bogus min-version was pushed — currently users must restart or wait for cache TTL.",
+    "Admin panel is a single 815-line HTML file with inline JS. If it grows further, split into external .js files for maintainability. Not urgent."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_admin_stats_shape.py (NEW — 2 tests: admin/stats shape + 422 detail-array shape)"
+  ],
+  "success_rate": {"backend": "100% (41/41 in-scope tests pass, 1 pre-existing skip)", "frontend": "100% (admin.html error-toast logic verified via live-payload evaluate; no [object Object] in any of 3 detail shapes)"},
+  "test_credentials": "Used conftest fixtures: admin_user (999000333, isAdmin=true). Owner id 5762701937 not exercised beyond curl 422 repro.",
+  "seed_data_creation": "conftest fixtures upsert TEST_ users/sessions and clean up after session. No permanent state changes.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "iteration_14 verifies two fixes: (a) admin.html now renders string/array/object FastAPI detail shapes without '[object Object]' toast; (b) DM to outdated-extension users is skipped when sent_version >= _FALLBACK_MIN_VERSION (2.3.9), preventing DM-spam storms if DB has a bogus min-version. All 11 DM tests + 34+ regression tests pass. New file /app/backend/tests/test_admin_stats_shape.py added. Minor unrelated finding: preview URL /admin routes to React SPA, not backend admin.html — ingress config, not a code bug in this iteration.",
+  "rca of the issue": "Original '[object Object]' bug: admin.html api() helper only handled string `detail`. When FastAPI returned Pydantic 422 (detail=array of dicts) or a rich error object (detail={code,message,...} for 426 EXTENSION_OUTDATED), `new Error(j.detail)` coerced the object into '[object Object]'. Fixed by branching on typeof/Array.isArray. Original DM-spam bug: a corrupted extension_releases row (version='3') made _get_min_extension_version return '3'; tuple-compare '3' vs '2.3.9' → outdated → 426 + DM to every user. Iteration_13 self-healed the version read path; iteration_14 adds a defense-in-depth gate: only DM if sent_version < FALLBACK floor, so even if the read path regresses again, users on current builds won't be DM-spammed."
+}

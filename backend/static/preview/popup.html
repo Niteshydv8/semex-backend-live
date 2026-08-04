@@ -1,0 +1,970 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEMEX</title>
+    <link rel="stylesheet" href="styles.css">
+<script>
+// Chrome API mock for preview screenshots
+window.chrome = {
+  runtime: {
+    id: "preview",
+    getURL: (p) => p,
+    sendMessage: (msg, cb) => { if (cb) cb({}); },
+    onMessage: { addListener: () => {} }
+  },
+  storage: {
+    local: {
+      _data: {
+        accessToken: "preview_token",
+        userProfile: {
+          telegramId: 5762701937,
+          username: "CARAXSS",
+          firstName: "NEPALI BHAI",
+          photoUrl: "",
+          plan: "VIP",
+          planExpiresAt: null,
+          isAdmin: true
+        },
+        userStats: { total: 148, charged: 12, live: 3, dead: 133 },
+        settings: {
+          screenshot: { saveLocally: true, blurEmail: true },
+          sound: { enabled: true, volume: 70 }
+        },
+        semexCheckoutTheme: { color: "#8B5CF6", enabled: false }
+      },
+      get(keys, cb){
+        const out={};
+        if(!keys) Object.assign(out,this._data);
+        else if(typeof keys==="string") out[keys]=this._data[keys];
+        else if(Array.isArray(keys)) keys.forEach(k=>out[k]=this._data[k]);
+        else Object.keys(keys).forEach(k=>out[k]=this._data[k]!==undefined?this._data[k]:keys[k]);
+        if(cb) cb(out);
+        return Promise.resolve(out);
+      },
+      set(o, cb){ Object.assign(this._data, o); if(cb) cb(); return Promise.resolve(); },
+      remove(k, cb){ delete this._data[k]; if(cb) cb(); return Promise.resolve(); }
+    },
+    sync: null,
+    session: null,
+    onChanged: { addListener: () => {} }
+  },
+  tabs: {
+    query: (q, cb) => cb([{ id: 1, url: "https://checkout.stripe.com/preview" }]),
+    sendMessage: () => {}
+  },
+  action: { setBadgeText: () => {}, setBadgeBackgroundColor: () => {} },
+  downloads: { download: () => {} }
+};
+chrome.storage.sync = chrome.storage.local;
+chrome.storage.session = chrome.storage.local;
+window.serverClient = {
+  baseUrl: "https://YOUR-RAILWAY-URL.up.railway.app",
+  fingerprint: "preview-fp",
+  init: () => Promise.resolve(),
+  verifySession: () => Promise.resolve({
+    valid: true, hasAccess: true, requiresRedeem: false,
+    plan: "VIP", isAdmin: true, telegramId: "5762701937",
+    firstName: "NEPALI BHAI", username: "CARAXSS", name: "NEPALI BHAI"
+  }),
+  requestOTP: () => Promise.resolve({ success: true, message: "OTP sent" }),
+  verifyOTP: () => Promise.resolve({ success: true, accessToken: "x", user: {} }),
+  submitStatus: () => Promise.resolve({ success: true }),
+  uploadScreenshot: () => Promise.resolve({ success: true })
+};
+</script>
+</head>
+
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <div class="logo">
+                <img src="../icons/logo.png" alt="SEMEX" class="logo-img">
+            </div>
+            <div class="title-group">
+                <div class="title">SEMEX</div>
+            </div>
+
+            <!-- User Badge (Compact with Tooltip) -->
+            <div id="user-badge" class="user-info-group hidden">
+                <div class="user-badge-row" id="user-badge-container" title="User">
+                    <img id="user-avatar" src="../icons/default-avatar.png" class="user-avatar">
+                    <!-- User Name Hidden (Shown in Tooltip) -->
+                    <div class="user-name hidden" id="user-name">User</div>
+                    <span id="user-plan" class="plan-badge"></span>
+                    <button id="logout-btn" class="logout-btn" title="Logout">🚪</button>
+
+                    <!-- Custom Tooltip -->
+                    <div class="user-tooltip" id="user-tooltip">
+                        <span id="tooltip-username">User</span>
+                    </div>
+                </div>
+            </div>
+            <!-- Notification Bell -->
+            <div id="notif-bell" class="notif-bell" title="Notifications">
+                <svg viewBox="0 0 24 24">
+                    <path
+                        d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z">
+                    </path>
+                </svg>
+                <div class="notif-badge hidden" id="notif-badge">0</div>
+            </div>
+        </header>
+
+        <!-- Notification Dropdown -->
+        <div class="notif-dropdown hidden" id="notif-dropdown">
+            <div class="notif-dropdown-header">
+                <span>🔔 Notifications</span>
+                <span class="notif-clear-all" id="notif-clear-all">Clear All</span>
+            </div>
+            <div class="notif-list" id="notif-list">
+                <div class="notif-empty">No new notifications</div>
+            </div>
+        </div>
+
+        <!-- Announcement Banner (from Admin Config) -->
+        <div class="announcement-banner hidden" id="announcement-banner">
+            <div class="announcement-icon">📢</div>
+            <div class="announcement-text" id="announcement-text">Announcement message here</div>
+            <button class="announcement-dismiss" id="announcement-dismiss" title="Dismiss">×</button>
+        </div>
+
+        <!-- Subscription Status Banner -->
+        <div class="trial-banner hidden" id="trial-banner">
+            <div class="trial-banner-content">
+                <div class="trial-icon" id="trial-icon">⏱️</div>
+                <div class="trial-info">
+                    <div class="trial-title" id="trial-title">Premium Active</div>
+                    <div class="trial-countdown" id="trial-countdown">Loading...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Statistics -->
+        <div class="stats" id="stats-section">
+            <div class="stat">
+                <div class="stat-val blue" id="total-cards">0</div>
+                <div class="stat-label">Total</div>
+            </div>
+            <div class="stat">
+                <div class="stat-val green" id="stats-charged">0</div>
+                <div class="stat-label">Charged</div>
+            </div>
+            <div class="stat">
+                <div class="stat-val purple" id="stats-ccn">0</div>
+                <div class="stat-label">Live</div>
+            </div>
+            <div class="stat">
+                <div class="stat-val red" id="stats-dead">0</div>
+                <div class="stat-label">Dead</div>
+            </div>
+        </div>
+
+        <!-- Tabs -->
+        <div class="tabs">
+            <button class="tab active" data-tab="bypass">Bypass</button>
+            <button class="tab" data-tab="history">History</button>
+            <button class="tab" data-tab="news">News</button>
+            <button class="tab" data-tab="captcha">Captcha</button>
+            <button class="tab" data-tab="proxy">Proxy</button>
+            <button class="tab" data-tab="settings">Settings</button>
+        </div>
+
+        <!-- Tab Content -->
+        <div class="tab-content">
+            <!-- Bypass Tab -->
+            <div id="bypass-tab" class="tab-panel active">
+                <!-- BIN/CC List Section - MOVED TO TOP for quick access (V2.3.9) -->
+                <div class="section">
+                    <div class="section-header">
+                        <h2>1. BIN / CC List</h2>
+                        <div class="mode-toggle">
+                            <button class="mode-btn active" id="bin-mode-btn" data-mode="bin">BIN</button>
+                            <button class="mode-btn" id="cc-list-mode-btn" data-mode="ccList">CC List</button>
+                        </div>
+                    </div>
+                    <div class="section-content">
+                        <!-- BIN Mode -->
+                        <div id="bin-mode-content">
+                            <div class="bin-cvv-row">
+                                <div class="bin-group">
+                                    <label for="bin-input">BIN:</label>
+                                    <input type="text" id="bin-input" placeholder="44304400" autocomplete="off"
+                                        spellcheck="false">
+                                </div>
+                                <div class="cvv-group">
+                                    <label for="cvv-input">CVV:</label>
+                                    <input type="text" id="cvv-input" placeholder="RND" maxlength="4" autocomplete="off"
+                                        spellcheck="false">
+                                </div>
+                            </div>
+
+                            <div class="expiry-selectors">
+                                <div class="expiry-group">
+                                    <label for="expiry-month-select">Expiry Month:</label>
+                                    <select id="expiry-month-select">
+                                        <option value="RND">RND</option>
+                                        <option value="01">01</option>
+                                        <option value="02">02</option>
+                                        <option value="03">03</option>
+                                        <option value="04">04</option>
+                                        <option value="05">05</option>
+                                        <option value="06">06</option>
+                                        <option value="07">07</option>
+                                        <option value="08">08</option>
+                                        <option value="09">09</option>
+                                        <option value="10">10</option>
+                                        <option value="11">11</option>
+                                        <option value="12">12</option>
+                                    </select>
+                                </div>
+                                <div class="expiry-group">
+                                    <label for="expiry-year-select">Expiry Year:</label>
+                                    <select id="expiry-year-select">
+                                        <option value="RND">RND</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <p class="bypass-hint">💡 <code>RND</code> = Random value generated for each card. AMEX BINs (34/37) auto-detected.</p>
+                        </div>
+                        <!-- CC List Mode -->
+                        <div id="cc-list-mode-content" class="hidden">
+                            <div class="cc-list-header">
+                                <label for="cc-list-input">CC List:</label>
+                                <span class="cc-badge" id="cc-list-counter">📋 0 cards</span>
+                            </div>
+                            <textarea id="cc-list-input"
+                                placeholder="Paste cards (any format: pipe, colon, space, comma)&#10;Luhn validation + expired filter applied automatically"></textarea>
+                            <p class="bypass-hint">💡 Supports: <code>4242...|12|25|123</code> or <code>4242... 12 25 123</code></p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Card Replacement - MOVED right after BIN/CC List (V2.3.9) -->
+                <div class="section">
+                    <div class="section-header">
+                        <h2>2. Card Replacement</h2>
+                        <label class="toggle">
+                            <input type="checkbox" id="card-replacement-toggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="section-content hidden" id="card-replacement-content">
+                        <div class="gateway-selector">
+                            <label class="gateway-option">
+                                <input type="checkbox" id="card-replacement-stripe" data-gateway="stripe">
+                                <span>Stripe</span>
+                            </label>
+                            <label class="gateway-option">
+                                <input type="checkbox" id="card-replacement-adyen" data-gateway="adyen">
+                                <span>Adyen</span>
+                            </label>
+                            <label class="gateway-option">
+                                <input type="checkbox" id="card-replacement-checkout" data-gateway="checkout">
+                                <span>Checkout.com</span>
+                            </label>
+                            <label class="gateway-option">
+                                <input type="checkbox" id="card-replacement-recurly" data-gateway="recurly">
+                                <span>Recurly</span>
+                            </label>
+                            <label class="gateway-option">
+                                <input type="checkbox" id="card-replacement-xsolla" data-gateway="xsolla">
+                                <span>Xsolla</span>
+                            </label>
+                        </div>
+                        <p class="bypass-hint">💡 Auto-uses next card from CC List when one fails. Required for <strong>Automation Mode</strong>.</p>
+                        <div id="card-replacement-hint" class="hint warning hidden">
+                            ⚠️ Add BIN or CC List above to use Card Replacement.
+                        </div>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-header">
+                        <h2>3. CVV Bypass</h2>
+                        <label class="toggle">
+                            <input type="checkbox" id="cvv-bypass-toggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="section-content hidden" id="cvv-bypass-content">
+                        <div class="gateway-selector">
+                            <label class="gateway-option">
+                                <input type="checkbox" id="cvv-stripe" data-gateway="stripe">
+                                <span>Stripe</span>
+                            </label>
+                            <label class="gateway-option">
+                                <input type="checkbox" id="cvv-adyen" data-gateway="adyen">
+                                <span>Adyen</span>
+                            </label>
+                            <label class="gateway-option">
+                                <input type="checkbox" id="cvv-checkout" data-gateway="checkout">
+                                <span>Checkout.com</span>
+                            </label>
+                            <label class="gateway-option">
+                                <input type="checkbox" id="cvv-recurly" data-gateway="recurly">
+                                <span>Recurly</span>
+                            </label>
+                            <label class="gateway-option">
+                                <input type="checkbox" id="cvv-xsolla" data-gateway="xsolla">
+                                <span>Xsolla</span>
+                            </label>
+                        </div>
+                        <p class="bypass-hint">💡 <code>cvc_required</code> error? Disable this bypass for that gateway.</p>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-header">
+                        <h2>4. Payment User Agent Bypass</h2>
+                        <label class="toggle">
+                            <input type="checkbox" id="payment-user-agent-bypass-toggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="section-content hidden" id="payment-user-agent-bypass-content">
+                        <p class="info-text">Stripe only</p>
+                        <p class="bypass-hint">💡 <code>ua_required</code> error? Disable this bypass.</p>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-header">
+                        <h2>5. Stripe Security Bypass</h2>
+                        <label class="toggle">
+                            <input type="checkbox" id="stripe-security-bypass-toggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="section-content hidden" id="stripe-security-bypass-content">
+                        <div class="gateway-selector">
+                            <label class="gateway-option">
+                                <input type="checkbox" id="security-pasted" checked>
+                                <span>Pasted Fields</span>
+                            </label>
+                            <label class="gateway-option">
+                                <input type="checkbox" id="security-timing" checked>
+                                <span>Time Tracking</span>
+                            </label>
+                            <label class="gateway-option">
+                                <input type="checkbox" id="security-tracking" checked>
+                                <span>Tracking IDs</span>
+                            </label>
+                            <label class="gateway-option">
+                                <input type="checkbox" id="security-zip" checked>
+                                <span>Zip Code</span>
+                            </label>
+                        </div>
+                        <p class="info-text">Stripe only</p>
+                        <p class="bypass-hint">⚠️ Advanced: Makes automation harder to detect. Keep default <strong>ON</strong> recommended.</p>
+                    </div>
+                </div>
+
+                <div class="section">
+                    <div class="section-header">
+                        <h2>6. 3DS Bypass</h2>
+                        <label class="toggle">
+                            <input type="checkbox" id="three-ds-bypass-toggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="section-content hidden" id="three-ds-bypass-content">
+                        <p class="info-text">Stripe only</p>
+                        <p class="bypass-hint">⚠️ Experimental: <code>3ds_bypass_failed</code> is normal sometimes. Card will be re-added to list on 3DS fail.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- History Tab -->
+            <div id="history-tab" class="tab-panel">
+                <div class="history-actions">
+                    <button type="button" class="btn-action btn-blur active" id="historyBlurToggle">
+                        <span id="historyBlurIcon">👁️</span> <span id="historyBlurText">Unblur</span>
+                    </button>
+                    <button type="button" class="btn-action btn-copy" id="historyCopyBtn">📋 Copy</button>
+                    <button type="button" class="btn-action btn-export" id="historyExportBtn">📥 Export</button>
+                    <button type="button" class="btn-action btn-danger" id="historyClearBtn">🗑️ Clear</button>
+                </div>
+                <div class="history-filters" id="historyFilterContainer">
+                    <button type="button" class="filter-btn active" data-filter="all">All</button>
+                    <button type="button" class="filter-btn" data-filter="charged">Charged</button>
+                    <button type="button" class="filter-btn" data-filter="live">Live</button>
+                    <button type="button" class="filter-btn" data-filter="dead">Dead</button>
+                </div>
+                <div class="history-list blurred" id="historyList">
+                    <div class="empty-state">
+                        <div class="empty-icon">📭</div>
+                        <div>No transactions yet</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- News Tab -->
+            <div id="news-tab" class="tab-panel">
+                <div class="news-header">
+                    <h3>📰 Latest News & BINs</h3>
+                    <button class="news-refresh-btn" id="news-refresh-btn" title="Refresh">🔄</button>
+                </div>
+                <div class="news-list" id="news-list">
+                    <div class="news-loading">Loading...</div>
+                </div>
+            </div>
+
+            <!-- Captcha Tab -->
+            <div id="captcha-tab" class="tab-panel">
+                <div class="section">
+                    <div class="section-header">
+                        <h2>Captcha Solving</h2>
+                        <label class="toggle">
+                            <input type="checkbox" id="captcha-solving-toggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="section-content hidden" id="captcha-solving-content">
+                        <p class="bypass-hint" style="margin-bottom: 12px;">⚠️ <strong>Cloudflare Warning:</strong> Auto-pauses on Cloudflare challenge pages to prevent infinite loops.</p>
+                        
+                        <!-- NopeCHA API Key -->
+                        <div class="subsection" style="margin-bottom: 16px;">
+                            <div class="subsection-header">
+                                <h3>NopeCHA API</h3>
+                                <span id="nopecha-status-badge" style="font-size: 12px; padding: 2px 8px; border-radius: 4px; background: #333;">Not Set</span>
+                            </div>
+                            <div class="subsection-content">
+                                <div style="display: flex; gap: 12px; align-items: center; margin-bottom: 8px;">
+                                    <label for="nopecha-api-key" style="white-space: nowrap;">API Key:</label>
+                                    <input type="text" id="nopecha-api-key" placeholder="Enter your NopeCHA API key" autocomplete="off" spellcheck="false" style="flex: 1;">
+                                </div>
+                                <p class="bypass-hint">🔑 Get your API key from <a href="https://nopecha.com" target="_blank" style="color: #4CAF50;">nopecha.com</a> (Required for image solving)</p>
+                            </div>
+                        </div>
+
+                        <!-- hCaptcha Settings -->
+                        <div class="subsection">
+                            <div class="subsection-header">
+                                <h3>hCaptcha</h3>
+                                <label class="toggle">
+                                    <input type="checkbox" id="hcaptcha-enabled">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="subsection-content hidden" id="hcaptcha-content">
+                                <p class="bypass-hint" style="color: #ff9800; margin-bottom: 8px;">⚠️ Enable only on checkout pages. Enabling on all pages may cause Cloudflare infinite loops!</p>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="hcaptcha-tap-based" checked>
+                                    <span>Tap-based solving (auto-click checkbox)</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="hcaptcha-fallback-manual" checked>
+                                    <span>Fallback to manual if image challenge appears</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- reCAPTCHA Settings -->
+                        <div class="subsection">
+                            <div class="subsection-header">
+                                <h3>reCAPTCHA v2</h3>
+                                <label class="toggle">
+                                    <input type="checkbox" id="recaptcha-enabled">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="subsection-content hidden" id="recaptcha-content">
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="recaptcha-auto-open" checked>
+                                    <span>Auto-open (click checkbox automatically)</span>
+                                </label>
+                                <label class="checkbox-label">
+                                    <input type="checkbox" id="recaptcha-auto-solve" checked>
+                                    <span>Auto-solve (solve image challenges via API)</span>
+                                </label>
+                                <p class="bypass-hint" style="margin-top: 8px;">⚠️ Auto-solve requires NopeCHA API key above</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Proxy Tab -->
+            <div id="proxy-tab" class="tab-panel">
+                <div class="section">
+                    <div class="section-header">
+                        <div style="display: flex; flex-direction: column; gap: 4px;">
+                            <h2>Proxy Management</h2>
+                            <div id="current-ip-display" class="hidden"
+                                style="font-size: 11px; color: #666; font-family: monospace;">
+                                Current IP: <span class="loading-dots">...</span>
+                            </div>
+                        </div>
+                        <label class="toggle">
+                            <input type="checkbox" id="proxy-rotation-toggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+
+                    <!-- Proxy Input Section -->
+                    <div class="subsection">
+                        <label for="proxy-input">Proxy Address:</label>
+                        <input type="text" id="proxy-input" placeholder="host:port or host:port:user:pass"
+                            autocomplete="off" spellcheck="false">
+
+                        <div style="display: flex; gap: 12px; margin-top: 12px; align-items: flex-end;">
+                            <div style="flex: 1;">
+                                <label for="proxy-type-select">Type:</label>
+                                <select id="proxy-type-select">
+                                    <option value="http">HTTP/S</option>
+                                    <option value="socks4">SOCKS4</option>
+                                    <option value="socks5">SOCKS5</option>
+                                </select>
+                            </div>
+                            <div>
+                                <button id="test-proxy-btn" class="small-button">Test</button>
+                            </div>
+                        </div>
+
+                        <label class="checkbox-label" style="margin-top: 12px;">
+                            <input type="checkbox" id="auto-save-live" checked>
+                            <span>Auto save live proxy</span>
+                        </label>
+                    </div>
+
+                    <!-- Test Results -->
+                    <div id="proxy-test-results" class="hidden"
+                        style="margin-bottom: 15px; padding: 10px; border-radius: 4px;">
+                    </div>
+
+                    <!-- Rotation Settings -->
+                    <div class="subsection hidden" id="rotation-settings">
+                        <label for="rotation-mode" style="display: block; margin-bottom: 5px;">Rotation Mode:</label>
+                        <select id="rotation-mode" style="width: 100%; margin-bottom: 10px;">
+                            <option value="sequential">Sequential</option>
+                            <option value="random">Random</option>
+                        </select>
+                        <label for="rotation-interval" style="display: block; margin-bottom: 5px;">Interval
+                            (minutes):</label>
+                        <input type="number" id="rotation-interval" min="1" value="5" style="width: 100%;">
+                    </div>
+
+                    <!-- Saved Proxy List -->
+                    <div class="subsection">
+                        <h3>Saved Proxies</h3>
+                        <div id="saved-proxy-list">
+                            <!-- Dynamic list of saved proxies -->
+                        </div>
+                    </div>
+
+                    <!-- Proxy Status Display -->
+                    <div id="proxy-status-display" class="hidden"
+                        style="margin-top: 15px; padding: 12px; border-radius: 8px; background: linear-gradient(135deg, #1e3a5f, #2d5a87);">
+                        <div style="display: flex; align-items: center; gap: 12px;">
+                            <span id="proxy-geo-flag" style="font-size: 28px;">🌍</span>
+                            <div>
+                                <div id="proxy-geo-country" style="font-weight: bold; color: #fff;">Not Connected</div>
+                                <div id="proxy-geo-ip" style="font-size: 12px; color: #aaa; font-family: monospace;">-
+                                </div>
+                            </div>
+                            <div style="margin-left: auto; text-align: right;">
+                                <div id="proxy-geo-latency" style="font-size: 12px; color: #0f0;">-</div>
+                                <div id="proxy-geo-city" style="font-size: 11px; color: #888;">-</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Settings Tab -->
+            <div id="settings-tab" class="tab-panel">
+                <!-- Redeem Code Section (MOVED TO TOP for better UX) -->
+                <div class="section">
+                    <div class="section-header">
+                        <h2>🎁 Redeem Code</h2>
+                    </div>
+                    <div class="section-content">
+                        <div class="redeem-input-row">
+                            <input type="text" id="redeem-code-input"
+                                placeholder="Enter code (e.g., SEMEX-XXXX-XXXX-XXXX)" autocomplete="off"
+                                spellcheck="false">
+                            <button id="redeem-code-btn" class="redeem-btn">Redeem</button>
+                        </div>
+                        <div id="redeem-status" class="redeem-status hidden"></div>
+                    </div>
+                </div>
+
+                <!-- SEMEX Checkout Theme -->
+                <div class="section">
+                    <div class="section-header">
+                        <h2>🎨 Checkout Page Theme</h2>
+                    </div>
+                    <div class="section-content">
+                        <p style="font-size:12px; color: var(--semex-text-muted, #94A3B8); margin-bottom: 12px;">
+                            Customise the accent colour applied on checkout pages you visit.
+                        </p>
+                        <div class="theme-presets" style="display:flex; gap:8px; margin-bottom:12px; flex-wrap:wrap;">
+                            <button type="button" class="theme-preset" data-color="#0A0A0F" title="Black" style="width:32px;height:32px;border-radius:50%;border:2px solid transparent;background:#0A0A0F;cursor:pointer;"></button>
+                            <button type="button" class="theme-preset" data-color="#3B82F6" title="Blue" style="width:32px;height:32px;border-radius:50%;border:2px solid transparent;background:#3B82F6;cursor:pointer;"></button>
+                            <button type="button" class="theme-preset" data-color="#8B5CF6" title="Purple" style="width:32px;height:32px;border-radius:50%;border:2px solid transparent;background:#8B5CF6;cursor:pointer;"></button>
+                            <button type="button" class="theme-preset" data-color="#EC4899" title="Pink" style="width:32px;height:32px;border-radius:50%;border:2px solid transparent;background:#EC4899;cursor:pointer;"></button>
+                            <button type="button" class="theme-preset" data-color="#22c55e" title="Green" style="width:32px;height:32px;border-radius:50%;border:2px solid transparent;background:#22c55e;cursor:pointer;"></button>
+                            <button type="button" class="theme-preset" data-color="#ef4444" title="Red" style="width:32px;height:32px;border-radius:50%;border:2px solid transparent;background:#ef4444;cursor:pointer;"></button>
+                            <button type="button" class="theme-preset" data-color="#f59e0b" title="Amber" style="width:32px;height:32px;border-radius:50%;border:2px solid transparent;background:#f59e0b;cursor:pointer;"></button>
+                            <button type="button" class="theme-preset" data-color="#ffffff" title="White" style="width:32px;height:32px;border-radius:50%;border:2px solid #444;background:#ffffff;cursor:pointer;"></button>
+                        </div>
+                        <div style="display:flex; gap:10px; align-items:center; margin-bottom:12px;">
+                            <label for="checkout-theme-color" style="font-size:12px;">Custom:</label>
+                            <input type="color" id="checkout-theme-color" value="#8B5CF6" style="width:44px;height:32px;border-radius:6px;border:1px solid var(--semex-border, #333);cursor:pointer;">
+                            <input type="text" id="checkout-theme-hex" value="#8B5CF6" placeholder="#RRGGBB" maxlength="7" style="width:100px;font-family:monospace;">
+                        </div>
+                        <div style="display:flex; gap:16px; margin-bottom:12px; flex-wrap:wrap;">
+                            <label class="checkbox-label"><input type="checkbox" id="checkout-theme-buttons" checked><span>Buttons</span></label>
+                            <label class="checkbox-label"><input type="checkbox" id="checkout-theme-links" checked><span>Links</span></label>
+                            <label class="checkbox-label"><input type="checkbox" id="checkout-theme-accent"><span>Background accent</span></label>
+                        </div>
+                        <label class="checkbox-label" style="margin-bottom: 12px;">
+                            <input type="checkbox" id="checkout-theme-enabled">
+                            <span>Enable checkout page theming</span>
+                        </label>
+                        <button type="button" id="checkout-theme-apply" class="btn-primary" style="width:100%; padding:10px; border-radius:8px; border:none; color:white; cursor:pointer; font-weight:600;">Save & Apply</button>
+                        <div id="checkout-theme-status" style="margin-top:10px; font-size:12px;"></div>
+                    </div>
+                </div>
+
+
+                <!-- Utilities Functions Section -->
+                <div class="section">
+                    <div class="section-header">
+                        <h2>Utilities Functions</h2>
+                    </div>
+                    <div class="section-content">
+                        <!-- Address Generator -->
+                        <div class="subsection">
+                            <div class="subsection-header">
+                                <h3>Address Generator</h3>
+                            </div>
+                            <div class="subsection-content">
+                                <label class="checkbox-label" style="margin-bottom: 12px;">
+                                    <input type="checkbox" id="address-follow-proxy">
+                                    <span>Use proxy country for address generation</span>
+                                </label>
+                                <div style="margin-bottom: 12px;">
+                                    <label for="address-country-select"
+                                        style="display: block; margin-bottom: 4px;">Country:</label>
+                                    <div style="display: flex; gap: 10px; align-items: center;">
+                                        <select id="address-country-select" style="flex: 1;">
+                                            <option value="US">🇺🇸 United States</option>
+                                            <option value="UK">🇬🇧 United Kingdom</option>
+                                            <option value="CA">🇨🇦 Canada</option>
+                                            <option value="AU">🇦🇺 Australia</option>
+                                            <option value="DE">🇩🇪 Germany</option>
+                                            <option value="FR">🇫🇷 France</option>
+                                            <option value="ES">🇪🇸 Spain</option>
+                                            <option value="IT">🇮🇹 Italy</option>
+                                            <option value="NL">🇳🇱 Netherlands</option>
+                                            <option value="SE">🇸🇪 Sweden</option>
+                                            <option value="CUSTOM">📝 Custom...</option>
+                                        </select>
+                                        <input type="text" id="address-country-custom" placeholder="XX" maxlength="2"
+                                            style="width: 50px; text-transform: uppercase; display: none;">
+                                        <label class="checkbox-label" style="font-size: 12px; margin: 0;">
+                                            <input type="checkbox" id="address-country-random">
+                                            <span>Random?</span>
+                                        </label>
+                                    </div>
+                                </div>
+                                <button id="generate-address-btn" class="small-button">Generate Address</button>
+                                <div id="address-result" class="hidden"
+                                    style="margin-top: 12px; padding: 8px; background: #f5f5f5; border-radius: 4px; font-size: 12px;">
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- User Generator -->
+                        <div class="subsection" style="margin-top: 16px;">
+                            <div class="subsection-header">
+                                <h3>User Generator</h3>
+                            </div>
+                            <div class="subsection-content">
+                                <p class="info-text" style="margin-bottom: 12px;">Generates user info based on address
+                                    country</p>
+                                <button id="generate-user-btn" class="small-button">Generate User</button>
+                                <div id="user-result" class="hidden"
+                                    style="margin-top: 12px; padding: 8px; background: #f5f5f5; border-radius: 4px; font-size: 12px;">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Payment Tracking Section -->
+                <div class="section">
+                    <div class="section-header">
+                        <h2>Payment Tracking</h2>
+                        <label class="toggle">
+                            <input type="checkbox" id="payment-tracking-toggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="section-content hidden" id="payment-tracking-content">
+                        <!-- Gateway Selection -->
+                        <div class="subsection">
+                            <h3>Gateways</h3>
+                            <div class="gateway-selector">
+                                <label class="gateway-option">
+                                    <input type="checkbox" id="pt-stripe" checked>
+                                    <span>Stripe</span>
+                                </label>
+                                <label class="gateway-option">
+                                    <input type="checkbox" id="pt-adyen">
+                                    <span>Adyen</span>
+                                </label>
+                                <label class="gateway-option">
+                                    <input type="checkbox" id="pt-checkout">
+                                    <span>Checkout.com</span>
+                                </label>
+                                <label class="gateway-option">
+                                    <input type="checkbox" id="pt-recurly">
+                                    <span>Recurly</span>
+                                </label>
+                                <label class="gateway-option">
+                                    <input type="checkbox" id="pt-xsolla">
+                                    <span>Xsolla</span>
+                                </label>
+                            </div>
+                        </div>
+
+                        <!-- Notification Settings -->
+                        <div class="subsection">
+                            <h3>Notifications</h3>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="pt-show-toast" checked>
+                                <span>Show popup/toast notifications</span>
+                            </label>
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="pt-only-success" checked>
+                                <span>Show only CHARGED/LIVE (hide DEAD)</span>
+                            </label>
+                            <div style="margin-top: 12px;">
+                                <label for="pt-dismiss-time" style="display: block; margin-bottom: 4px;">Auto-dismiss
+                                    after
+                                    (seconds):</label>
+                                <input type="number" id="pt-dismiss-time" min="1" max="30" value="5"
+                                    style="width: 100px;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Screenshot Settings Section -->
+                <div class="section">
+                    <div class="section-header">
+                        <h2>📸 Screenshot Settings</h2>
+                    </div>
+                    <div class="section-content">
+                        <div class="subsection">
+                            <label class="checkbox-label">
+                                <input type="checkbox" id="screenshot-save-locally" checked>
+                                <span>Save screenshots locally (Downloads folder)</span>
+                            </label>
+                            <p class="info-text" style="margin-top: 6px;">
+                                When OFF, you receive text notifications only.
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Other Independent Features Section -->
+                <div class="section">
+                    <div class="section-header">
+                        <h2>Other Independent Features</h2>
+                    </div>
+                    <div class="section-content">
+                        <!-- Form Filling - Email & Name Customization -->
+                        <div class="subsection">
+                            <div class="subsection-header">
+                                <h3>Form Filling</h3>
+                            </div>
+                            <div class="subsection-content">
+                                <div class="toggle-row" style="margin-bottom: 12px;">
+                                    <label for="form-filling-toggle">Enable Auto-fill (non-Stripe pages)</label>
+                                    <input type="checkbox" id="form-filling-toggle" checked>
+                                </div>
+                                <p class="info-text">Stripe Checkout pages always auto-fill. Toggle controls other
+                                    sites.</p>
+
+                                <!-- Email Field Section -->
+                                <div style="margin-top: 12px;">
+                                    <label for="form-filling-custom-email">Email (for checkout):</label>
+                                    <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;">
+                                        <input type="email" id="form-filling-custom-email"
+                                            value="support@semex.pro" autocomplete="off" spellcheck="false"
+                                            class="form-input" style="flex: 1;">
+                                        <label class="checkbox-label"
+                                            style="margin: 0; white-space: nowrap; font-size: 12px;">
+                                            <input type="checkbox" id="form-filling-random-email">
+                                            <span>Random</span>
+                                        </label>
+                                    </div>
+                                    <p class="info-text" style="margin-top: 4px;">Used if checkout page email field is
+                                        empty</p>
+                                </div>
+
+                                <!-- Name Field Section -->
+                                <div style="margin-top: 12px;">
+                                    <label for="form-filling-custom-name">Billing Name (for checkout):</label>
+                                    <div style="display: flex; gap: 8px; align-items: center; margin-top: 4px;">
+                                        <input type="text" id="form-filling-custom-name" value="SEMEX"
+                                            autocomplete="off" spellcheck="false" class="form-input" style="flex: 1;">
+                                        <label class="checkbox-label"
+                                            style="margin: 0; white-space: nowrap; font-size: 12px;">
+                                            <input type="checkbox" id="form-filling-random-name">
+                                            <span>Random</span>
+                                        </label>
+                                    </div>
+                                    <p class="info-text" style="margin-top: 4px;">Used as cardholder name during
+                                        automation</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Telegram Bot Section -->
+                <div class="section">
+                    <div class="section-header">
+                        <h2>Actions</h2>
+                    </div>
+                    <div class="section-content">
+                        <button id="reset-stats-btn">🔄 Reset Statistics</button>
+                    </div>
+                </div>
+
+
+            </div>
+        </div>
+    </div>
+    </div>
+    </div>
+
+    <!-- Status Footer (New) -->
+    <div class="status-footer" id="status-footer">
+        <div class="sys-stat">
+            <div class="sys-dot" id="sys-dot"></div>
+            <span class="sys-text" id="sys-text">System Connected</span>
+        </div>
+        <span class="version-text" id="version-text">v...</span>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer"
+        style="padding: 15px; text-align: center; border-top: 1px solid rgba(255, 255, 255, 0.05); margin-top: 10px;">
+        <div style="margin-bottom: 10px;">
+            <a href="https://t.me/SemexAutoxBot" target="_blank" style="text-decoration: none;">
+                <button class="small-button"
+                    style="background: rgba(255, 255, 255, 0.1); border: 1px solid rgba(255, 255, 255, 0.2); width: auto; padding: 6px 16px; cursor: pointer; color: white;">
+                    💬 Contact Support
+                </button>
+            </a>
+        </div>
+        <div style="font-size: 11px; color: #666;">
+            © 2025 SEMEX
+        </div>
+    </footer>
+
+    <!-- Alert Modal -->
+    <div id="modal-overlay" class="modal-overlay hidden">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modal-title">Warning</h3>
+                <button class="modal-close" id="modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="modal-message"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn modal-btn-primary" id="modal-ok">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Modal -->
+    <div id="confirm-modal-overlay" class="modal-overlay hidden">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="confirm-modal-title">Confirm</h3>
+                <button class="modal-close" id="confirm-modal-close">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p id="confirm-modal-message"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="modal-btn" id="confirm-modal-cancel">Cancel</button>
+                <button class="modal-btn modal-btn-primary" id="confirm-modal-ok">OK</button>
+            </div>
+        </div>
+    </div>
+
+
+    <!-- Auth Modal (2FA) -->
+    <div id="auth-modal" class="auth-overlay">
+        <div class="auth-card">
+            <div class="auth-icon">🛡️</div>
+            <h2 class="auth-title" id="auth-title">Login Required</h2>
+            <p class="auth-subtitle" id="auth-subtitle">Enter your Telegram ID to verify access.</p>
+
+            <!-- Step 1: ID Input -->
+            <div id="auth-step-1">
+                <div id="bot-alert-box" class="auth-alert-box hidden"
+                    style="background: rgba(255, 71, 87, 0.1); border: 1px solid rgba(255, 71, 87, 0.3); padding: 10px; border-radius: 8px; margin-bottom: 15px; font-size: 13px; color: #ff6b81; text-align: left;">
+                    <strong>⚠️ Important:</strong> Before sending OTP, you MUST start the bot <a id="bot-link" href="#"
+                        target="_blank" style="color: #ff6b81; text-decoration: underline; font-weight: bold;">@Bot</a>
+                    first.
+                </div>
+                <input type="text" id="auth-telegram-id" class="telegram-id-input"
+                    placeholder="Telegram User ID (e.g. 123456)" autocomplete="off">
+                <button class="auth-btn" id="auth-btn-send">Send OTP</button>
+            </div>
+
+            <!-- Step 2: OTP Input -->
+            <div id="auth-step-2" class="hidden">
+                <div class="otp-input-group">
+                    <input type="text" id="auth-otp" class="otp-input" placeholder="000000" maxlength="6"
+                        autocomplete="off">
+                </div>
+                <button class="auth-btn" id="auth-btn-verify">Verify & Login</button>
+                <a href="#" class="auth-link" id="auth-link-back">← Back</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Maintenance Mode Overlay -->
+    <div id="maintenance-overlay" class="maintenance-overlay hidden">
+        <div class="maintenance-card">
+            <div class="maintenance-icon">🔧</div>
+            <h2 class="maintenance-title">Under Maintenance</h2>
+            <p class="maintenance-message" id="maintenance-message">
+                Server is temporarily unavailable. Please try again later.
+            </p>
+            <button class="maintenance-retry-btn" id="maintenance-retry-btn">🔄 Retry</button>
+        </div>
+    </div>
+
+    <!-- Scripts: Minimal for Phase 1 -->
+    <!-- <script src="../utils/address-generator.js"></script> -->
+    <!-- <script src="../utils/user-generator.js"></script> -->
+    <!-- <script src="../utils/telegram-notifier.js"></script> -->
+    <!-- <script src="../utils/constants.js"></script> -->
+    <!-- \u003cscript src=\"../utils/storage.js\"\u003e\u003c/script\u003e -->
+    <!-- Confirm Modal moved to line 733 (deduplicated) -->
+
+    <script src="../utils/encryption.js"></script>
+    <script src="../utils/server-client.js"></script>
+    <script src="../utils/cache-manager.js"></script>
+    <!-- <script src="../utils/subscription-manager.js"></script> -->
+    <!-- <script src="../utils/proxy-manager.js"></script> -->
+    <!-- <script src="../features/proxy-management.js"></script> -->
+    <!-- <script src="toast-helper.js"></script> -->
+    <script src="popup.js"></script>
+</body>
+
+</html>

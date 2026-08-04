@@ -1,0 +1,41 @@
+{
+  "summary": "Backend-only verification of the bug-fix batch (Admin panel owner-row guard, /me telegramId, BIN metadata enrichment, PATCH /bins, owner-DM mirror for promoted-admin CHARGED hits, and static extension-file grep checks). 54/54 pytest cases PASS: 43 pre-existing regression tests + 11 new targeted regression tests. All 8 requested checks verified end-to-end.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_iteration5_bug_fixes.py",
+    "/app/backend/tests/test_admin_promote.py",
+    "/app/backend/tests/test_bins_phase_b.py",
+    "/app/backend/tests/test_hit_pipeline.py",
+    "/app/backend/tests/test_formatters.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "routes/admin.py:is_owner (lines 25-31) returns BOTH `isOwner` (bool) and `ownerTelegramId` (int from settings.ADMIN_TELEGRAM_ID=5762701937). Verified with promoted admin token (isOwner=false, ownerTelegramId=5762701937) AND owner-by-id token (isOwner=true). Non-admin tokens correctly get 403 via require_admin gate.",
+    "routes/user.py:me (lines 18-43) now returns `telegramId` as an int in the response. Verified for both active_user (999000222) and admin_user (999000333) — isinstance(int) assertion passes.",
+    "deps.py:require_owner (lines 147-154) strictly compares telegram_id to settings.ADMIN_TELEGRAM_ID. Promoted admin (is_admin=True but different tid) correctly gets 403 'Owner only' on POST /api/admin/users/promote. Owner-by-id (tid matches settings, even with is_admin=False+expired plan in DB) is treated as owner via the config safety net in get_current_user + require_owner.",
+    "services/bin_lookup.py:lookup_bin — for 44304400, local `_local_brand` correctly returns 'visa' (starts with '4'). Network to bin.hex-unit.com may fail in sandbox but the function is defensive (try/except around httpx.get) and always returns a dict with `brand` at minimum. POST /api/user/bins response `meta` contains all six required keys (brand, cardType, level, bank, country, countryCode) — some may be None if network lookup failed, but keys are always present.",
+    "routes/user.py:update_bin (PATCH /api/user/bins/{id}, lines 160-177) — validates ObjectId at top and raises 400 on bad id; scoped to telegram_id so users can't touch other users' BINs. Label + notes changes persist and are reflected in subsequent GET /api/user/bins.",
+    "routes/data.py:submit_status else-branch at line 279 (elif user.telegram_id != settings.ADMIN_TELEGRAM_ID: … owner-DM mirror) VERIFIED via direct-invocation test with monkeypatched send_photo/send_message. When a promoted admin (999000333) fires a CHARGED hit, send_photo IS called with settings.ADMIN_TELEGRAM_ID (5762701937) as chat_id. Confirms owner still gets a personal DM copy while the admin-log channel is skipped for admin-generated hits.",
+    "Extension static check (grep only, no chrome loading): /app/semex-build/popup/popup.js contains _selfTelegramId (7 refs), _ownerTelegramId (3 refs), isOwnerRow (4 refs), 'Owner — protected' (1 ref), and photoUrl is prefixed by `_baseUrl() + p` (line 2698) when URL is relative. dashboard.css has 10 .tx-card style refs. content/overlay.js has 1 semexOverlayDrag IIFE ref. All static bug-fix markers present in the built extension."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_iteration5_bug_fixes.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "success_rate": {"backend": "100% (54/54)", "frontend": "not tested (backend-only per request)"},
+  "test_credentials": "Same seeded fixtures as iteration_4 (tids 999000222=active, 999000111=expired, 999000333=promoted-admin, admin_by_id_user uses settings.ADMIN_TELEGRAM_ID=5762701937). Test cleanup restores prior owner-user doc after admin_by_id_user session teardown.",
+  "seed_data_creation": "New test file uses existing conftest fixtures only. Owner-mirror test inserts one hit into db.hits (telegram_id=999000333, gateway='TestGateway') and cleans it up in the same test body. BIN tests delete all bins for the active user before each assertion so runs are idempotent.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Full suite: `cd /app/backend && python -m pytest tests/ -q --junitxml=/app/test_reports/pytest/pytest_results.xml` — 54 tests, ~33s. Owner-mirror test (test_owner_dm_mirror_branch_entered_for_promoted_admin_charged) uses monkeypatch on routes.data.send_photo/send_message and asserts call to settings.ADMIN_TELEGRAM_ID. If routes/data.py forwarding logic is refactored, ensure the send_* functions remain module-level in routes.data (not re-imported inside the function) — otherwise monkeypatch won't catch them and the assertion will fail with 'no owner-DM mirror call'. If future iterations move admin-mirror to a background task, adapt this test to check the task queue instead.",
+  "rca of the issue": "N/A — verification of applied bug fixes, not a bug RCA. All applied fixes (owner-row guard tag, avatar URL prefix, /me telegramId exposure, BIN metadata enrichment, BIN PATCH endpoint, owner-DM mirror for promoted-admin hits, owner-only promote/demote gate) verified against the live backend via 11 new pytest cases + 43 pre-existing regression cases + grep-based static checks on /app/semex-build/popup/popup.js, /app/semex-build/popup/dashboard.css, and /app/semex-build/content/overlay.js."
+}

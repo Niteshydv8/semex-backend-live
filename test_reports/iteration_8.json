@@ -1,0 +1,41 @@
+{
+  "summary": "Backend-only verification of the new Extension Release Management surface (admin publish/list/make-latest/delete/broadcast + release-aware /get and public /download/extension). Wrote /app/backend/tests/test_extension_releases.py (15 tests) covering auth-gating, upload validation (empty/non-zip/no-manifest), happy path with is_latest, demotion on new publish, make-latest promotion, delete auto-promotion + on-disk file removal, broadcast returning {sent, failed}, public download release-vs-legacy resolution + download_count increment, and webhook /get resolves latest release. All 15 pass. Full regression 102/102 pass (87 baseline + 15 new).",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "conftest.py::admin_by_id_user teardown", "issue": "PRE-EXISTING (also present in iteration 7 baseline). Session-scoped teardown does mongo_db.users.replace_one({'telegram_id': tid}, existing) where 'existing' still carries the original _id — pymongo rejects with WriteError code 66 'immutable field _id was found to have been altered'. This is reported by pytest as ERROR on the last-scheduled test that used the fixture but does NOT fail any actual test. Fix: pop '_id' from existing before replace_one, or use replace_one({'_id': existing['_id']}, existing)."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_extension_releases.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "(Optional/minor) Fix conftest.py admin_by_id_user teardown to drop _id from the restored doc — currently produces a harmless ERROR line in pytest summary (present since iteration 7)."
+  ],
+  "critical_code_review_comments": [
+    "routes/admin.py:publish_extension (lines 543-605) — order of validation is correct: empty → size cap → PK magic → zipfile.BadZipFile → manifest.json presence. HTTPException raised inside the ZipFile 'with' block is NOT caught by `except zipfile.BadZipFile`, so the 'no manifest' 400 propagates cleanly. Demotion runs update_many({is_latest:True}, {$set:{is_latest:False}}) BEFORE inserting the new release with is_latest=True — guarantees the single-latest invariant.",
+    "routes/admin.py:delete_release (lines 623-644) — auto-promotion picks newest by published_at after delete only if the deleted doc had is_latest=True. Correct. File unlink is best-effort (missing_ok=True) — good.",
+    "routes/admin.py:broadcast_release (lines 653-703) — correctly filters is_banned, respects include_admins/include_expired, always returns {success, sent, failed}. Even when Telegram API returns non-ok (fake test IDs), send_message returns None → counted as failed → 200 still returned. Verified end-to-end.",
+    "routes/telegram_bot.py:_resolve_zip (lines 49-59) — prefers published release, falls back to legacy /app/semex-*.zip glob. Correct 2-layer fallback per spec. _find_latest_release_doc first tries {is_latest:True} then falls back to newest by published_at — belt-and-suspenders.",
+    "routes/telegram_bot.py:download_extension (lines 190-215) — public route, no auth, increments download_count on the release doc (best-effort, wrapped in try/except). FileResponse sets content-length correctly (verified: matches size_bytes exactly).",
+    "models.py:ExtensionRelease (lines 153-169) — clean schema; download_count defaults to 0, obfuscated defaults to False, published_at defaults via utcnow. is_latest defaults False, ensuring accidental new inserts don't clobber the flag.",
+    "Security: /api/telegram/download/extension is public (no auth) — intended per spec. /api/admin/extension/* all Depends(require_admin) — returns 401 for missing token, 403 for non-admin. Verified."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_extension_releases.py (new)",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "success_rate": {"backend": "100% (102/102)", "frontend": "not tested (backend-only per request)"},
+  "test_credentials": "Reused conftest.py fixtures: admin_user (999000333, is_admin=True), active_user (999000222, non-admin). Bearer token from create_access_token, X-Fingerprint = test-fp-000000000000000000000000000000.",
+  "seed_data_creation": "Each test in test_extension_releases.py runs against a clean extension_releases collection via an autouse fixture that delete_many({}) before and a module-scope autouse fixture that clears the collection + removes files created in /app/extension_releases at teardown. No permanent seed data added.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Full backend suite: `cd /app/backend && python -m pytest tests/ -q --junitxml=/app/test_reports/pytest/pytest_results.xml` — 102 tests, ~52s. The single 'ERROR' line in pytest summary is the pre-existing admin_by_id_user teardown issue in conftest.py — it does NOT fail any test and predates iteration 8. New test file /app/backend/tests/test_extension_releases.py uses admin_user fixture; uses /app/semex-v2.2.0.zip as the valid extension zip fixture (~838KB, has manifest.json). Static file requirements verified: /app/semex-build/popup/dashboard.html contains all 4 required data-testids (release-upload-btn, release-version, release-file, releases-list) and popup.js contains uploadRelease + loadReleasesPanel + '/api/admin/extension/publish'.",
+  "rca of the issue": "N/A — new-feature verification, no bugs found. All 6 new admin endpoints + 2 updated public/webhook endpoints behave per spec. Notable verified behaviors: (1) Zip validation order rejects empty(400)→wrong-magic(400)→corrupt-zip(400)→no-manifest(400) before writing to disk. (2) is_latest invariant preserved across sequential publishes AND across manual make-latest promotion. (3) delete_release unlinks the file on disk AND auto-promotes newest remaining if the deleted one was latest. (4) Broadcast returns {success:true, sent:N, failed:M} even when all Telegram sends fail against fake IDs (uses truthy check `r and r.get('ok')`). (5) Public /download/extension serves release file (Content-Length matches size_bytes) and increments download_count atomically per request; falls back to legacy /app/semex-v2.2.0.zip when no releases exist. (6) Webhook /get returns {ok:true} whether a release exists (delegates to _resolve_zip → latest release) or not (falls back to legacy zip). (7) obfuscated flag correctly detected on the shipped /app/semex-v2.2.0.zip (contains _0x hex names in popup.js as noted in the request)."
+}

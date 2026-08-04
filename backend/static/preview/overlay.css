@@ -1,0 +1,602 @@
+/**
+ * SEMEX Overlay V2 Styles
+ * States: Pill (Minimized), Full (Maximized), Dock (Edge)
+ * Features: Position Switch, Mobile Responsive
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+/* =========================================
+   CONTAINER
+   ========================================= */
+#semex-overlay {
+    position: fixed;
+    z-index: 999999;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: white;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    pointer-events: none;
+}
+
+#semex-overlay * {
+    box-sizing: border-box;
+}
+
+/* Position Classes */
+#semex-overlay.pos-bl {
+    bottom: 20px;
+    left: 20px;
+}
+
+#semex-overlay.pos-br {
+    bottom: 20px;
+    right: 20px;
+}
+
+#semex-overlay.pos-tl {
+    top: 20px;
+    left: 20px;
+}
+
+#semex-overlay.pos-tr {
+    top: 20px;
+    right: 20px;
+}
+
+/* =========================================
+   STATE: PILL (Minimized)
+   ========================================= */
+#semex-overlay.state-pill .overlay-full {
+    display: none;
+}
+
+#semex-overlay.state-pill .overlay-dock {
+    display: none;
+}
+
+#semex-overlay.state-pill .overlay-pill {
+    display: flex;
+}
+
+.overlay-pill {
+    display: none;
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 40px;
+    padding: 6px 14px 6px 6px;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    cursor: pointer;
+    pointer-events: auto;
+    animation: semex-slideIn 0.4s ease;
+}
+
+.pill-logo {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pill-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Logo Letter Fallback (CSP-safe) */
+.logo-letter {
+    font-weight: 800;
+    font-size: 12px;
+    color: white;
+    display: flex;
+    width: 100%;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+}
+
+.full-brand-logo .logo-letter {
+    font-size: 10px;
+}
+
+.pill-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.pill-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #10b981;
+    animation: semex-pulse 1.5s infinite;
+    flex-shrink: 0;
+}
+
+.pill-dot.charged {
+    background: #10b981;
+}
+
+.pill-dot.live {
+    background: #fbbf24;
+}
+
+.pill-dot.dead {
+    background: #ef4444;
+    animation: none;
+}
+
+.pill-dot.processing {
+    background: #3b82f6;
+}
+
+.pill-text {
+    font-size: 12px;
+    font-weight: 600;
+    color: white;
+    max-width: 120px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.pill-btns {
+    display: flex;
+    gap: 4px;
+}
+
+.pill-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    color: white;
+}
+
+.pill-btn:hover {
+    transform: scale(1.1);
+}
+
+.pill-btn.play {
+    background: #10b981;
+}
+
+.pill-btn.pause {
+    background: #f59e0b;
+    display: none;
+}
+
+.pill-btn.stop {
+    background: #ef4444;
+}
+
+.pill-btn.expand {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+/* =========================================
+   STATE: FULL (Maximized)
+   ========================================= */
+#semex-overlay.state-full .overlay-pill {
+    display: none;
+}
+
+#semex-overlay.state-full .overlay-dock {
+    display: none;
+}
+
+#semex-overlay.state-full .overlay-full {
+    display: block;
+}
+
+.overlay-full {
+    display: none;
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 14px;
+    width: 300px;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+    pointer-events: auto;
+    animation: semex-slideIn 0.4s ease;
+}
+
+/* Mobile Responsive */
+@media (max-width: 480px) {
+    .overlay-full {
+        width: calc(100vw - 40px);
+        max-width: 340px;
+    }
+
+    .full-stats {
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .stat-item {
+        flex: 1 1 40%;
+    }
+
+    .stat-div {
+        display: none;
+    }
+}
+
+.full-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.full-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.full-brand-logo {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    overflow: hidden;
+    background: linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.full-brand-logo img {
+    width: 100%;
+    height: 100%;
+}
+
+.full-brand-text {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+}
+
+.full-brand-name {
+    font-weight: 800;
+    font-size: 14px;
+    background: linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.full-brand-tag {
+    font-size: 9px;
+    color: #64748b;
+    text-transform: uppercase;
+}
+
+.header-btns {
+    display: flex;
+    gap: 4px;
+}
+
+.header-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.header-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.full-body {
+    padding: 12px;
+}
+
+/* Status Indicator */
+.full-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(0, 0, 0, 0.25);
+    padding: 10px;
+    border-radius: 8px;
+    margin-bottom: 10px;
+}
+
+.full-status-icon {
+    font-size: 16px;
+}
+
+.full-status-text {
+    font-weight: 600;
+    font-size: 13px;
+    flex: 1;
+}
+
+/* Stats Dashboard */
+.full-stats {
+    display: flex;
+    justify-content: space-between;
+    background: rgba(30, 41, 59, 0.5);
+    border-radius: 8px;
+    padding: 10px;
+    margin-bottom: 10px;
+    position: relative;
+}
+
+.stats-toggle {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 3px;
+}
+
+.stats-toggle:hover {
+    color: white;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    flex: 1;
+}
+
+.stat-label {
+    font-size: 9px;
+    color: #64748b;
+    text-transform: uppercase;
+}
+
+.stat-value {
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.stat-value.charged {
+    color: #10b981;
+}
+
+.stat-value.live {
+    color: #fbbf24;
+}
+
+.stat-value.dead {
+    color: #ef4444;
+}
+
+.stat-div {
+    width: 1px;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+/* Details */
+.full-details {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 10px;
+    border-radius: 6px;
+    font-size: 11px;
+    color: #94a3b8;
+    margin-bottom: 10px;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 3px;
+}
+
+.detail-row:last-child {
+    margin-bottom: 0;
+}
+
+.detail-val {
+    color: #e2e8f0;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+}
+
+/* Controls */
+.full-controls {
+    display: flex;
+    gap: 6px;
+}
+
+.ctrl-btn {
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    color: white;
+    transition: all 0.15s;
+}
+
+.ctrl-btn:hover {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+}
+
+.ctrl-btn:active {
+    transform: translateY(0);
+}
+
+.ctrl-btn.start {
+    flex: 1;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.ctrl-btn.pause {
+    flex: 1;
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+    display: none;
+}
+
+.ctrl-btn.stop {
+    width: 40px;
+    background: #ef4444;
+}
+
+.ctrl-btn.blur {
+    width: 40px;
+    background: #334155;
+}
+
+/* Blur Mode */
+.overlay-full.blur-active .detail-val {
+    filter: blur(4px);
+}
+
+/* =========================================
+   STATE: DOCK (Edge Strip)
+   ========================================= */
+#semex-overlay.state-dock .overlay-pill {
+    display: none;
+}
+
+#semex-overlay.state-dock .overlay-full {
+    display: none;
+}
+
+#semex-overlay.state-dock .overlay-dock {
+    display: flex;
+}
+
+.overlay-dock {
+    display: none;
+    position: fixed;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-right: none;
+    border-radius: 10px 0 0 10px;
+    padding: 12px 8px;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    box-shadow: -4px 0 16px rgba(0, 0, 0, 0.3);
+    pointer-events: auto;
+    animation: semex-slideInRight 0.3s ease;
+}
+
+.dock-logo {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dock-logo img {
+    width: 100%;
+    height: 100%;
+}
+
+.dock-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #10b981;
+    animation: semex-pulse 1.5s infinite;
+}
+
+.dock-text {
+    writing-mode: vertical-rl;
+    font-size: 10px;
+    font-weight: 600;
+    color: #64748b;
+}
+
+/* =========================================
+   ANIMATIONS
+   ========================================= */
+@keyframes semex-slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes semex-slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(20px) translateY(-50%);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0) translateY(-50%);
+    }
+}
+
+@keyframes semex-pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6);
+    }
+
+    70% {
+        box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+    }
+}
+
+/* Hidden State */
+.overlay-hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(20px) scale(0.9);
+}

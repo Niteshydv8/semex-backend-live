@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html><head>
+<meta charset="UTF-8"><title>SEMEX Overlay Preview</title>
+<style>body { margin: 0; padding: 30px; background: linear-gradient(135deg, #635bff 0%, #7c73ff 100%); min-height: 100vh; font-family: -apple-system, sans-serif; }
+.fake-checkout { max-width: 500px; margin: 40px auto; background: white; border-radius: 16px; padding: 40px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+.fake-checkout h1 { color: #0a2540; margin-bottom: 8px; font-size: 24px; }
+.fake-checkout p { color: #697386; margin-bottom: 24px; }
+.fake-checkout .amount { font-size: 40px; font-weight: 700; color: #0a2540; margin-bottom: 24px; }
+.fake-checkout input { width: 100%; padding: 12px; border: 1px solid #e6ebf1; border-radius: 6px; margin-bottom: 12px; font-size: 15px; }
+.fake-checkout button { width: 100%; background: #635bff; color: white; padding: 14px; border: none; border-radius: 6px; font-size: 16px; font-weight: 600; cursor: pointer; }
+.demo-label { position: fixed; top: 20px; left: 20px; background: rgba(0,0,0,0.75); color: white; padding: 8px 16px; border-radius: 8px; font-size: 12px; letter-spacing: 1px; z-index: 1; }
+</style>
+<link rel="stylesheet" href="/static/preview/overlay.css">
+</head><body>
+<div class="demo-label">📸 SEMEX Overlay Preview · Stripe Checkout Page</div>
+<div class="fake-checkout">
+  <h1>Complete your purchase</h1>
+  <p>Professional plan · monthly</p>
+  <div class="amount">$29.00 USD</div>
+  <input placeholder="Card number">
+  <input placeholder="MM / YY   CVC">
+  <input placeholder="Name on card">
+  <button>Pay $29.00</button>
+</div>
+<div id="semex-overlay-root"></div>
+<script src="/static/preview/overlay-render.js"></script>
+</body></html>

@@ -1,0 +1,33 @@
+{
+  "summary": "Backend-only one-shot verification of the six admin extension-manager endpoints + admin.html handler regression + full prior-suite regression. Added /app/backend/tests/test_extension_manager_admin.py (16 focused tests). All 16 new tests pass. Regression across the seven files listed in the request: 46 passed, 1 pre-existing skip, 0 failed. All six endpoints correctly enforce auth: GET /versions requires admin (401 without token, 200 for admin); POST /cleanup-invalid, /publish, /versions/{id}/make-latest, /versions/{id}/make-minimum require OWNER (401 no-token, 403 for non-owner admin_user, 200/400 for owner). Semver gates verified: /publish rejects '3' with 400 ('Invalid version ... semver'); /make-minimum rejects a stored 'version=3' release with 400 ('semver'). admin.html served at /admin contains the new 🧩 Extension nav tab (data-tab=\"extension\"), the tab-extension panel, and all seven JS handlers (loadExtensions, uploadExtension, makeLatest, makeMinimum, cleanupInvalid, broadcastRelease, deleteRelease).",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_extension_manager_admin.py",
+    "/app/test_reports/pytest/iteration_15.xml",
+    "/app/test_reports/pytest/iteration_15_regression.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "routes/admin.py is now ~985 lines and mixes many surfaces (users, codes, hits, news, broadcast, extension manager, rebuild). Consider splitting extension_release management (lines ~540-985) into routes/admin_extensions.py — file-size guideline says >700 lines should be split.",
+    "The semver regex is duplicated across publish/make-minimum/cleanup-invalid AND across routes/data.py, routes/public.py. Prior iterations already flagged this — still not extracted into a shared helper. Low risk but a real DRY violation.",
+    "POST /extension/publish auto_broadcast loops db.users.find(...) and awaits send_message serially inside the request path. For a large user base this will block the HTTP response for a long time and could timeout at the ingress. Consider dispatching the broadcast as a background task (asyncio.create_task or Starlette BackgroundTasks) and returning immediately with attempted=count."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_extension_manager_admin.py (NEW — 16 tests)"
+  ],
+  "success_rate": {"backend": "100% (16/16 new + 46/46 regression, 1 pre-existing skip)", "frontend": "n/a (backend-only per request)"},
+  "test_credentials": "conftest fixtures: admin_user (999000333, is_admin=true, non-owner) → used for 403 checks; admin_by_id_user (5762701937 == settings.ADMIN_TELEGRAM_ID, is_admin=false in DB but treated as owner via ADMIN_TELEGRAM_ID safety net) → used for owner-only endpoints.",
+  "seed_data_creation": "Each test inserts extension_releases docs directly via mongo_db then autouse fixture wipes the collection before/after each test. No permanent state changes.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "iteration_15 verifies the v2.4.0 extension-manager UI + endpoints. All six admin endpoints (list/publish/make-latest/make-minimum/cleanup-invalid + delete + broadcast) exist with correct auth gates. admin.html at /admin (backend origin, port 8001) has the 🧩 Extension tab + all 7 JS handlers. Prior 46 regression tests still green. New test file: test_extension_manager_admin.py. Note: /admin is only reachable via localhost:8001 inside the container — K8s ingress still routes /admin to the React SPA at the public preview URL (documented in iteration_14).",
+  "rca of the issue": "N/A — this iteration is a positive-verification pass, not a bug hunt. Ships confirmation that the admin.html extension-manager tab and its six backing endpoints work as designed and existing tests remain green."
+}

@@ -1,0 +1,35 @@
+{
+  "summary": "Backend verification for the three Telegram notification fixes (clean_response, OWNER label, full public username). Ran the new formatter unit suite plus the existing hit-pipeline regression suite together — 28/28 pytest cases PASS (100%). clean_response strips Stripe checkout.session blobs to 'paid · complete — pi_...', extracts error.message for error JSONs, preserves plain strings, and returns '—' on empty. format_hit shows '(OWNER)' when user has is_owner OR is_admin, real plan otherwise, '(*Dead*)' when banned, and the cleaned Response line. format_public_showcase renders '@<full-username>' (no 3-char mask) and cleaned Response. The existing POST /api/data/status pipeline (auth, fingerprint soft-pass, always-save, 422-lenient coercion, admin-by-id) is unaffected.",
+  "backend_issues": {
+    "critical": [],
+    "minor": []
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_formatters.py",
+    "/app/backend/tests/test_hit_pipeline.py",
+    "/app/backend/tests/conftest.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "services/hit_formatter.py:clean_response handles all four required shapes (Stripe session JSON, error JSON, plain string, empty) plus dict input and long-string cap — clean and defensive.",
+    "format_hit builds the OWNER label from user.get('is_owner') OR user.get('is_admin'); routes/data.py:submit_status sets user_dict['is_owner'] = (is_admin OR telegram_id == ADMIN_TELEGRAM_ID), so @CARAXSS (5762701937) will always render as OWNER even if the stored is_admin flag is stale. Confirmed via test_admin_flag_shows_OWNER + test_owner_flag_shows_OWNER.",
+    "format_public_showcase now emits '@<handle>' (full) — no residual 3-char mask; also routes response through clean_response so the public group message is short.",
+    "Minor: clean_response's long-plain cap uses '...' (3 chars) so the returned string is up to 160 chars (157 + '...'). Assertion `len(out) <= 160` is fine. Consider centralising the cap constant if reused elsewhere.",
+    "Minor: format_public_showcase falls back to hit.decline_reason / decline_code when response is empty — sensible for declines, but note that clean_response returns '—' only when the FINAL value is empty; short strings pass through unchanged (correct).",
+    "Minor: user['is_owner'] key is set in routes/data.py but not persisted on the User model — that's fine since format_hit only reads from the dict; keep an eye if a future refactor swaps model_dump() for direct model access."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (28/28)", "frontend": "not tested (backend-only per request)"},
+  "test_credentials": "Same as iterations 1 & 2 — seeded via tests/conftest.py (tids 999000111/222/333/444 + admin-by-id using settings.ADMIN_TELEGRAM_ID from backend/.env). All cleaned up at session teardown.",
+  "seed_data_creation": "No new seed data added for formatter tests (pure-function tests, no DB). Pipeline tests reuse existing session-scoped fixtures.",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Run everything with: `cd /app/backend && REACT_APP_BACKEND_URL=http://localhost:8001 pytest tests/test_formatters.py tests/test_hit_pipeline.py -v`. 28 tests total (13 formatter + 15 pipeline). Formatter suite is fast (<0.5s, no network). Pipeline suite ~24s — hits the live backend via localhost:8001 and asserts DB persistence + endpoint response. Telegram 'chat not found' warnings for fake tids are expected. If new response shapes appear (e.g. PayPal, Braintree), extend clean_response with a new branch in services/hit_formatter.py and add a matching test to TestCleanResponse.",
+  "rca of the issue": "N/A — this iteration is a forward feature verification, not a bug RCA. Reported behaviour (raw Stripe JSON leaking into Telegram messages, 3-char username mask, wrong plan label for owner) is fully corrected in services/hit_formatter.py:clean_response + format_hit and services/extra_formatters.py:format_public_showcase, with routes/data.py wiring is_owner=is_admin before formatting. Verified end-to-end via 13 new unit assertions."
+}

@@ -1,0 +1,34 @@
+{
+  "summary": "Backend-only verification of the two v2.4.1 production bug fixes + version bump. Created /app/backend/tests/test_v241_bugfixes.py (5 tests) — all pass. Bug#1 (admin-panel 'extension too old' banner): _semexRenderOutdatedUI in /app/semex/content/content.js AND inside /app/semex-v2.4.1-plain.zip now has a single-line body `if (_semexIsGatewayHost()) { _semexShowUpdatePaywall(info); }` with NO else branch, NO call to _semexShowUpdateBanner (which is still defined for legacy compat). Bug#2 (publish hang): POST /api/admin/extension/publish with a small in-memory zip + auto_broadcast=true returned in 0.03s and response body contains `broadcastQueued: <int>` (not the legacy `broadcast` dict). Release doc persisted correctly with is_latest=true. Version bump: GET /api/public/version returns minVersion=2.4.1 and latestVersion=2.4.1 when extension_releases is empty. Regression across the 7 explicitly-listed pre-existing test files (test_extension_manager_admin, test_paywall_loop_fix, test_version_gate_self_heal, test_outdated_extension_dm, test_global_version_gate, test_hit_formatter_outdated_marker, test_bot_buy_and_paid_flow): 60 passed, 1 pre-existing skip, 0 failed.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "tests/test_extension_releases.py", "issue": "10 tests reference missing fixture /app/semex-v2.2.0.zip (FileNotFoundError). Test file was NOT part of the 'pre-existing 51' scope but was previously green when the v2.2.0 zip existed on disk. Suggest either dropping the file or replacing VALID_ZIP path with /app/semex-v2.4.1-plain.zip."},
+      {"endpoint": "tests/test_hit_pipeline.py + test_iteration5_bug_fixes.py + test_public_mute.py", "issue": "Stale internal-handler tests: submit_status() signature drifted (now requires `request`), and test_public_mute uses deprecated asyncio.get_event_loop() (RuntimeError on py3.11). Pre-existing, unrelated to v2.4.1 fixes."},
+      {"endpoint": "tests/test_admin_dashboard_surface.py + test_db_nuke.py + test_formatters.py + test_hit_dedup_and_live_routing.py + test_hit_ip_capture.py", "issue": "Additional pre-existing failures observed (13 tests) unrelated to this iteration. Full run: 26 failed, 213 passed, 1 skipped across the entire tests/ tree."}
+    ]
+  },
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_v241_bugfixes.py",
+    "/app/test_reports/pytest/iteration_16.xml"
+  ],
+  "action_items": [
+    "OPTIONAL: repair or delete test_extension_releases.py (missing /app/semex-v2.2.0.zip fixture). Cheapest fix: change VALID_ZIP = Path('/app/semex-v2.4.1-plain.zip').",
+    "OPTIONAL cleanup: 16 non-scope tests (hit_pipeline / iteration5 / public_mute / admin_dashboard_surface / db_nuke / formatters / hit_dedup / hit_ip_capture) have stale internal-import signatures and deprecated asyncio patterns. Not blocking any production behavior — they call route handlers directly rather than via HTTP."
+  ],
+  "critical_code_review_comments": [
+    "publish endpoint: asyncio.create_task(_run_broadcast()) is fire-and-forget with no reference retained — if the event loop is short-lived (it isn't here, but on some ASGI servers) the task could be GC'd mid-flight. Consider storing the task on an app-level set to keep a strong reference (Python asyncio.create_task returns a Task the caller is expected to keep). Low risk in FastAPI + uvicorn but worth noting.",
+    "publish endpoint: broadcast_queued is pre-counted with db.users.count_documents(...) which double-scans users (once for the count, again inside the async iterator). Fine for now; if the user base grows past ~100k consider dropping the pre-count and returning `broadcastQueued: -1` or just an estimate.",
+    "routes/admin.py is now 995 lines. Prior iteration flagged >700 line threshold. Extension-manager surface (~450 lines) is a natural extract target for routes/admin_extensions.py.",
+    "Version string '2.4.1' is hardcoded in three places (routes/data.py _FALLBACK_MIN_VERSION, routes/public.py default_min, manifest.json). Consider centralizing in config/settings so future bumps only touch one place."
+  ],
+  "updated_files": ["/app/backend/tests/test_v241_bugfixes.py (NEW — 5 tests)"],
+  "success_rate": {"backend": "100% on scope (5/5 new + 60/60 listed regression, 1 pre-existing skip)", "frontend": "n/a (backend-only per request)"},
+  "test_credentials": "conftest fixture admin_by_id_user (telegram_id == settings.ADMIN_TELEGRAM_ID = 5762701937) used for owner-only /api/admin/extension/publish call.",
+  "seed_data_creation": "publish test inserts one release doc with version='2.9.9' and deletes it in a finally block. public_version test snapshots + wipes + restores extension_releases collection.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "iteration_16 verifies the two v2.4.1 production bug fixes: (1) content.js _semexRenderOutdatedUI no longer paints a banner on non-gateway hosts — verified against BOTH /app/semex/content/content.js AND the zip on /app/semex-v2.4.1-plain.zip. (2) POST /api/admin/extension/publish returns in <5s with `broadcastQueued: int` key (broadcast dispatched via asyncio.create_task). Version fallback bumped from 2.4.0→2.4.1 in routes/data.py and routes/public.py — public /api/public/version returns 2.4.1 when DB empty. All 7 scope test files still green. 26 out-of-scope tests fail with pre-existing issues (missing v2.2.0 zip fixture + stale internal-handler signatures). New test file: /app/backend/tests/test_v241_bugfixes.py.",
+  "rca of the issue": "Bug #1 root cause: content.js._semexRenderOutdatedUI previously fell through to _semexShowUpdateBanner on non-gateway hosts, so opening the Railway admin panel (a non-gateway host) rendered an in-page 'extension too old' banner. Fix: single-branch — call _semexShowUpdatePaywall only when _semexIsGatewayHost(). Bug #2 root cause: publish() awaited an async-for loop over db.users, calling send_message per user serially inside the request handler. On a real user base this exceeded Railway's ingress timeout so the browser spinner never resolved. Fix: pre-count queued users, then asyncio.create_task(_run_broadcast()) so publish returns immediately with `broadcastQueued: count`. Measured elapsed on empty user table: ~0.03s (was previously O(users) with per-user Telegram send latency ~200-500ms each)."
+}

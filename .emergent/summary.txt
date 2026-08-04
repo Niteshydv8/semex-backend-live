@@ -1,0 +1,11 @@
+<ask_human_response>Extension lockout — what should blocked actually mean when outdated?:
+**YES**
+
+Form fill improvements — Name generator::
+**NAME SHOULD BE RANDOM IF USERS SELECTED THAT TICK AND DEFAULT NAME AND USERS CUSTOME NAME**
+
+Custom name / email in settings::
+**YES CUSTOM OR DEFAULT MAIL**
+
+Address mode in Settings — which options should the user pick from?:
+**SAME ADDRESS AS BIN OR CARD AND SAME AS PROXY OR CUSTOM OR RANDOMS**</ask_human_response>
