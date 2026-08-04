@@ -1,2 +1,3 @@
 - [Telegram custom-emoji delivery](telegram-custom-emoji.md) — invalid custom_emoji_id entities 400-reject the WHOLE message; hit notifications/screenshots silently fail while plain OTP works.
 - [Git push for SEMEX backend](git-push-railway.md) — raw `git push` fails auth; use `gitPush({branch:"main"})` callback; push auto-redeploys Railway backend.
+- [SEMEX hit statuses & 3DS](semex-hit-statuses.md) — only charged/live/3d_live forwarded to Telegram; 3DS challenge = own non-forwarded label; NEVER touch 3DS bypass logic.
