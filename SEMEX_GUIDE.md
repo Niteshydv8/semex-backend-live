@@ -104,6 +104,7 @@ If someone bypasses the paywall (e.g. via DevTools) and keeps using an **outdate
 - **Backend:** commit, then push to GitHub. Railway auto-redeploys on push to `main`.
   - Push with the managed helper (raw `git push` fails auth in this workspace).
 - **Extension:** rebuild the zips (§2), then hand the **obfuscated** zip to users. Loading: unzip → `chrome://extensions` → Developer mode → **Load unpacked** → select the folder.
+- **API URL lock:** the API URL is hardcoded and cannot be overridden from storage or DevTools. If anyone removes or changes the URL, the extension stops working completely — there is no fallback path.
 
 ---
 
