@@ -109,7 +109,7 @@ If someone bypasses the paywall (e.g. via DevTools) and keeps using an **outdate
 
 ## 10. How to test
 
-1. Download `semex-v2.4.1-plain.zip` (private, readable) → load unpacked.
+1. Download `semex-v2.4.2-plain.zip` (private, readable) → load unpacked.
 2. Log in via Telegram OTP.
 3. Check the **History** tab on a wide screen — card details should now wrap and be fully visible.
 4. Run a test checkout on a supported gateway → confirm the hit reaches your Telegram (DM + showcase) with screenshot.
