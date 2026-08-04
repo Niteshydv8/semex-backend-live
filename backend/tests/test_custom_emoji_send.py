@@ -184,17 +184,19 @@ def test_custom_emoji_map_env_non_dict_falls_back(monkeypatch):
 
 # ---------- Route wiring verification (grep-style) ----------
 
-def test_telegram_service_signature_defaults_premium_true():
-    """Route callers (routes/data.py) rely on premium_emojis defaulting to True
-    so no code change is needed to upgrade admin-log/public-group forwarding."""
+def test_telegram_service_signature_defaults_premium_false():
+    """Animated premium (custom) emoji are DISABLED by default: a normal bot
+    can't send arbitrary custom_emoji_ids, and doing so 400-rejects the whole
+    message. Callers must opt in explicitly (with valid, owned IDs) if ever
+    re-enabled. Default must stay False so hit notifications always deliver."""
     import inspect
     sig_msg = inspect.signature(tg.send_message)
-    assert sig_msg.parameters["premium_emojis"].default is True, \
-        "send_message must default premium_emojis=True to auto-upgrade existing callers"
+    assert sig_msg.parameters["premium_emojis"].default is False, \
+        "send_message must default premium_emojis=False so notifications always deliver"
 
     sig_photo = inspect.signature(tg.send_photo)
-    assert sig_photo.parameters["premium_emojis"].default is True, \
-        "send_photo must default premium_emojis=True to auto-upgrade existing callers"
+    assert sig_photo.parameters["premium_emojis"].default is False, \
+        "send_photo must default premium_emojis=False so screenshots always deliver"
 
 
 def test_data_route_uses_send_message_without_override():
