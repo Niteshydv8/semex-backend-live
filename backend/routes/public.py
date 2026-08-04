@@ -22,12 +22,14 @@ def _parse_semver(v: str) -> tuple:
     """Parse an extension version like '2.3.0' into a comparable tuple.
     Bad/malformed versions sort as (0,) so they're always considered outdated."""
     if not v:
-        return (0,)
+        return (0, 0, 0, 0)
     try:
         parts = [int("".join(ch for ch in p if ch.isdigit()) or "0") for p in str(v).split(".")[:4]]
-        return tuple(parts) if parts else (0,)
+        while len(parts) < 4:
+            parts.append(0)
+        return tuple(parts[:4])
     except Exception:
-        return (0,)
+        return (0, 0, 0, 0)
 
 
 @router.get("/api/public/version")
@@ -55,8 +57,14 @@ async def public_version_info():
                 return v
         return None
 
-    latest_version = await _find_valid({"is_latest": True})
-    min_version = await _find_valid({"is_minimum": True})
+    try:
+        latest_version = await _find_valid({"is_latest": True})
+        min_version = await _find_valid({"is_minimum": True})
+    except Exception:
+        # DB hiccup must not 500 the bootstrap — outdated clients still need
+        # to learn where to upgrade. Fall back to the safe floor.
+        latest_version = None
+        min_version = None
 
     # Sanity: if only "latest" exists, treat latest as also the minimum required.
     if not min_version and latest_version:
@@ -64,6 +72,12 @@ async def public_version_info():
     if not min_version:
         min_version = default_min
     if not latest_version:
+        latest_version = min_version
+
+    # Invariant: never advertise minVersion > latestVersion, which would tell a
+    # client to upgrade to a build the gate then rejects. If an admin published
+    # contradictory metadata, raise latest up to the minimum.
+    if _parse_semver(min_version) > _parse_semver(latest_version):
         latest_version = min_version
 
     return {

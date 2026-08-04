@@ -42,14 +42,20 @@ def _is_valid_semver(v: str) -> bool:
 
 
 def _parse_version(v: str) -> tuple:
-    """Best-effort semver parse. Returns (0,) for missing/malformed input."""
+    """Best-effort semver parse, normalized to a fixed 4-part tuple so that
+    equivalent versions compare equal (e.g. "2.4" == "2.4.0.0") and shorter
+    strings are never treated as LESS than their zero-padded form. Returns
+    (0,0,0,0) for missing/malformed input."""
     if not v:
-        return (0,)
+        return (0, 0, 0, 0)
     try:
         parts = [int("".join(ch for ch in p if ch.isdigit()) or "0") for p in str(v).split(".")[:4]]
-        return tuple(parts) if parts else (0,)
+        # Pad to 4 components so (2,4) and (2,4,0,0) compare equal.
+        while len(parts) < 4:
+            parts.append(0)
+        return tuple(parts[:4])
     except Exception:
-        return (0,)
+        return (0, 0, 0, 0)
 
 
 async def _get_min_extension_version() -> str:
