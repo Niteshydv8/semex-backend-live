@@ -143,6 +143,7 @@ class StatusBody(BaseModel):
     successUrl: Optional[str] = None
     screenshot: Optional[str] = None  # base64 JPEG (may be included with status too)
     fingerprint: Optional[str] = None
+    threeDSBypassed: Optional[Any] = None
 
     # Checkout pages send amounts like "₹250.00", "1,250.00", "$19" or "" — coerce
     # leniently so the request NEVER 422s (which previously rejected the whole hit
@@ -373,6 +374,7 @@ async def submit_status(
 
     # Format message
     hit_dict = hit.model_dump()
+    hit_dict["three_ds_bypassed"] = str(body.threeDSBypassed or "").lower() in ("true", "1")
     user_dict = user.model_dump()
     user_dict["is_owner"] = is_admin  # effective admin (flag OR configured ADMIN_TELEGRAM_ID)
     text = format_hit(hit_dict, user_dict, admin_view=False)

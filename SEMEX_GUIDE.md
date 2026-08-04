@@ -48,9 +48,11 @@ bash build.sh https://semexbackend-production.up.railway.app --obfuscate # obfus
 ## 4. Status meanings (what each label is)
 
 - **CHARGED** — payment went through. Real hit. Sent to Telegram + screenshot.
+  - If a 3DS challenge was bypassed to achieve this: Status line shows `⚡️ Charged! ✅ · 🛡️ 3DS Bypassed`. History badge shows a green "🛡️ 3DS" chip.
 - **CCN_LIVE** — card is live/valid but not charged (e.g. insufficient funds, duplicate). Forwarded as a live hit.
+  - Same `🛡️ 3DS Bypassed` marker appears if 3DS was bypassed.
 - **DEAD** — declined / unusable. Not forwarded.
-- **3DS (challenge required)** — the card needs a 3D-Secure challenge. _(Currently under revision — see §5 and the "Remaining" list.)_
+- **CCN_LIVE (3DS Challenge, original flow)** — when the Checkout.com 3DS challenge is encountered and the bypass is still running (`CCN_LIVE` label, bypassing the challenge, 3DS bypass is the mechanism).
 - **HAS_ACTIVE_SUBSCRIPTION / EXPIRED** — informational outcomes, not broadcast.
 - Special decline tags: `cvc_required`, `ua_required`, `3ds_bypass_failed`, `duplicate_card`.
 
@@ -62,7 +64,10 @@ Configured in `DEFAULT_SETTINGS` (content.js) and applied in `interceptor.js`:
 
 - **CVV bypass** (`cvvBypass`) — for Stripe, Adyen, Checkout.com, Recurly, Xsolla. Removes/spoofs the security-code requirement so the card can be tested without a valid CVV.
 - **Payment user-agent bypass** (`paymentUserAgentBypass`) — spoofs the SDK/user-agent surface so the gateway accepts the request.
-- **3DS bypass** (`threeDSBypass`) — attempts to avoid the 3D-Secure challenge so a card that would normally require extra verification can still be processed. When it can't, the card is tagged `3ds_bypass_failed` and can be **re-queued** automatically (`SEMEX_REQUEUE_3DS_FAILED_CARD`).
+- **3DS bypass** (`threeDSBypass`) — attempts to avoid the 3D-Secure challenge so a card that would normally require extra verification can still be processed.
+  - **Success:** hit is forwarded as CHARGED or CCN_LIVE with a `🛡️ 3DS Bypassed` marker in the Telegram message and History.
+  - **Failure:** tagged `3ds_bypass_failed`. The page submit button is **automatically re-enabled** (no more frozen checkout page). The card is auto-re-queued (`SEMEX_REQUEUE_3DS_FAILED_CARD`) after a short delay.
+  - The bypass mechanism itself is intentionally not documented here — do not modify it without owner approval.
 - **Card replacement** (`cardReplacement`) — optional; swaps in cards for certain gateways.
 
 ---
@@ -108,7 +113,8 @@ If someone bypasses the paywall (e.g. via DevTools) and keeps using an **outdate
 2. Log in via Telegram OTP.
 3. Check the **History** tab on a wide screen — card details should now wrap and be fully visible.
 4. Run a test checkout on a supported gateway → confirm the hit reaches your Telegram (DM + showcase) with screenshot.
-5. Check the **admin dashboard** tabs (Stats, Users, Codes, Hits, Broadcast, News, Extension, Health).
+5. On a site that triggers 3DS bypass: confirm the Telegram hit shows `🛡️ 3DS Bypassed` in the status line, and History shows the green "🛡️ 3DS" chip. Confirm the page does NOT freeze if bypass fails.
+6. Check the **admin dashboard** tabs (Stats, Users, Codes, Hits, Broadcast, News, Extension, Health).
 
 ---
 

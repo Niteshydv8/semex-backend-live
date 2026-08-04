@@ -104,9 +104,15 @@ def _status_line(hit: dict) -> str:
     amt = hit.get("amount")
     cur = (hit.get("currency") or "").upper() or "USD"
     if status in ("charged", "success", "approved", "succeeded", "captured"):
-        return f"⚡️ {cur} {amt if amt is not None else '0.00'} Charged! ✅"
+        base = f"⚡️ {cur} {amt if amt is not None else '0.00'} Charged! ✅"
+        if hit.get("three_ds_bypassed"):
+            base += " · 🛡️ 3DS Bypassed"
+        return base
     if status in ("live", "ccn_live", "3d_live"):
-        return "⚡️ LIVE ✅"
+        base = "⚡️ LIVE ✅"
+        if hit.get("three_ds_bypassed"):
+            base += " · 🛡️ 3DS Bypassed"
+        return base
     if status in ("3d", "3ds", "3d_secure", "requires_action"):
         return "🛡️ 3DS Required"
     if status in ("otp", "otp_required"):
