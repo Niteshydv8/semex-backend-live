@@ -151,7 +151,13 @@ async def enforce_extension_version_globally(request: Request, call_next):
         return await call_next(request)
     sent = request.headers.get("x-extension-version") or ""
     min_v = await _get_min_extension_version()
-    is_outdated = (not sent) or (_parse_version(sent) < _parse_version(min_v))
+    # A MISSING version header must NOT be treated as outdated. Current builds
+    # occasionally issue a fingerprinted request without the version header, and
+    # flagging those as outdated caused false 426s AND false "update required"
+    # bot DMs for users on the latest build. Only flag a build as outdated when
+    # it actually sent a version AND that version is below the minimum. This
+    # matches _enforce_min_extension_version() in routes/data.py.
+    is_outdated = bool(sent) and (_parse_version(sent) < _parse_version(min_v))
     if not is_outdated:
         return await call_next(request)
     # HONEYPOT: outdated extension hitting a data-submit endpoint. We DO NOT
