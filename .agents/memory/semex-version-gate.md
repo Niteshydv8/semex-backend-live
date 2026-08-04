@@ -21,3 +21,13 @@ upgrade modal without this guard.
 
 **Why:** blocking a current build is worse than missing an upgrade prompt — the network re-check
 (`_semexCheckExtensionVersion` via `/api/public/version`) still catches genuinely old builds.
+
+## Server side (the other half — caused false bot DMs too)
+`server.py` middleware previously did `is_outdated = (not sent) or (parsed<min)`, so a MISSING
+`X-Extension-Version` header was treated as outdated → false 426 AND a false "update required"
+Telegram bot DM (via `_dm_outdated_user`) even for latest builds. Fixed to
+`is_outdated = bool(sent) and (parsed<min)` — missing header is allowed, matching
+`_enforce_min_extension_version()` in `routes/data.py`.
+
+**Rule:** never treat a missing version header as outdated in the gate; only a version that was
+actually sent AND parses below the minimum. A missing header ≠ old build.
