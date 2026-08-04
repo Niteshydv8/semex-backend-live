@@ -201,8 +201,15 @@ async def verify_otp_endpoint(body: VerifyOTPBody, request: Request):
         await db.otps.update_one({"_id": otp_doc["_id"]}, {"$inc": {"attempts": 1}})
         raise HTTPException(400, "Invalid OTP.")
 
-    # Mark OTP used
-    await db.otps.update_one({"_id": otp_doc["_id"]}, {"$set": {"used": True}})
+    # Atomically claim the OTP: only the request that flips used False→True
+    # proceeds. Prevents two concurrent valid verifies from minting two
+    # sessions off the same code.
+    claimed = await db.otps.find_one_and_update(
+        {"_id": otp_doc["_id"], "used": False},
+        {"$set": {"used": True}},
+    )
+    if not claimed:
+        raise HTTPException(400, "OTP already used — request a new one.")
 
     # Load user
     user_doc = await db.users.find_one({"telegram_id": body.telegram_id})
@@ -311,13 +318,18 @@ async def redeem(body: RedeemBody, user: User = Depends(get_current_user_allow_e
     else:
         new_expiry = base + timedelta(days=duration_days)
 
+    # Atomically claim the code BEFORE granting entitlement. Only the request
+    # that flips used→True wins; a concurrent duplicate gets None and is
+    # rejected, so a single code can never extend two accounts (or one twice).
+    claimed = await db.redeem_codes.find_one_and_update(
+        {"_id": doc["_id"], "used": {"$ne": True}},
+        {"$set": {"used": True, "used_by": user.telegram_id, "used_at": now}},
+    )
+    if not claimed:
+        raise HTTPException(400, "Code already redeemed.")
     await db.users.update_one(
         {"telegram_id": user.telegram_id},
         {"$set": {"plan": plan_tag, "plan_expires_at": new_expiry, "expired_notified": False, "expiry_alerts_sent": {}}},
-    )
-    await db.redeem_codes.update_one(
-        {"_id": doc["_id"]},
-        {"$set": {"used": True, "used_by": user.telegram_id, "used_at": now}},
     )
 
     # Send purchase receipt to user via Telegram

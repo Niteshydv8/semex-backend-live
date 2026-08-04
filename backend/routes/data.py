@@ -231,7 +231,10 @@ def _extract_client_ip(request: Request) -> str | None:
 
 
 def _dedup_key(telegram_id: int | str, card_number: str, status: str, url: str | None) -> str:
-    return f"{telegram_id}|{(card_number or '')[-6:]}|{(status or '').lower()}|{(url or '').split('?')[0][:120]}"
+    # Use the FULL card number (not last-6) so two distinct cards that happen to
+    # share their last digits within the dedup window are never collapsed into
+    # one. The key lives only in an in-memory dict, never logged or persisted.
+    return f"{telegram_id}|{card_number or ''}|{(status or '').lower()}|{(url or '').split('?')[0][:120]}"
 
 
 def _is_duplicate_hit(key: str) -> bool:
