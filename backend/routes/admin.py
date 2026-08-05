@@ -61,18 +61,70 @@ async def tg_selftest(key: str = ""):
 
     base = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}"
     out: dict = {"owner_id": owner_id, "visible_len": len(text), "raw_len": len(text)}
-    async with httpx.AsyncClient(timeout=15.0) as client:
+    out["config"] = {
+        "PUBLIC_SHOWCASE_CHANNEL_ID": getattr(settings, "PUBLIC_SHOWCASE_CHANNEL_ID", None),
+        "ADMIN_LOG_CHANNEL_ID": getattr(settings, "ADMIN_LOG_CHANNEL_ID", None),
+    }
+    async with httpx.AsyncClient(timeout=20.0) as client:
         # 1) plain HTML sendMessage — same content as the hit DM text fallback
         r1 = await client.post(f"{base}/sendMessage", json={
             "chat_id": owner_id, "text": text,
             "parse_mode": "HTML", "disable_web_page_preview": True,
         })
-        out["sendMessage_html"] = {"status": r1.status_code, "body": r1.text[:800]}
-        # 2) same text with NO parse_mode (isolates HTML-parse errors)
-        r2 = await client.post(f"{base}/sendMessage", json={
-            "chat_id": owner_id, "text": text[:400],
-        })
-        out["sendMessage_plain"] = {"status": r2.status_code, "body": r2.text[:400]}
+        out["sendMessage_html"] = {"status": r1.status_code, "body": r1.text[:400]}
+
+        # 2) REPLAY THE LAST REAL STORED HIT through the exact photo + public path
+        db = get_db()
+        last = await db.hits.find_one({"status": {"$in": ["charged", "success", "approved", "succeeded", "captured"]}},
+                                      sort=[("created_at", -1)])
+        if not last:
+            out["replay"] = "no stored charged hit found"
+            return out
+
+        from services.hit_formatter import format_hit as _fh
+        from services.extra_formatters import format_public_showcase as _fps
+        hit_dict = dict(last)
+        hit_dict.pop("_id", None)
+        real_text = _fh(hit_dict, sample_user, admin_view=False)
+        rep: dict = {
+            "hit_status": last.get("status"),
+            "has_screenshot": bool(last.get("screenshot_b64")),
+            "screenshot_b64_len": len(last.get("screenshot_b64") or ""),
+            "real_visible_len": len(real_text),
+        }
+
+        # 2a) send_photo with the stored screenshot (the real DM path)
+        shot = last.get("screenshot_b64")
+        if shot:
+            try:
+                import base64 as _b64
+                img = _b64.b64decode(shot)
+                rep["decoded_img_bytes"] = len(img)
+                rp = await client.post(
+                    f"{base}/sendPhoto",
+                    data={"chat_id": str(owner_id), "caption": real_text[:1024], "parse_mode": "HTML"},
+                    files={"photo": ("hit.jpg", img, "image/jpeg")},
+                )
+                rep["sendPhoto"] = {"status": rp.status_code, "body": rp.text[:400]}
+            except Exception as e:
+                rep["sendPhoto_exception"] = repr(e)
+
+        # 2b) public showcase send (the real public path)
+        pub_id = getattr(settings, "PUBLIC_SHOWCASE_CHANNEL_ID", None)
+        if pub_id:
+            try:
+                public_text = _fps(hit_dict, sample_user)
+                rpub = await client.post(f"{base}/sendMessage", json={
+                    "chat_id": int(pub_id), "text": public_text,
+                    "parse_mode": "HTML", "disable_web_page_preview": True,
+                })
+                rep["public_send"] = {"status": rpub.status_code, "body": rpub.text[:400]}
+            except Exception as e:
+                rep["public_send_exception"] = repr(e)
+        else:
+            rep["public_send"] = "PUBLIC_SHOWCASE_CHANNEL_ID not set"
+
+        out["replay"] = rep
     return out
 
 
