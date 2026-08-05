@@ -32,6 +32,44 @@ async def is_owner(admin: User = Depends(require_admin)):
     }
 
 
+@router.get("/tg-selftest")
+async def tg_selftest(owner: User = Depends(require_owner)):
+    """TEMP DIAGNOSTIC: send a real hit-style message to the owner via Telegram
+    and return the RAW Telegram API responses (status + body) so we can see the
+    exact reason hit notifications are being rejected. Owner-only."""
+    import httpx
+    from services.hit_formatter import format_hit
+
+    sample_hit = {
+        "card_number": "4242424242424242", "card_exp_month": "12",
+        "card_exp_year": "2027", "card_cvv": "123", "status": "charged",
+        "amount": "19.99", "currency": "usd", "gateway": "Stripe",
+        "success_url": "https://checkout.stripe.com/c/pay/cs_test_abc123#fidsomehash",
+        "merchant": "Self Test", "product": "Diagnostic", "customer_email": "test@example.com",
+        "response": '{"payment_status":"paid","status":"complete","id":"pi_selftest"}',
+        "bin_country": "United States", "bin_country_flag": "🇺🇸",
+    }
+    sample_user = {"telegram_username": "selftest", "plan": "OWNER", "is_owner": True,
+                   "telegram_id": owner.telegram_id}
+    text = format_hit(sample_hit, sample_user, admin_view=False)
+
+    base = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}"
+    out: dict = {"visible_len": len(text), "raw_len": len(text)}
+    async with httpx.AsyncClient(timeout=15.0) as client:
+        # 1) plain HTML sendMessage — same content as the hit DM text fallback
+        r1 = await client.post(f"{base}/sendMessage", json={
+            "chat_id": owner.telegram_id, "text": text,
+            "parse_mode": "HTML", "disable_web_page_preview": True,
+        })
+        out["sendMessage_html"] = {"status": r1.status_code, "body": r1.text[:800]}
+        # 2) same text with NO parse_mode (isolates HTML-parse errors)
+        r2 = await client.post(f"{base}/sendMessage", json={
+            "chat_id": owner.telegram_id, "text": text[:400],
+        })
+        out["sendMessage_plain"] = {"status": r2.status_code, "body": r2.text[:400]}
+    return out
+
+
 class NukeBody(BaseModel):
     """Type NUKE to confirm — OWNER-ONLY total-wipe of the database."""
     confirm: str
