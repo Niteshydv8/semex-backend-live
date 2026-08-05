@@ -1,7 +1,7 @@
 """Public endpoints — bot info, site config, news, BIN lookup."""
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
 
 from config import settings
 from db import get_db
@@ -194,10 +194,43 @@ async def health_detail():
             }
         else:
             out["last_hit"] = None
+        tr = await db.debug.find_one({}, sort=[("_id", -1)])
+        if tr:
+            tr["_id"] = str(tr["_id"])
+            out["last_submit_trace"] = tr
+        errs = []
+        async for ce in db.client_errors.find({}).sort("_id", -1).limit(3):
+            ce["_id"] = str(ce["_id"])
+            errs.append(ce)
+        out["client_errors"] = errs
     except Exception as e:
         out["db_ok"] = False
         out["error"] = str(e)[:200]
     return out
+
+
+@router.post("/api/public/client-error")
+async def client_error(request: Request):
+    """TEMPORARY diagnostics — the extension reports submit failures here (no
+    auth needed, so reporting works even when the failure itself IS auth).
+    Remove after debugging."""
+    from datetime import datetime, timezone
+    try:
+        body = await request.json()
+    except Exception:
+        body = {}
+    doc = {
+        "at": datetime.now(timezone.utc).isoformat(),
+        "msg": str(body.get("msg"))[:300],
+        "http": body.get("http"),
+        "status": str(body.get("status"))[:50],
+        "version": str(body.get("version"))[:20],
+    }
+    try:
+        await get_db().client_errors.insert_one(doc)
+    except Exception:
+        pass
+    return {"ok": True}
 
 
 @router.get("/api/tg-selftest")

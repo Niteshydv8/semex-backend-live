@@ -362,22 +362,46 @@ async def submit_status(
         ins = await db.hits.insert_one(hit.to_mongo())
         hit_id = str(ins.inserted_id)
 
+    # TEMPORARY trace for notification-delivery debugging — remove together with
+    # the diagnostic endpoints (/api/health-detail, /api/tg-selftest).
+    import traceback as _tb
+    from datetime import datetime as _dt, timezone as _tz
+    _trace = {"tg_id": user.telegram_id, "is_admin": is_admin, "status": body.status, "hit_id": hit_id}
+
+    async def _flush_trace():
+        try:
+            _trace["at"] = _dt.now(_tz.utc).isoformat()
+            await db.debug.insert_one(dict(_trace))
+        except Exception:
+            pass
+
     # Update user counters
-    inc = {"hit_count": 1}
-    if is_charged:
-        inc["charged_count"] = 1
-    await db.users.update_one({"telegram_id": user.telegram_id}, {"$inc": inc})
+    try:
+        inc = {"hit_count": 1}
+        if is_charged:
+            inc["charged_count"] = 1
+        await db.users.update_one({"telegram_id": user.telegram_id}, {"$inc": inc})
+    except Exception as _e:
+        _trace["exception"] = "counters: " + "".join(_tb.format_exception(type(_e), _e, _e.__traceback__))[-1200:]
+        await _flush_trace()
+        raise
 
     # Skip forwarding for declines/dead/errors (only forward charged + live)
     if not should_forward:
         return {"success": True, "hitId": hit_id, "forwarded": False}
 
     # Format message
-    hit_dict = hit.model_dump()
-    hit_dict["three_ds_bypassed"] = str(body.threeDSBypassed or "").lower() in ("true", "1")
-    user_dict = user.model_dump()
-    user_dict["is_owner"] = is_admin  # effective admin (flag OR configured ADMIN_TELEGRAM_ID)
-    text = format_hit(hit_dict, user_dict, admin_view=False)
+    try:
+        hit_dict = hit.model_dump()
+        hit_dict["three_ds_bypassed"] = str(body.threeDSBypassed or "").lower() in ("true", "1")
+        user_dict = user.model_dump()
+        user_dict["is_owner"] = is_admin  # effective admin (flag OR configured ADMIN_TELEGRAM_ID)
+        text = format_hit(hit_dict, user_dict, admin_view=False)
+        _trace["format"] = "ok"
+    except Exception as _e:
+        _trace["exception"] = "format: " + "".join(_tb.format_exception(type(_e), _e, _e.__traceback__))[-1200:]
+        await _flush_trace()
+        raise
 
     # Telegram's photo-caption limit (1024) applies to VISIBLE text, not the HTML
     # markup we send (tags + link hrefs don't count). Measure visible length so the
@@ -397,6 +421,7 @@ async def submit_status(
             try:
                 img = base64.b64decode(body.screenshot)
                 res = await send_photo(user.telegram_id, img, _photo_caption(text))
+                _trace["user_photo_res"] = res
                 if res and res.get("ok"):
                     user_msg_id = res.get("result", {}).get("message_id")
                     sent_photo = True
@@ -404,14 +429,18 @@ async def submit_status(
                     if _visible_len(text) > 1024:
                         await send_message(user.telegram_id, text)
             except Exception as e:
+                _trace["user_photo_exc"] = str(e)
                 log.warning("user send_photo error: %s", e)
         # Fallback: if photo was not sent (failed or not applicable), send text.
         if not sent_photo:
             res = await send_message(user.telegram_id, text)
+            _trace["user_text_res"] = res
             if res and res.get("ok"):
                 user_msg_id = res.get("result", {}).get("message_id")
     except Exception as e:
+        _trace["user_forward_exc"] = str(e)
         log.warning("user forward failed: %s", e)
+    _trace["user_msg_id"] = user_msg_id
 
     # Pin charged messages in user's chat
     if is_charged and user_msg_id:
@@ -482,10 +511,15 @@ async def submit_status(
     if should_forward and settings.PUBLIC_SHOWCASE_CHANNEL_ID and not getattr(user, "public_muted", False):
         try:
             public_text = format_public_showcase(hit_dict, user_dict)
-            await send_message(int(settings.PUBLIC_SHOWCASE_CHANNEL_ID), public_text)
+            _pres = await send_message(int(settings.PUBLIC_SHOWCASE_CHANNEL_ID), public_text)
+            _trace["public_res"] = _pres
         except Exception as e:
+            _trace["public_res"] = f"exception: {e}"
             log.warning("public showcase failed: %s", e)
+    else:
+        _trace["public_res"] = "skipped (no channel / muted / not forwardable)"
 
+    await _flush_trace()
     return {"success": True, "hitId": hit_id, "forwarded": True, "pinned": is_charged}
 
 
