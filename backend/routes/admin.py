@@ -140,6 +140,20 @@ async def tg_selftest(key: str = ""):
             rep["public_send"] = "PUBLIC_SHOWCASE_CHANNEL_ID not set"
 
         out["replay"] = rep
+
+    # 3) Read the live-path debug record written by submit_status on the last real hit.
+    # This is the ground truth for what ACTUALLY ran when the extension submitted.
+    try:
+        db2 = get_db()
+        dbg = await db2.debug.find_one({"_id": "last_forward"})
+        if dbg:
+            dbg.pop("_id", None)
+            out["last_real_forward"] = dbg
+        else:
+            out["last_real_forward"] = "no real hit has been submitted yet since this deploy"
+    except Exception as e:
+        out["last_real_forward_err"] = repr(e)
+
     return out
 
 
