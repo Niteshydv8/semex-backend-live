@@ -93,7 +93,14 @@ def _mask_success_url(url: Optional[str]) -> str:
         short = f"{p.netloc}{p.path}"
         if len(short) > 40:
             short = short[:37] + "..."
-        safe_href = html.escape(quote(url, safe=":/?#[]@!$&'()*+,;=%~"), quote=True)
+        # Use ONLY scheme://netloc/path for the href — drop the query/fragment.
+        # Stripe success URLs carry a 500+ char query string; embedding the full
+        # URL in the <a href> blows past Telegram's 1024-char caption limit and
+        # 400-rejects the WHOLE hit message (screenshot + DM + public all vanish).
+        href_url = f"{p.scheme}://{p.netloc}{p.path}"
+        if len(href_url) > 300:
+            href_url = href_url[:300]
+        safe_href = html.escape(quote(href_url, safe=":/?#[]@!$&'()*+,;=%~"), quote=True)
         return f'<a href="{safe_href}">{_esc(short)}</a>'
     except Exception:
         return _esc(url)

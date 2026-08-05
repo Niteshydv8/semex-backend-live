@@ -57,6 +57,10 @@ async def get_user_photo_url(user_id: int) -> Optional[str]:
 
 
 async def send_message(chat_id: int, text: str, parse_mode: str = "HTML", *, premium_emojis: bool = False) -> Optional[dict]:
+    # Telegram hard-limits sendMessage text to 4096 chars; over-length 400-rejects
+    # the whole message. Cap defensively so one long field never kills delivery.
+    if isinstance(text, str) and len(text) > 4096:
+        text = text[:4093] + "..."
     payload = {"chat_id": chat_id, "text": text, "parse_mode": parse_mode, "disable_web_page_preview": True}
     used_custom_emoji = False
     if premium_emojis:
@@ -81,6 +85,10 @@ async def send_message(chat_id: int, text: str, parse_mode: str = "HTML", *, pre
 
 
 async def send_photo(chat_id: int, photo_bytes: bytes, caption: str, parse_mode: str = "HTML", *, premium_emojis: bool = False) -> Optional[dict]:
+    # Telegram hard-limits a photo caption to 1024 chars; over-length 400-rejects
+    # the whole sendPhoto so the screenshot never arrives. Cap defensively.
+    if isinstance(caption, str) and len(caption) > 1024:
+        caption = caption[:1021] + "..."
     files = {"photo": ("hit.jpg", photo_bytes, "image/jpeg")}
     data = {"chat_id": str(chat_id), "caption": caption, "parse_mode": parse_mode}
     used_custom_emoji = False
