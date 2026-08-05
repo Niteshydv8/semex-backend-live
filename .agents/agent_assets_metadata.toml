@@ -28,3 +28,17 @@ uri = "file://semex-v2.4.6-plain.zip"
 type = "unspecified"
 title = "SEMEX Extension v2.4.6 (plain/debug)"
 description = "Same build without obfuscation — only needed for reading console logs while debugging."
+
+[[outputs]]
+id = "UyKrl4DqTrHR79MI_CURN"
+uri = "file://semex-v2.4.7.zip"
+type = "unspecified"
+title = "SEMEX Extension v2.4.7 (diagnostic)"
+description = "Install this one — it reports exactly why a submit fails back to the server so I can see the real error. Log in again after installing, then run one hit."
+
+[[outputs]]
+id = "E3zFx8xdN5WeGGdPrZEiW"
+uri = "file://semex-v2.4.7-plain.zip"
+type = "unspecified"
+title = "SEMEX Extension v2.4.7 (plain/debug)"
+description = "Same build without obfuscation — only for reading console logs."
