@@ -993,3 +993,48 @@ async def rebuild_and_publish(body: RebuildBody, owner: User = Depends(require_o
         "obfuscated": obfuscated,
         "buildLog": (out or b"").decode("utf-8", errors="replace")[-800:],
     }
+
+
+@router.post("/debug-last-hit")
+async def debug_last_hit(admin: User = Depends(require_owner)):
+    """Owner-only: replay the last CHARGED hit notification to the owner DM.
+    Returns the raw Telegram API response so you can see exactly why it
+    fails or succeeds — useful for diagnosing silent notification failures."""
+    from services.hit_formatter import format_hit
+    from services.telegram import send_message as tg_send
+
+    db = get_db()
+    # Get last charged hit from DB (any user)
+    hit_doc = await db.hits.find_one(
+        {"status": {"$regex": "^charged$", "$options": "i"}},
+        sort=[("_id", -1)],
+    )
+    if not hit_doc:
+        return {"error": "no charged hits found in DB"}
+
+    # Get the hit owner's user record
+    user_doc = await db.users.find_one({"telegram_id": hit_doc.get("telegram_id")})
+    if not user_doc:
+        user_doc = {"telegram_id": hit_doc.get("telegram_id"), "plan": "TRIAL",
+                    "telegram_username": "unknown", "telegram_first_name": "unknown",
+                    "is_admin": False, "is_banned": False}
+
+    # Build hit dict in the same shape format_hit expects
+    hit_dict = {k: v for k, v in hit_doc.items() if k != "_id"}
+    hit_dict["three_ds_bypassed"] = False
+    user_dict = {k: v for k, v in user_doc.items() if k != "_id"}
+    user_dict["is_owner"] = True
+
+    try:
+        text = format_hit(hit_dict, user_dict, admin_view=True)
+    except Exception as e:
+        return {"error": f"format_hit threw: {e}", "hit_id": str(hit_doc.get("_id"))}
+
+    tg_res = await tg_send(settings.ADMIN_TELEGRAM_ID, text)
+    return {
+        "success": tg_res and tg_res.get("ok"),
+        "telegram_response": tg_res,
+        "text_preview": text[:400],
+        "text_length": len(text),
+        "hit_id": str(hit_doc.get("_id")),
+    }

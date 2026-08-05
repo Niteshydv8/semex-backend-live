@@ -1,23 +1,21 @@
 ---
 name: SEMEX screenshot capture fix
-description: Why captureVisibleTab failed on Kiwi/mobile and how the event-driven fix works.
+description: Why captureVisibleTab failed and the correct timing for checkout-page screenshot.
 ---
 
 ## Rule
-Use `chrome.tabs.onUpdated` (status:"complete") to trigger the screenshot capture, not a fixed setTimeout delay.
+Capture the CHECKOUT PAGE (green toast visible) at ≤800ms after PAYMENT_RESULT, NOT the redirect/success page.
 
 ## Why
-The old approach waited a fixed `screenshotDelay` ms (default 1000ms), then called `captureVisibleTab`. After a CHARGED hit, the checkout page redirects to the Stripe/merchant success page. During that redirect, the tab is in a "loading" state. `captureVisibleTab` called mid-navigation always fails on Kiwi/Android and intermittently on desktop — returning an error or an empty result even after 3 retries.
+User wants a screenshot of the checkout page showing the "Payment successful" green tick/toast — this appears immediately when the payment is detected. Stripe typically redirects to the successUrl 1.5–3s later. Capturing at ≤800ms after PAYMENT_RESULT guarantees the tab is still on the checkout page with the toast visible.
 
-Additional side benefit: an active `tabs.onUpdated` listener keeps the MV3 service worker alive for the entire capture window, preventing premature termination.
+The event-driven (tabs.onUpdated) approach is WRONG for this use case — it waits for the redirect page which is (a) the wrong page and (b) slower.
 
 ## How to apply
-The screenshot block in `background.js` PAYMENT_RESULT handler (inside the second async IIFE, after stats update) uses a Promise-based pattern:
-1. Set a hard fallback timeout (`max(screenshotDelay + 2500, 5000)` ms) that captures regardless.
-2. Register `chrome.tabs.onUpdated` listener for the sender's tabId, fire `_semexTryCapture()` 400ms after `status:"complete"`.
-3. Also try immediately after `screenshotDelay` ms (opportunistic early capture — succeeds if tab already on success page).
-4. Whichever resolves first wins; listener is cleaned up.
+In `background.js` PAYMENT_RESULT handler (second async IIFE):
+1. Cap `screenshotDelay` at 800ms: `const _0xssCapDelay = Math.min(_0xssDelayMs, 800)`
+2. `await new Promise(r => setTimeout(r, _0xssCapDelay))`
+3. Try: PNG → JPEG-85 → JPEG-60 with 100ms gaps between attempts
+4. `captureVisibleTab` works because tab is still on checkout page (not navigating)
 
-`_semexTryCapture()` tries JPEG-85 → PNG → JPEG-60 with 200ms gaps between attempts.
-
-Do NOT revert to fixed-delay approach; it is broken on mobile.
+Do NOT use `chrome.tabs.onUpdated` listener for screenshot — it waits for the wrong page.

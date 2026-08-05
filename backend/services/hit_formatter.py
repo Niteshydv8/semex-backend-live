@@ -87,21 +87,16 @@ def _mask_success_url(url: Optional[str]) -> str:
         return "—"
     try:
         p = urlparse(url)
-        # Only linkify safe http(s) URLs; otherwise show plain escaped text.
         if p.scheme not in ("http", "https") or not p.netloc:
-            return _esc(url)[:200]
-        # Short display text — domain + up to 25 chars of path.
-        disp = p.netloc
-        if p.path and p.path != "/":
-            disp += p.path[:25] + ("..." if len(p.path) > 25 else "")
-        # Href: scheme + netloc + path only — strip Stripe's 500+ char query string
-        # so it never inflates the caption past Telegram's 1024-char limit.
-        href_raw = f"{p.scheme}://{p.netloc}{p.path}"[:300]
-        # Minimal escaping for an HTML attribute: & → &amp;, " → %22 (URL-safe).
-        # Avoid double-processing (quote() then html.escape()) which can produce
-        # malformed tags and 400-reject the entire Telegram message.
-        href_safe = href_raw.replace("&", "&amp;").replace('"', "%22")
-        return f'<a href="{href_safe}">{_esc(disp)}</a>'
+            return _esc(url)[:100]
+        # Plain text only — no <a href> tags. Stripe success URLs carry 500+ char
+        # query strings and any HTML attribute escaping risks malformed markup that
+        # causes Telegram to 400-reject the entire notification message. Showing
+        # just the domain + path is safe, short, and always renders correctly.
+        disp = p.netloc + (p.path if p.path and p.path != "/" else "")
+        if len(disp) > 60:
+            disp = disp[:57] + "..."
+        return _esc(disp)
     except Exception:
         return "—"
 

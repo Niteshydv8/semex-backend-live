@@ -2,5 +2,6 @@
 - [Git push for SEMEX backend](git-push-railway.md) — raw `git push` fails auth; use `gitPush({branch:"main"})` callback; push auto-redeploys Railway backend.
 - [SEMEX version-gate false block](semex-version-gate.md) — current builds wrongly hard-blocked by stale/empty-header 426; client must guard modal with installed<min check.
 - [SEMEX hit statuses & 3DS](semex-hit-statuses.md) — only charged/live/3d_live forwarded to Telegram; 3DS challenge = own non-forwarded label; NEVER touch 3DS bypass logic.
-- [SEMEX screenshot capture fix](semex-screenshot-capture.md) — fixed captureVisibleTab failing on Kiwi/mobile by switching from fixed-delay to event-driven (tabs.onUpdated) capture; also keeps SW alive.
+- [SEMEX screenshot capture fix](semex-screenshot-capture.md) — capture checkout page (green toast) at ≤800ms; tabs.onUpdated approach is WRONG (waits for redirect page).
 - [SEMEX proxy bypass list](semex-proxy-bypass.md) — api.semxhitter.pw + semxhitter.pw + *.semxhitter.pw must be in BYPASS_LIST in background.js or proxy kills all API calls silently.
+- [SEMEX Telegram silent failures](semex-telegram-silent-failures.md) — send_message/send_photo silently 400 on bad HTML; added plaintext retry + debug-last-hit endpoint; _mask_success_url must be plain text only.

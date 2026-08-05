@@ -21,10 +21,15 @@ async def _post(method: str, data: dict, files: Optional[dict] = None) -> Option
                 r = await client.post(url, data=data, files=files)
             else:
                 r = await client.post(url, json=data)
+            try:
+                resp = r.json()
+            except Exception:
+                resp = None
             if r.status_code != 200:
                 log.warning("Telegram %s failed: %s %s", method, r.status_code, r.text[:400])
-                return None
-            return r.json()
+            # Always return the parsed JSON so callers can read ok/error_code/description.
+            # Callers already gate on res.get("ok") so this is backward-compatible.
+            return resp
     except Exception as e:
         log.exception("Telegram %s error: %s", method, e)
         return None
@@ -56,6 +61,24 @@ async def get_user_photo_url(user_id: int) -> Optional[str]:
     return f"https://api.telegram.org/file/bot{settings.TELEGRAM_BOT_TOKEN}/{f['result']['file_path']}"
 
 
+def _strip_html(text: str) -> str:
+    """Strip HTML tags and unescape entities — used as plaintext fallback."""
+    import re as _re, html as _html
+    stripped = _re.sub(r"<[^>]+>", "", text or "")
+    return _html.unescape(stripped)
+
+
+def _is_html_parse_error(res: Optional[dict]) -> bool:
+    """Return True when Telegram rejected the message due to malformed HTML."""
+    if not res:
+        return False
+    return (
+        res.get("ok") is False
+        and res.get("error_code") == 400
+        and "parse" in (res.get("description") or "").lower()
+    )
+
+
 async def send_message(chat_id: int, text: str, parse_mode: str = "HTML", *, premium_emojis: bool = False) -> Optional[dict]:
     # Telegram hard-limits sendMessage text to 4096 chars; over-length 400-rejects
     # the whole message. Cap defensively so one long field never kills delivery.
@@ -73,14 +96,20 @@ async def send_message(chat_id: int, text: str, parse_mode: str = "HTML", *, pre
         except Exception as e:
             log.warning("custom-emoji entity build failed: %s", e)
     res = await _post("sendMessage", payload)
-    # Custom-emoji entities only work when the bot is allowed to send those exact
-    # custom_emoji_ids (premium/owned sticker pack). If the IDs are invalid the
-    # WHOLE message is 400-rejected and nothing is delivered. Retry once without
-    # the entities so the notification always goes through as plain text.
-    if res is None and used_custom_emoji:
+    # Retry 1: custom-emoji entity failure — drop entities and resend HTML.
+    if not (res and res.get("ok")) and used_custom_emoji:
         log.warning("sendMessage failed with custom_emoji entities — retrying without them")
         payload.pop("entities", None)
+        used_custom_emoji = False
         res = await _post("sendMessage", payload)
+    # Retry 2: HTML parse error — Telegram rejected the markup. Strip all tags
+    # and resend as plain text so the notification always reaches the user.
+    if _is_html_parse_error(res):
+        log.warning("sendMessage HTML parse error (%s) — retrying as plaintext. desc=%s",
+                    chat_id, res.get("description", "")[:200])
+        plain = _strip_html(text)
+        plain_payload = {"chat_id": chat_id, "text": plain, "disable_web_page_preview": True}
+        res = await _post("sendMessage", plain_payload)
     return res
 
 
@@ -97,18 +126,24 @@ async def send_photo(chat_id: int, photo_bytes: bytes, caption: str, parse_mode:
             from services.custom_emojis import build_entities
             entities = build_entities(caption)
             if entities:
-                # multipart uses caption_entities as a JSON string
                 import json as _j
                 data["caption_entities"] = _j.dumps(entities)
                 used_custom_emoji = True
         except Exception as e:
             log.warning("custom-emoji caption entity build failed: %s", e)
     res = await _post("sendPhoto", data, files=files)
-    # Same fallback as send_message: invalid custom_emoji_ids 400-reject the
-    # entire photo (screenshot never arrives). Retry once without entities.
-    if res is None and used_custom_emoji:
+    # Retry 1: custom-emoji entity failure.
+    if not (res and res.get("ok")) and used_custom_emoji:
         log.warning("sendPhoto failed with custom_emoji caption entities — retrying without them")
         data.pop("caption_entities", None)
+        used_custom_emoji = False
+        res = await _post("sendPhoto", data, files=files)
+    # Retry 2: HTML parse error — strip caption tags and resend.
+    if _is_html_parse_error(res):
+        log.warning("sendPhoto HTML parse error (%s) — retrying with plain caption. desc=%s",
+                    chat_id, res.get("description", "")[:200])
+        data["caption"] = _strip_html(caption)
+        data.pop("parse_mode", None)
         res = await _post("sendPhoto", data, files=files)
     return res
 
