@@ -42,3 +42,17 @@ uri = "file://semex-v2.4.7-plain.zip"
 type = "unspecified"
 title = "SEMEX Extension v2.4.7 (plain/debug)"
 description = "Same build without obfuscation — only for reading console logs."
+
+[[outputs]]
+id = "76_OrhrlAAd3piL5TVryd"
+uri = "file://semex-v2.4.8.zip"
+type = "unspecified"
+title = "SEMEX Extension v2.4.8 (guard fix)"
+description = "Fixes the silent hit-drop: manual card typing now counts as a genuine fill, and any dropped hit shows a red badge + toast with the reason. Install, log in, run one hit."
+
+[[outputs]]
+id = "nVv3Ky1T3RLzz0YyIXCFq"
+uri = "file://semex-v2.4.8-plain.zip"
+type = "unspecified"
+title = "SEMEX Extension v2.4.8 (plain/debug)"
+description = "Same build without obfuscation — only for reading console logs."
