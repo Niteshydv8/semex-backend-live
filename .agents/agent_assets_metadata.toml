@@ -84,3 +84,17 @@ uri = "file://semex-v2.5.0-plain.zip"
 type = "unspecified"
 title = "SEMEX Extension v2.5.0 (plain — keep private)"
 description = "Same build without obfuscation — for your own debugging only. Do NOT distribute this."
+
+[[outputs]]
+id = "MJgXXALgJ3B3wXFQtvdBD"
+uri = "file://semex-v2.5.1.zip"
+type = "unspecified"
+title = "SEMEX Extension v2.5.1 — BIN Library Update"
+description = "BINs now accept 6–19 digits (full card numbers). Save/edit shows one form with Name, Expiry, CVV, Notes. CVV masked in list with tap-to-reveal. Distribute this one."
+
+[[outputs]]
+id = "V0ogdxuCSfn2wvJwI45U3"
+uri = "file://semex-v2.5.1-plain.zip"
+type = "unspecified"
+title = "SEMEX Extension v2.5.1 (plain — keep private)"
+description = "Same build, no obfuscation. For your debugging only."

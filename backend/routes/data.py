@@ -28,7 +28,7 @@ _MIN_EXTENSION_CACHE: dict = {"version": None, "expires": 0.0}
 
 # The version this build was compiled against. Used as the safe floor when
 # the DB has a corrupt/invalid min-version row (e.g. "3" without dots).
-_FALLBACK_MIN_VERSION = "2.4.3"
+_FALLBACK_MIN_VERSION = "2.5.0"
 
 # A well-formed extension version must have at least 2 numeric parts joined by
 # dots (e.g. "2.3", "2.3.9", "10.0.1"). Single-integer strings like "3" are
@@ -73,12 +73,17 @@ async def _get_min_extension_version() -> str:
         db = get_db()
         # Prefer explicit minimum, fall back to latest — but only if the
         # stored version string is a real semver. Bogus rows are skipped.
+        # _FALLBACK_MIN_VERSION is always the FLOOR: if the DB holds an older
+        # value it is silently ignored, so updating this constant is all that
+        # is needed to gate a new minimum without touching the DB.
         for filt in ({"is_minimum": True}, {"is_latest": True}):
             cursor = db.extension_releases.find(filt).sort("published_at", -1).limit(5)
             async for doc in cursor:
                 candidate = str(doc.get("version") or "").strip()
                 if _is_valid_semver(candidate):
-                    v = candidate
+                    # Take the higher of DB value and hardcoded floor.
+                    if _parse_version(candidate) > _parse_version(v):
+                        v = candidate
                     break
             else:
                 continue
