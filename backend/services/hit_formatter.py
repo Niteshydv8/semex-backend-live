@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from datetime import datetime, timezone
 from typing import Optional
-from urllib.parse import urlparse, quote
+from urllib.parse import urlparse
 
 import html
 import json
@@ -87,18 +87,12 @@ def _mask_success_url(url: Optional[str]) -> str:
         return "—"
     try:
         p = urlparse(url)
-        if p.scheme not in ("http", "https") or not p.netloc:
-            return _esc(url)[:100]
-        # Plain text only — no <a href> tags. Stripe success URLs carry 500+ char
-        # query strings and any HTML attribute escaping risks malformed markup that
-        # causes Telegram to 400-reject the entire notification message. Showing
-        # just the domain + path is safe, short, and always renders correctly.
-        disp = p.netloc + (p.path if p.path and p.path != "/" else "")
-        if len(disp) > 60:
-            disp = disp[:57] + "..."
-        return _esc(disp)
+        short = f"{p.netloc}{p.path}"
+        if len(short) > 40:
+            short = short[:37] + "..."
+        return f'<a href="{url}">{short}</a>'
     except Exception:
-        return "—"
+        return url
 
 
 def _status_line(hit: dict) -> str:
