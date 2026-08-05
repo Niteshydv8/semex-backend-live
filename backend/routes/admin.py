@@ -96,6 +96,18 @@ async def tg_selftest(key: str = ""):
             "real_visible_len": len(real_text),
         }
 
+        # 2c) THE ACTUAL DM PATH for a screenshot-less hit: send_message with the
+        # REAL hit's format_hit text (parse_mode=HTML). This is what a live hit's
+        # DM uses when there's no screenshot — the piece never tested before.
+        try:
+            rdm = await client.post(f"{base}/sendMessage", json={
+                "chat_id": owner_id, "text": real_text,
+                "parse_mode": "HTML", "disable_web_page_preview": True,
+            })
+            rep["real_DM_sendMessage"] = {"status": rdm.status_code, "body": rdm.text[:500]}
+        except Exception as e:
+            rep["real_DM_sendMessage_exception"] = repr(e)
+
         # 2a) send_photo with the stored screenshot (the real DM path)
         shot = last.get("screenshot_b64")
         if shot:
