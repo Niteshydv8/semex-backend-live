@@ -479,41 +479,12 @@ async def submit_status(
     # PUBLIC SHOWCASE — for both CHARGED and LIVE hits, if channel configured.
     # Public info only: user (masked), status, gateway, response. NO card/amount/email.
     # Admin can mute individual users from the public feed via public_muted=True.
-    public_ok = False
-    public_err = None
     if should_forward and settings.PUBLIC_SHOWCASE_CHANNEL_ID and not getattr(user, "public_muted", False):
         try:
             public_text = format_public_showcase(hit_dict, user_dict)
-            pub_res = await send_message(int(settings.PUBLIC_SHOWCASE_CHANNEL_ID), public_text)
-            public_ok = bool(pub_res and pub_res.get("ok"))
+            await send_message(int(settings.PUBLIC_SHOWCASE_CHANNEL_ID), public_text)
         except Exception as e:
-            public_err = str(e)
             log.warning("public showcase failed: %s", e)
-
-    # DEBUG INSTRUMENT (temporary): write a trace of the forward attempt to the DB
-    # so /api/admin/tg-selftest can show what ACTUALLY happened in the live path.
-    try:
-        from datetime import datetime, timezone as _tz
-        await db.debug.replace_one(
-            {"_id": "last_forward"},
-            {
-                "_id": "last_forward",
-                "ts": datetime.now(_tz.utc).isoformat(),
-                "status": body.status,
-                "is_charged": is_charged,
-                "is_admin": is_admin,
-                "should_forward": should_forward,
-                "has_screenshot": bool(body.screenshot),
-                "sent_photo": sent_photo if 'sent_photo' in dir() else None,
-                "user_msg_id": user_msg_id,
-                "public_ok": public_ok,
-                "public_err": public_err,
-                "hits_total_at_time": await db.hits.count_documents({}),
-            },
-            upsert=True,
-        )
-    except Exception as _dbe:
-        log.debug("debug write failed: %s", _dbe)
 
     return {"success": True, "hitId": hit_id, "forwarded": True, "pinned": is_charged}
 
