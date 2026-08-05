@@ -200,6 +200,83 @@ async def health_detail():
     return out
 
 
+@router.get("/api/tg-selftest")
+async def tg_selftest():
+    """TEMPORARY diagnostics — exercises the exact Telegram send path used for hit
+    notifications and reports Telegram's own response for each step:
+      1. getMe            — is the bot token valid?
+      2. owner DM text    — can the bot message the owner? (sends a real test DM)
+      3. admin-log/public — can the bot post to the channels? (sendChatAction, no spam)
+      4. replay last hit  — formats the last CHARGED hit and sends it (with its
+         screenshot) to the owner DM, exactly like the real notification flow.
+    Remove after debugging."""
+    import base64 as _b64
+    import re as _re
+    from services.telegram import _post, send_message, send_photo
+    from services.hit_formatter import format_hit
+
+    def _res(r):
+        if r is None:
+            return {"ok": False, "error": "no response (network/timeout to Telegram)"}
+        if r.get("ok"):
+            return {"ok": True}
+        return {"ok": False, "error_code": r.get("error_code"), "error": r.get("description")}
+
+    out = {}
+    me = await _post("getMe", {})
+    out["1_getMe"] = _res(me)
+    if me and me.get("ok"):
+        out["1_getMe"]["username"] = me.get("result", {}).get("username")
+
+    owner_id = int(settings.ADMIN_TELEGRAM_ID)
+    dm = await send_message(owner_id, "SEMEX diagnostic: bot DM path test ✅")
+    out["2_owner_dm_text"] = _res(dm)
+
+    for name, cid in (("3_admin_log_channel", getattr(settings, "ADMIN_LOG_CHANNEL_ID", None)),
+                      ("4_public_channel", getattr(settings, "PUBLIC_SHOWCASE_CHANNEL_ID", None))):
+        if cid:
+            r = await _post("sendChatAction", {"chat_id": int(cid), "action": "typing"})
+            out[name] = _res(r)
+        else:
+            out[name] = {"ok": None, "error": "not configured"}
+
+    db = get_db()
+    last = await db.hits.find_one({"status": {"$regex": "(?i)charged"}}, sort=[("created_at", -1)])
+    if not last:
+        out["5_replay_last_hit"] = {"ok": None, "error": "no charged hit in DB"}
+    else:
+        owner = await db.users.find_one({"telegram_id": owner_id}) or {}
+        hit_d = {k: v for k, v in last.items() if k != "_id"}
+        user_d = {k: v for k, v in owner.items() if k != "_id"}
+        user_d.setdefault("telegram_id", owner_id)
+        user_d["is_owner"] = True
+        try:
+            text = format_hit(hit_d, user_d, admin_view=False)
+            out["5_format_ok"] = True
+        except Exception as e:
+            out["5_format_ok"] = False
+            out["5_format_error"] = f"{type(e).__name__}: {e}"
+            text = None
+        if text:
+            shot = last.get("screenshot_b64")
+            if shot:
+                try:
+                    img = _b64.b64decode(shot)
+                    visible = len(_re.sub(r"<[^>]+>", "", text))
+                    caption = text if visible <= 1024 else "⚜️ <b>SEMEX</b> — CHARGED ✅ (details below)"
+                    rp = await send_photo(owner_id, img, caption)
+                    out["5_replay_photo"] = _res(rp)
+                    if not (rp and rp.get("ok")) or visible > 1024:
+                        rm = await send_message(owner_id, text)
+                        out["5_replay_text"] = _res(rm)
+                except Exception as e:
+                    out["5_replay_photo"] = {"ok": False, "error": f"{type(e).__name__}: {e}"}
+            else:
+                rm = await send_message(owner_id, text)
+                out["5_replay_text"] = _res(rm)
+    return out
+
+
 @router.get("/api/user-photo/{telegram_id}")
 @router.get("/api/auth/photo/{telegram_id}")
 async def user_photo(telegram_id: int):
