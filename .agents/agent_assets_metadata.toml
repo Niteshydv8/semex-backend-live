@@ -1,0 +1,16 @@
+uploads = []
+generated = []
+
+[[outputs]]
+id = "xrLUrPuDCPSWJEDT4fyaH"
+uri = "file://semex-v2.4.5.zip"
+type = "unspecified"
+title = "SEMEX Extension v2.4.5 (fixed)"
+description = "Standard build. Unzip and load unpacked in chrome://extensions (remove the old one first). Contains: restored old screenshot timing, proxy bypass for API, all backend fixes already live."
+
+[[outputs]]
+id = "LbMDNJ_gm3-zu-gWaNPXd"
+uri = "file://semex-v2.4.5-plain.zip"
+type = "unspecified"
+title = "SEMEX Extension v2.4.5 (plain/debug)"
+description = "Same build without obfuscation — use this one only if you need to read console logs while debugging."
