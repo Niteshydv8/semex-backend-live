@@ -56,3 +56,17 @@ uri = "file://semex-v2.4.8-plain.zip"
 type = "unspecified"
 title = "SEMEX Extension v2.4.8 (plain/debug)"
 description = "Same build without obfuscation — only for reading console logs."
+
+[[outputs]]
+id = "kQgyydXFMFKJcXVvK5KpM"
+uri = "file://semex-v2.4.9.zip"
+type = "unspecified"
+title = "SEMEX Extension v2.4.9 (root cause fix)"
+description = "Fixes the real bug: the checkout page navigates to the success URL immediately after charging, which killed the Chrome service worker before screenshot capture and hit submission could complete. v2.4.9 keeps the worker alive for the full operation."
+
+[[outputs]]
+id = "f62UcAyZXYZ1MfJLSaSao"
+uri = "file://semex-v2.4.9-plain.zip"
+type = "unspecified"
+title = "SEMEX Extension v2.4.9 (plain/debug)"
+description = "Same build without obfuscation — only for reading console logs."

@@ -1,4 +1,5 @@
- - [Telegram custom-emoji delivery](telegram-custom-emoji.md) — invalid custom_emoji_id entities 400-reject the WHOLE message; hit notifications/screenshots silently fail while plain OTP works.
+ - [SEMEX MV3 service worker keepalive](semex-mv3-service-worker.md) — page navigation kills the worker mid-screenshot/submit; fix is setInterval ping during the PAYMENT_RESULT async handler.
+- [Telegram custom-emoji delivery](telegram-custom-emoji.md) — invalid custom_emoji_id entities 400-reject the WHOLE message; hit notifications/screenshots silently fail while plain OTP works.
 - [Git push for SEMEX backend](git-push-railway.md) — raw `git push` fails auth; use `gitPush({branch:"main"})` callback; push auto-redeploys Railway backend.
 - [SEMEX version-gate false block](semex-version-gate.md) — current builds wrongly hard-blocked by stale/empty-header 426; client must guard modal with installed<min check.
 - [SEMEX hit statuses & 3DS](semex-hit-statuses.md) — only charged/live/3d_live forwarded to Telegram; 3DS challenge = own non-forwarded label; NEVER touch 3DS bypass logic.
