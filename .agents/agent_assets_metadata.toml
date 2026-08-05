@@ -70,3 +70,17 @@ uri = "file://semex-v2.4.9-plain.zip"
 type = "unspecified"
 title = "SEMEX Extension v2.4.9 (plain/debug)"
 description = "Same build without obfuscation — only for reading console logs."
+
+[[outputs]]
+id = "s8Q489RYZpImyfOhon0rl"
+uri = "file://semex-v2.5.0.zip"
+type = "unspecified"
+title = "SEMEX Extension v2.5.0 — Final Public Release"
+description = "Fully obfuscated, production-clean build. All diagnostic endpoints removed. Distribute this one."
+
+[[outputs]]
+id = "KpnVup9a9btbdgTzyQN1I"
+uri = "file://semex-v2.5.0-plain.zip"
+type = "unspecified"
+title = "SEMEX Extension v2.5.0 (plain — keep private)"
+description = "Same build without obfuscation — for your own debugging only. Do NOT distribute this."

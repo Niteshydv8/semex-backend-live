@@ -86,6 +86,8 @@ async def list_bins(user: User = Depends(get_current_user)):
                 "bin": doc["bin"],
                 "label": doc.get("label"),
                 "notes": doc.get("notes"),
+                "expiry": doc.get("expiry"),
+                "cvv": doc.get("cvv"),
                 "brand": doc.get("brand"),
                 "cardType": doc.get("card_type"),
                 "level": doc.get("level"),
@@ -102,17 +104,25 @@ class BinBody(BaseModel):
     bin: str
     label: Optional[str] = None
     notes: Optional[str] = None
+    expiry: Optional[str] = None   # MM/YY
+    cvv: Optional[str] = None      # 3-4 digits
 
 
 @router.post("/bins")
 async def add_bin(body: BinBody, user: User = Depends(get_current_user)):
-    bin_clean = "".join(c for c in body.bin if c.isdigit())[:8]
+    # Keep all digits — allow 6-19 digits (full card numbers welcome, not just 6-8 BIN prefixes).
+    bin_clean = "".join(c for c in body.bin if c.isdigit())[:19]
     if len(bin_clean) < 6:
         raise HTTPException(400, "BIN must be at least 6 digits.")
-    # Auto-detect brand/type/level/bank/country (best-effort — never blocks save).
+    # Sanitize expiry / CVV
+    expiry_clean = (body.expiry or "").strip()[:5] or None   # "MM/YY"
+    cvv_clean = "".join(c for c in (body.cvv or "") if c.isdigit())[:4] or None
+
+    # Auto-detect brand/type/level/bank/country using first 8 digits (BIN databases
+    # only recognise 6–8 digit prefixes; longer numbers are trimmed inside lookup_bin).
     meta = {}
     try:
-        m = await lookup_bin(bin_clean)
+        m = await lookup_bin(bin_clean[:8])
         if m:
             meta = m
     except Exception:
@@ -125,6 +135,8 @@ async def add_bin(body: BinBody, user: User = Depends(get_current_user)):
             bin=bin_clean,
             label=body.label,
             notes=body.notes,
+            expiry=expiry_clean,
+            cvv=cvv_clean,
             brand=meta.get("brand"),
             card_type=meta.get("cardType"),
             level=meta.get("level"),
@@ -155,11 +167,13 @@ async def add_bin(body: BinBody, user: User = Depends(get_current_user)):
 class BinPatchBody(BaseModel):
     label: Optional[str] = None
     notes: Optional[str] = None
+    expiry: Optional[str] = None
+    cvv: Optional[str] = None
 
 
 @router.patch("/bins/{bin_id}")
 async def update_bin(bin_id: str, body: BinPatchBody, user: User = Depends(get_current_user)):
-    """Rename or add/edit notes on a saved BIN."""
+    """Rename, add notes, or update expiry/CVV on a saved BIN."""
     db = get_db()
     try:
         oid = ObjectId(bin_id)
@@ -168,6 +182,8 @@ async def update_bin(bin_id: str, body: BinPatchBody, user: User = Depends(get_c
     updates = {}
     if body.label is not None: updates["label"] = body.label
     if body.notes is not None: updates["notes"] = body.notes
+    if body.expiry is not None: updates["expiry"] = body.expiry.strip()[:5] or None
+    if body.cvv is not None: updates["cvv"] = "".join(c for c in body.cvv if c.isdigit())[:4] or None
     if not updates:
         return {"success": True, "modified": 0}
     r = await db.user_bins.update_one(
@@ -197,7 +213,7 @@ async def add_bins_bulk(body: BulkBinBody, user: User = Depends(get_current_user
     db = get_db()
     added, skipped = 0, 0
     for raw in body.bins:
-        bin_clean = "".join(c for c in raw if c.isdigit())[:8]
+        bin_clean = "".join(c for c in raw if c.isdigit())[:19]
         if len(bin_clean) < 6:
             skipped += 1
             continue

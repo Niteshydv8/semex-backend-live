@@ -133,9 +133,11 @@ class Hit(BaseDocument):
 
 class UserBin(BaseDocument):
     telegram_id: int
-    bin: str
+    bin: str                             # stored as entered — can be 6-19 digits
     label: Optional[str] = None
     notes: Optional[str] = None
+    expiry: Optional[str] = None         # MM/YY format, optional
+    cvv: Optional[str] = None            # 3-4 digits, optional
     brand: Optional[str] = None          # visa, mastercard, amex, discover, ...
     card_type: Optional[str] = None      # credit, debit, prepaid, charge
     level: Optional[str] = None          # classic, gold, platinum, business, corporate, world...
