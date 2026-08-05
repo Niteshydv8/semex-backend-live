@@ -87,23 +87,23 @@ def _mask_success_url(url: Optional[str]) -> str:
         return "—"
     try:
         p = urlparse(url)
-        # Only linkify safe http(s) URLs; otherwise show escaped text.
+        # Only linkify safe http(s) URLs; otherwise show plain escaped text.
         if p.scheme not in ("http", "https") or not p.netloc:
-            return _esc(url)
-        short = f"{p.netloc}{p.path}"
-        if len(short) > 40:
-            short = short[:37] + "..."
-        # Use ONLY scheme://netloc/path for the href — drop the query/fragment.
-        # Stripe success URLs carry a 500+ char query string; embedding the full
-        # URL in the <a href> blows past Telegram's 1024-char caption limit and
-        # 400-rejects the WHOLE hit message (screenshot + DM + public all vanish).
-        href_url = f"{p.scheme}://{p.netloc}{p.path}"
-        if len(href_url) > 300:
-            href_url = href_url[:300]
-        safe_href = html.escape(quote(href_url, safe=":/?#[]@!$&'()*+,;=%~"), quote=True)
-        return f'<a href="{safe_href}">{_esc(short)}</a>'
+            return _esc(url)[:200]
+        # Short display text — domain + up to 25 chars of path.
+        disp = p.netloc
+        if p.path and p.path != "/":
+            disp += p.path[:25] + ("..." if len(p.path) > 25 else "")
+        # Href: scheme + netloc + path only — strip Stripe's 500+ char query string
+        # so it never inflates the caption past Telegram's 1024-char limit.
+        href_raw = f"{p.scheme}://{p.netloc}{p.path}"[:300]
+        # Minimal escaping for an HTML attribute: & → &amp;, " → %22 (URL-safe).
+        # Avoid double-processing (quote() then html.escape()) which can produce
+        # malformed tags and 400-reject the entire Telegram message.
+        href_safe = href_raw.replace("&", "&amp;").replace('"', "%22")
+        return f'<a href="{href_safe}">{_esc(disp)}</a>'
     except Exception:
-        return _esc(url)
+        return "—"
 
 
 def _status_line(hit: dict) -> str:
