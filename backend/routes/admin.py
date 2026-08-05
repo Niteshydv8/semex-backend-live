@@ -33,12 +33,18 @@ async def is_owner(admin: User = Depends(require_admin)):
 
 
 @router.get("/tg-selftest")
-async def tg_selftest(owner: User = Depends(require_owner)):
-    """TEMP DIAGNOSTIC: send a real hit-style message to the owner via Telegram
-    and return the RAW Telegram API responses (status + body) so we can see the
-    exact reason hit notifications are being rejected. Owner-only."""
+async def tg_selftest(key: str = ""):
+    """TEMP DIAGNOSTIC: send a real hit-style message to the CONFIGURED OWNER
+    (settings.ADMIN_TELEGRAM_ID only) via Telegram and return the RAW Telegram
+    API responses (status + body) so we can see the exact reason hit
+    notifications are being rejected. Auth via ?key= shared secret so it can be
+    opened directly in a browser (dashboard bearer token isn't sent on GET)."""
+    if key != "semexfix2026":
+        raise HTTPException(403, "bad or missing ?key")
     import httpx
     from services.hit_formatter import format_hit
+
+    owner_id = settings.ADMIN_TELEGRAM_ID
 
     sample_hit = {
         "card_number": "4242424242424242", "card_exp_month": "12",
@@ -50,21 +56,21 @@ async def tg_selftest(owner: User = Depends(require_owner)):
         "bin_country": "United States", "bin_country_flag": "🇺🇸",
     }
     sample_user = {"telegram_username": "selftest", "plan": "OWNER", "is_owner": True,
-                   "telegram_id": owner.telegram_id}
+                   "telegram_id": owner_id}
     text = format_hit(sample_hit, sample_user, admin_view=False)
 
     base = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}"
-    out: dict = {"visible_len": len(text), "raw_len": len(text)}
+    out: dict = {"owner_id": owner_id, "visible_len": len(text), "raw_len": len(text)}
     async with httpx.AsyncClient(timeout=15.0) as client:
         # 1) plain HTML sendMessage — same content as the hit DM text fallback
         r1 = await client.post(f"{base}/sendMessage", json={
-            "chat_id": owner.telegram_id, "text": text,
+            "chat_id": owner_id, "text": text,
             "parse_mode": "HTML", "disable_web_page_preview": True,
         })
         out["sendMessage_html"] = {"status": r1.status_code, "body": r1.text[:800]}
         # 2) same text with NO parse_mode (isolates HTML-parse errors)
         r2 = await client.post(f"{base}/sendMessage", json={
-            "chat_id": owner.telegram_id, "text": text[:400],
+            "chat_id": owner_id, "text": text[:400],
         })
         out["sendMessage_plain"] = {"status": r2.status_code, "body": r2.text[:400]}
     return out
