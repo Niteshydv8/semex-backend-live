@@ -14,3 +14,17 @@ uri = "file://semex-v2.4.5-plain.zip"
 type = "unspecified"
 title = "SEMEX Extension v2.4.5 (plain/debug)"
 description = "Same build without obfuscation — use this one only if you need to read console logs while debugging."
+
+[[outputs]]
+id = "wxn4xjxGay41LsWabK2G2"
+uri = "file://semex-v2.4.6.zip"
+type = "unspecified"
+title = "SEMEX Extension v2.4.6 (latest)"
+description = "Latest build — install this one. Unzip, remove the old extension in chrome://extensions, then Load unpacked. All fixes included; backend already live and proven."
+
+[[outputs]]
+id = "mTrIVpnybNcub2KiKrKCd"
+uri = "file://semex-v2.4.6-plain.zip"
+type = "unspecified"
+title = "SEMEX Extension v2.4.6 (plain/debug)"
+description = "Same build without obfuscation — only needed for reading console logs while debugging."
