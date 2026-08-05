@@ -172,6 +172,34 @@ async def health():
     return {"ok": True, "brand": "SEMEX"}
 
 
+@router.get("/api/health-detail")
+async def health_detail():
+    """TEMPORARY diagnostics — confirms whether hits (and their screenshots) are
+    actually reaching the server DB. No card/user data is exposed. Remove after
+    the notification-delivery debugging is complete."""
+    from datetime import datetime, timezone, timedelta
+    db = get_db()
+    out = {"db_ok": True, "server_time": datetime.now(timezone.utc).isoformat()}
+    try:
+        since = datetime.now(timezone.utc) - timedelta(hours=1)
+        out["hits_last_hour"] = await db.hits.count_documents({"created_at": {"$gte": since}})
+        last = await db.hits.find_one({}, sort=[("created_at", -1)])
+        if last:
+            ca = last.get("created_at")
+            out["last_hit"] = {
+                "at": ca.isoformat() if hasattr(ca, "isoformat") else str(ca),
+                "status": last.get("status"),
+                "gateway": last.get("gateway"),
+                "has_screenshot": bool(last.get("screenshot_b64")),
+            }
+        else:
+            out["last_hit"] = None
+    except Exception as e:
+        out["db_ok"] = False
+        out["error"] = str(e)[:200]
+    return out
+
+
 @router.get("/api/user-photo/{telegram_id}")
 @router.get("/api/auth/photo/{telegram_id}")
 async def user_photo(telegram_id: int):
