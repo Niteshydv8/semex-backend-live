@@ -75,11 +75,14 @@ async def tg_selftest(key: str = ""):
 
         # 2) REPLAY THE LAST REAL STORED HIT through the exact photo + public path
         db = get_db()
-        last = await db.hits.find_one({"status": {"$in": ["charged", "success", "approved", "succeeded", "captured"]}},
-                                      sort=[("created_at", -1)])
+        out["hits_total"] = await db.hits.count_documents({})
+        # Grab the absolute newest hit regardless of status casing (_id always exists).
+        last = await db.hits.find_one({}, sort=[("_id", -1)])
         if not last:
-            out["replay"] = "no stored charged hit found"
+            out["replay"] = "hits collection is EMPTY — no hit is being saved at all"
             return out
+        out["latest_hit_raw_status"] = repr(last.get("status"))
+        out["latest_hit_has_screenshot"] = bool(last.get("screenshot_b64"))
 
         from services.hit_formatter import format_hit as _fh
         from services.extra_formatters import format_public_showcase as _fps
