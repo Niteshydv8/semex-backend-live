@@ -54,5 +54,11 @@ class Settings:
     PAYMENT_BTC_ADDRESS: str = _env("PAYMENT_BTC_ADDRESS", "")
     PAYMENT_LTC_ADDRESS: str = _env("PAYMENT_LTC_ADDRESS", "")
 
+    # Optional Telegram webhook secret — set this value when registering the webhook:
+    #   POST https://api.telegram.org/bot<TOKEN>/setWebhook?url=...&secret_token=<THIS>
+    # Telegram will then send X-Telegram-Bot-Api-Secret-Token on every update.
+    # Leave empty to skip the check (less secure but backward-compatible).
+    TELEGRAM_WEBHOOK_SECRET: str = _env("TELEGRAM_WEBHOOK_SECRET", "")
+
 
 settings = Settings()

@@ -376,6 +376,16 @@ async def submit_status(
     except Exception as _e:
         raise
 
+    # Notify any open dashboard tabs via SSE so stats/history refresh live.
+    # publish() is non-blocking — it enqueues to in-memory asyncio.Queue(s).
+    # This is safe on single-process Railway deployments; for multi-worker
+    # setups a pub-sub broker (Redis) would be needed instead.
+    try:
+        from services.sync import sync_manager as _sm
+        _sm.publish(user.telegram_id, "hit")
+    except Exception:
+        pass
+
     # Skip forwarding for declines/dead/errors (only forward charged + live)
     if not should_forward:
         return {"success": True, "hitId": hit_id, "forwarded": False}

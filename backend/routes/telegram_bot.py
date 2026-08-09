@@ -230,15 +230,144 @@ async def _cmd_start(chat_id: int, username: str | None) -> None:
 async def _cmd_help(chat_id: int) -> None:
     text = (
         "<b>🛠 SEMEX Bot Commands</b>\n\n"
+        "<b>📊 Your account:</b>\n"
+        "/status – plan, expiry & hit counters\n"
+        "/history – last 5 charged hits\n"
+        "/bins – your saved BINs\n\n"
+        "<b>🚀 Getting started:</b>\n"
         "/start – onboarding\n"
         "/get – download the extension .zip\n"
         "/buy – premium plans + USDT payment addresses\n"
-        "/paid – submit proof-of-payment screenshot for verification\n"
+        "/paid – submit proof-of-payment screenshot\n"
         "/cancel – cancel a pending /paid submission\n"
         "/help – this message\n\n"
         "Any issues? Message the owner directly."
     )
     await send_message(chat_id, text)
+
+
+# ─── Self-service account commands ────────────────────────────────────────────
+
+async def _cmd_status(chat_id: int, from_user_id: int | None) -> None:
+    """Show the user's plan, expiry, and hit counters."""
+    from db import get_db
+    db = get_db()
+    tid = from_user_id or chat_id
+    user = await db.users.find_one({"telegram_id": tid})
+    if not user:
+        await send_message(
+            chat_id,
+            "⚠️ No account found for your Telegram ID.\n"
+            "Open the SEMEX extension and log in first.",
+        )
+        return
+    plan = user.get("plan") or "TRIAL"
+    exp = user.get("plan_expires_at")
+    if exp:
+        if hasattr(exp, "strftime"):
+            exp_str = exp.strftime("%Y-%m-%d")
+        else:
+            exp_str = str(exp)[:10]
+    else:
+        exp_str = "—"
+    hits = user.get("hit_count", 0)
+    charged = user.get("charged_count", 0)
+    uname = user.get("telegram_username")
+    name_line = f"@{uname}" if uname else str(tid)
+    lines = [
+        "📋 <b>SEMEX — Account Status</b>",
+        "",
+        f"👤 <b>User:</b> {name_line}",
+        f"🏷 <b>Plan:</b> {plan}",
+        f"📅 <b>Expires:</b> {exp_str}",
+        "",
+        f"🎯 <b>Total Hits:</b> {hits}",
+        f"✅ <b>Charged:</b> {charged}",
+        "",
+        "Use /history to see your last charged hits.",
+    ]
+    await send_message(chat_id, "\n".join(lines))
+
+
+async def _cmd_history(chat_id: int, from_user_id: int | None) -> None:
+    """Show last 5 charged hits — safe fields only (no full card numbers)."""
+    from db import get_db
+    db = get_db()
+    tid = from_user_id or chat_id
+    cursor = (
+        db.hits.find(
+            {"telegram_id": tid, "status": {"$in": ["charged", "success", "approved", "succeeded", "captured"]}},
+            # Exclude screenshot and full card number from bot output
+            {"screenshot_b64": 0},
+        )
+        .sort("created_at", -1)
+        .limit(5)
+    )
+    hits = []
+    async for doc in cursor:
+        hits.append(doc)
+
+    if not hits:
+        await send_message(chat_id, "📭 No charged hits found yet.")
+        return
+
+    lines = ["💳 <b>Last Charged Hits</b>\n"]
+    for i, h in enumerate(hits, 1):
+        card = h.get("card_number") or ""
+        masked = ("•" * max(0, len(card) - 4) + card[-4:]) if len(card) >= 4 else "•••"
+        gw = h.get("gateway") or h.get("hostname") or "—"
+        amt = h.get("amount")
+        cur = h.get("currency") or ""
+        amt_str = f"{amt:.2f} {cur}".strip() if amt else "—"
+        ts = h.get("created_at")
+        date_str = ts.strftime("%Y-%m-%d %H:%M") if ts and hasattr(ts, "strftime") else "—"
+        lines.append(
+            f"{i}. <code>{masked}</code>\n"
+            f"   💰 {amt_str}  |  🌐 {gw}\n"
+            f"   🕐 {date_str}"
+        )
+    await send_message(chat_id, "\n".join(lines))
+
+
+async def _cmd_bins(chat_id: int, from_user_id: int | None) -> None:
+    """List the user's saved BINs."""
+    from db import get_db
+    db = get_db()
+    tid = from_user_id or chat_id
+    cursor = db.user_bins.find({"telegram_id": tid}).sort("created_at", -1).limit(20)
+    bins = []
+    async for doc in cursor:
+        bins.append(doc)
+
+    if not bins:
+        await send_message(
+            chat_id,
+            "📭 No saved BINs yet.\nOpen the SEMEX dashboard → BINs tab to add some.",
+        )
+        return
+
+    lines = [f"💳 <b>Your Saved BINs</b> ({len(bins)} shown)\n"]
+    for b in bins:
+        raw_num = b.get("bin") or "—"
+        # Mask anything beyond an 8-digit BIN prefix — saved values can be up to
+        # 19 digits (full card numbers), so only expose the BIN portion.
+        if len(raw_num) > 8:
+            display_num = raw_num[:6] + "•" * (len(raw_num) - 6)
+        else:
+            display_num = raw_num
+        label = b.get("label") or ""
+        brand = b.get("brand") or ""
+        level = b.get("level") or ""
+        bank = b.get("bank") or ""
+        meta_parts = [x for x in [brand.upper() if brand else "", level.upper() if level else "", bank] if x]
+        meta_str = " · ".join(meta_parts[:2]) if meta_parts else ""
+        label_str = f" <i>{label}</i>" if label else ""
+        meta_line = f"\n   {meta_str}" if meta_str else ""
+        lines.append(f"• <code>{display_num}</code>{label_str}{meta_line}")
+
+    if len(bins) == 20:
+        lines.append("\n<i>Showing 20 most recent. Open the dashboard to see all.</i>")
+    await send_message(chat_id, "\n".join(lines))
 
 
 async def _cmd_get(chat_id: int) -> None:
@@ -290,10 +419,22 @@ async def telegram_webhook(request: Request):
     Configure once via:
         POST https://api.telegram.org/bot<TOKEN>/setWebhook
              ?url=https://<your-host>/api/telegram/webhook
+             &secret_token=<TELEGRAM_WEBHOOK_SECRET>   ← set this env var too
 
     We always return {"ok": True} so Telegram doesn't retry — even if the
     command handler failed, the failure is logged and reported to the user.
     """
+    # ── Webhook secret verification ────────────────────────────────────────
+    # If TELEGRAM_WEBHOOK_SECRET is configured, every genuine Telegram update
+    # arrives with that value in X-Telegram-Bot-Api-Secret-Token. Any POST
+    # lacking or mismatching this header is a forgery — reject silently.
+    _wh_secret = (getattr(settings, "TELEGRAM_WEBHOOK_SECRET", "") or "").strip()
+    if _wh_secret:
+        _sent = (request.headers.get("x-telegram-bot-api-secret-token") or "").strip()
+        if _sent != _wh_secret:
+            log.warning("webhook: rejected — bad or missing secret token")
+            return {"ok": True}  # silent; don't reveal the expected value
+
     try:
         update = await request.json()
     except Exception as e:
@@ -345,6 +486,24 @@ async def telegram_webhook(request: Request):
             await _cmd_paid(chat_id, username, from_user_id)
         elif command == "/cancel":
             await _cmd_cancel(chat_id)
+        elif command in ("/status", "/stats", "/me", "/plan"):
+            # Only respond in private chats (chat_id == from_user_id in Telegram DMs).
+            # This prevents forged webhook POSTs from leaking account data to a
+            # different chat by faking the from.id field.
+            if from_user_id and chat_id != from_user_id:
+                await send_message(chat_id, "⚠️ /status is only available in private chats with the bot.")
+            else:
+                await _cmd_status(chat_id, from_user_id)
+        elif command == "/history":
+            if from_user_id and chat_id != from_user_id:
+                await send_message(chat_id, "⚠️ /history is only available in private chats with the bot.")
+            else:
+                await _cmd_history(chat_id, from_user_id)
+        elif command in ("/bins", "/bin", "/mybins"):
+            if from_user_id and chat_id != from_user_id:
+                await send_message(chat_id, "⚠️ /bins is only available in private chats with the bot.")
+            else:
+                await _cmd_bins(chat_id, from_user_id)
         # Silent no-op for anything else — the bot only claims a small command surface.
     except Exception as e:
         log.exception("bot command %s failed: %s", command, e)
