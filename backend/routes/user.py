@@ -1,16 +1,20 @@
-"""User-scoped routes — profile, settings, BINs, proxies, hit history."""
+"""User-scoped routes — profile, settings, BINs, proxies, hit history, live SSE stream."""
 from __future__ import annotations
 
+import asyncio
+import json as _json
 from datetime import datetime, timezone
-from typing import List, Optional
+from typing import AsyncGenerator, List, Optional
 
 from bson import ObjectId
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi.responses import StreamingResponse
 from pydantic import BaseModel
 
 from db import get_db
 from deps import get_current_user
 from models import User, UserBin, UserProxy, UserSettings
+from services.sync import sync_manager
 
 router = APIRouter(prefix="/api/user", tags=["user"])
 
@@ -67,6 +71,7 @@ async def save_settings(body: SettingsBody, user: User = Depends(get_current_use
         },
         upsert=True,
     )
+    sync_manager.publish(user.telegram_id, "settings")
     return {"success": True}
 
 
@@ -150,6 +155,7 @@ async def add_bin(body: BinBody, user: User = Depends(get_current_user)):
         if "duplicate" in str(e).lower():
             raise HTTPException(400, "BIN already saved.")
         raise
+    sync_manager.publish(user.telegram_id, "bins")
     return {
         "success": True,
         "bin": bin_clean,
@@ -190,6 +196,7 @@ async def update_bin(bin_id: str, body: BinPatchBody, user: User = Depends(get_c
         {"_id": oid, "telegram_id": user.telegram_id},
         {"$set": updates},
     )
+    sync_manager.publish(user.telegram_id, "bins")
     return {"success": r.modified_count > 0}
 
 
@@ -201,6 +208,7 @@ async def delete_bin(bin_id: str, user: User = Depends(get_current_user)):
     except Exception:
         raise HTTPException(400, "Bad id")
     r = await db.user_bins.delete_one({"_id": oid, "telegram_id": user.telegram_id})
+    sync_manager.publish(user.telegram_id, "bins")
     return {"success": r.deleted_count > 0}
 
 
@@ -223,6 +231,8 @@ async def add_bins_bulk(body: BulkBinBody, user: User = Depends(get_current_user
             added += 1
         except Exception:
             skipped += 1
+    if added:
+        sync_manager.publish(user.telegram_id, "bins")
     return {"success": True, "added": added, "skipped": skipped}
 
 
@@ -345,9 +355,48 @@ async def put_user_state(body: StateBody, user: User = Depends(get_current_user)
          "$setOnInsert": {"telegram_id": user.telegram_id, "created_at": now}},
         upsert=True,
     )
+    sync_manager.publish(user.telegram_id, "state")
     return {"success": True, "updatedAt": now.isoformat()}
 
 
+# ---------- Live SSE stream ----------
+
+@router.get("/stream")
+async def user_stream(request: Request, user: User = Depends(get_current_user)):
+    """Server-Sent Events — push state-change notifications to all open dashboards for
+    this user so hits, BINs and settings appear live on every device within ~1-2 s.
+
+    The client connects with Authorization: Bearer <token> and reads the stream.
+    Events pushed: ``state`` (stats/history updated), ``settings``, ``bins``, ``ping``
+    (30 s heartbeat to keep proxies/CDNs from closing idle connections).
+    """
+
+    async def _generate() -> AsyncGenerator[str, None]:
+        queue: asyncio.Queue[dict] = asyncio.Queue(maxsize=50)
+        sync_manager.subscribe(user.telegram_id, queue)
+        try:
+            # Immediate ping confirms the connection is alive
+            yield "event: ping\ndata: {}\n\n"
+            while True:
+                try:
+                    event = await asyncio.wait_for(queue.get(), timeout=25.0)
+                    yield f"event: {event['type']}\ndata: {_json.dumps(event['data'])}\n\n"
+                except (asyncio.TimeoutError, TimeoutError):
+                    if await request.is_disconnected():
+                        break
+                    yield "event: ping\ndata: {}\n\n"
+        finally:
+            sync_manager.unsubscribe(user.telegram_id, queue)
+
+    return StreamingResponse(
+        _generate(),
+        media_type="text/event-stream",
+        headers={
+            "Cache-Control": "no-cache",
+            "Connection": "keep-alive",
+            "X-Accel-Buffering": "no",  # disable nginx/Railway response buffering
+        },
+    )
 
 
 # ---------- Devices / sessions ----------
