@@ -121,6 +121,8 @@ class Hit(BaseDocument):
     merchant: Optional[str] = None
     customer_email: Optional[str] = None
     success_url: Optional[str] = None
+    invoice_url: Optional[str] = None  # hosted Stripe invoice/billing page URL
+    invoice_number: Optional[str] = None  # human-readable invoice number
     ip: Optional[str] = None  # client IP at time of hit (proxy IP if user is proxied)
     ip_country: Optional[str] = None  # country code (2-letter, e.g. "US")
     screenshot_b64: Optional[str] = None  # base64 JPEG (kept only in admin dashboard, not in user hits list)

@@ -163,6 +163,19 @@ def format_hit(hit: dict, user: dict, admin_view: bool = False) -> str:
     email = _cap(email, 80)
     bin_bank = _cap(bin_bank, 80)
 
+    # Hosted Stripe invoice/billing hits carry an invoice URL + number. Only show
+    # the invoice line when at least one is present so ordinary hits stay clean.
+    invoice_number = hit.get("invoice_number")
+    invoice_url = hit.get("invoice_url")
+    invoice_line = ""
+    if invoice_number or invoice_url:
+        _num = _esc(_cap(invoice_number, 60)) if invoice_number else "—"
+        _url = _mask_success_url(invoice_url) if invoice_url else "—"
+        invoice_line = (
+            f"⚜️Invoice ➔ <code>{_num}</code>\n"
+            f"⚜️Invoice URL ➔ {_url}\n"
+        )
+
     handle = user.get("telegram_username") or user.get("telegram_first_name") or f"id{user.get('telegram_id')}"
     plan = user.get("plan", "TRIAL")
     if user.get("is_owner") or user.get("is_admin"):
@@ -197,6 +210,7 @@ def format_hit(hit: dict, user: dict, admin_view: bool = False) -> str:
         f"- - - - - - - - - - - - - - - - - - - - - -\n"
         f"⚜️Product ➔ {_esc(product)}\n"
         f"⚜️Merchant ➔ {_esc(merchant)}\n"
+        f"{invoice_line}"
         f"⚜️Success URL ➔ {success}\n"
         f"⚜️Customer Email ➔ <code>{_esc(email)}</code>\n"
         f"⚜️IP ➔ <code>{_esc(ip_display)}</code>\n"

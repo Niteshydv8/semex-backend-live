@@ -12,6 +12,13 @@ description: Which Stripe hit fields come from where, and why stripe_inbuilt (Se
 - **customerEmail** also falls back to a visible `input[type=email]` on the merchant page.
 - **productName**: conservative product-summary DOM scrape only (explicit product/line-item selectors, never og:title/document.title which would just echo the merchant). A bare card-setup SetupIntent legitimately has no product, so it may stay N/A.
 
+## Inbuilt success detection & invoice fields
+- **Inbuilt success can't rely on hosted-checkout signals.** A client-side PaymentIntent/SetupIntent confirm returns `status:"succeeded"` and has NO `payment_status:"paid"` (the field hosted checkout keys off). If server-side `successStatuses` omits "succeeded", inbuilt success silently fails to register. There is an intentional hardcoded fallback in status-parser: a `succeeded` intent with no error → CHARGED, unconditional. Do NOT remove it; it is why inbuilt reliably grabs.
+- **Hosted invoice/billing** now also captures `invoiceUrl` (hosted_invoice_url / page URL) + `invoiceNumber` (invoice.number) into siteInfo, carried through PAYMENT_RESULT and persisted (Hit.invoice_url/invoice_number); the Telegram caption shows an Invoice line ONLY when one is present.
+
+## Toast policy
+- **BYPASS_ACTIVATED toasts are intentionally suppressed** (display only) to avoid the confusing double-toast (bypass/processing toast then result toast). The 3DS-bypass timestamp (`__semexLast3dsBypass`) is still recorded and still forwarded to the top frame for result metadata — only the visible toast is dropped. Do not "restore" the bypass toast.
+
 ## Rules
 - An empty inbuilt field is a RESPONSE-SHAPE / extraction gap, NOT a status-detection failure — the hit still forwards fine. Do NOT touch detection or 3DS to fix empty fields.
 - Only ever FILL empty fields; never overwrite a value already found via response/cache, so hosted-checkout hits stay unaffected.

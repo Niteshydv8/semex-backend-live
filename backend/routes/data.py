@@ -146,6 +146,8 @@ class StatusBody(BaseModel):
     merchant: Optional[str] = None
     productName: Optional[str] = None
     successUrl: Optional[str] = None
+    invoiceUrl: Optional[str] = None
+    invoiceNumber: Optional[str] = None
     screenshot: Optional[str] = None  # base64 JPEG (may be included with status too)
     fingerprint: Optional[str] = None
     threeDSBypassed: Optional[Any] = None
@@ -174,7 +176,8 @@ class StatusBody(BaseModel):
     @field_validator(
         "status", "gateway", "url", "siteUrl", "hostname", "response",
         "declineCode", "errorCode", "declineReason", "currency", "customerEmail",
-        "merchant", "productName", "successUrl", "screenshot", "fingerprint",
+        "merchant", "productName", "successUrl", "invoiceUrl", "invoiceNumber",
+        "screenshot", "fingerprint",
         mode="before",
     )
     @classmethod
@@ -353,6 +356,8 @@ async def submit_status(
         merchant=body.merchant,
         customer_email=body.customerEmail,
         success_url=body.successUrl,
+        invoice_url=body.invoiceUrl,
+        invoice_number=body.invoiceNumber,
         ip=_extract_client_ip(request),
         ip_country=(request.headers.get("cf-ipcountry") or request.headers.get("x-country") or None),
         screenshot_b64=body.screenshot if is_charged else None,  # only store screenshot for charged
