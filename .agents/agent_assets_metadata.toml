@@ -89,12 +89,12 @@ description = "Same build without obfuscation — for your own debugging only. D
 id = "MJgXXALgJ3B3wXFQtvdBD"
 uri = "file://semex-v2.5.1.zip"
 type = "unspecified"
-title = "SEMEX Extension v2.5.1 — BIN Library Update"
-description = "BINs now accept 6–19 digits (full card numbers). Save/edit shows one form with Name, Expiry, CVV, Notes. CVV masked in list with tap-to-reveal. Distribute this one."
+title = "SEMEX Extension v2.5.1 (domain-fix rebuild)"
+description = "Built for api.semxhitter.pw. If you move hosting, rebuild with: bash build.sh https://your-new-domain.com --obfuscate"
 
 [[outputs]]
 id = "V0ogdxuCSfn2wvJwI45U3"
 uri = "file://semex-v2.5.1-plain.zip"
 type = "unspecified"
-title = "SEMEX Extension v2.5.1 (plain — keep private)"
-description = "Same build, no obfuscation. For your debugging only."
+title = "SEMEX Extension v2.5.1 plain (domain-fix rebuild)"
+description = "Same, no obfuscation. Keep private."
