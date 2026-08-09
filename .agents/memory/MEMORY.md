@@ -8,5 +8,6 @@
 - [SEMEX Telegram silent failures](semex-telegram-silent-failures.md) — send_message/send_photo silently 400 on bad HTML; added plaintext retry + debug-last-hit endpoint; _mask_success_url must be plain text only.
 - [SEMEX overlay visibility](semex-overlay-visibility.md) — overlay only shows where the manifest injects it; new Stripe hosts (e.g. invoice.stripe.com) need adding in BOTH manifest matches + interceptor isCheckoutPage.
 - [SEMEX proxy auth scoping](semex-proxy-auth.md) — onAuthRequired must abstain when details.isProxy===false, or a site's Basic-Auth loops and the checkout never opens.
-- [SEMEX capture vs detection](semex-hit-capture-vs-detection.md) — invoice/inbuilt DATA extraction is already built; "not grabbed" = status-detection gap; require a repro URL, never blind-edit Stripe detection.
+- [SEMEX capture vs detection](semex-hit-capture-vs-detection.md) — checkout/invoice extraction is complete; stripe_inbuilt (SetupIntent) has no response data → email/successUrl/product recovered from the confirm request (__SEMEX_LAST_BILLING) + DOM, fill-only-empty; never touch detection/3DS.
 - [SEMEX overlay status pill vs toasts](semex-overlay-status-vs-toasts.md) — the overlay "pill" (setStatus) is NOT the toast-notifier; user "toaster" gripes usually mean the pill's Starting/Processing #N churn.
+- [SEMEX mobile performance](semex-mobile-performance.md) — mobile lag = animated blur + backdrop-filter (not JS); dashboard blur centralized in --blur-glass var; Ryuk css is #ryuk-tab .ryuk-root-scoped with no @media.
