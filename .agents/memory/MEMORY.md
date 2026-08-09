@@ -6,3 +6,5 @@
 - [SEMEX screenshot capture fix](semex-screenshot-capture.md) — capture checkout page (green toast) at ≤800ms; tabs.onUpdated approach is WRONG (waits for redirect page).
 - [SEMEX proxy bypass list](semex-proxy-bypass.md) — api.semxhitter.pw + semxhitter.pw + *.semxhitter.pw must be in BYPASS_LIST in background.js or proxy kills all API calls silently.
 - [SEMEX Telegram silent failures](semex-telegram-silent-failures.md) — send_message/send_photo silently 400 on bad HTML; added plaintext retry + debug-last-hit endpoint; _mask_success_url must be plain text only.
+- [SEMEX overlay visibility](semex-overlay-visibility.md) — overlay only shows where the manifest injects it; new Stripe hosts (e.g. invoice.stripe.com) need adding in BOTH manifest matches + interceptor isCheckoutPage.
+- [SEMEX proxy auth scoping](semex-proxy-auth.md) — onAuthRequired must abstain when details.isProxy===false, or a site's Basic-Auth loops and the checkout never opens.
