@@ -372,14 +372,15 @@ async def submit_status(
         ins = await db.hits.insert_one(hit.to_mongo())
         hit_id = str(ins.inserted_id)
 
-    # Update user counters
+    # Update user counters. Best-effort: the hit is already saved and must still be
+    # forwarded to Telegram, so a counter-update failure is logged, never fatal.
     try:
         inc = {"hit_count": 1}
         if is_charged:
             inc["charged_count"] = 1
         await db.users.update_one({"telegram_id": user.telegram_id}, {"$inc": inc})
     except Exception as _e:
-        raise
+        log.warning("user counter update failed (hit already saved): %s", _e)
 
     # Notify any open dashboard tabs via SSE so stats/history refresh live.
     # publish() is non-blocking — it enqueues to in-memory asyncio.Queue(s).
@@ -395,15 +396,21 @@ async def submit_status(
     if not should_forward:
         return {"success": True, "hitId": hit_id, "forwarded": False}
 
-    # Format message
+    # Format message. A formatting failure must NOT silently drop an already-saved
+    # charged hit (the exact "saved to DB but never reached Telegram" failure mode):
+    # log it and fall back to a minimal notification so downstream sends still fire.
+    # hit_dict/user_dict are built outside the try so the admin/owner paths below
+    # (which reuse them) are always defined even if formatting raises.
+    hit_dict = hit.model_dump()
+    hit_dict["three_ds_bypassed"] = str(body.threeDSBypassed or "").lower() in ("true", "1")
+    user_dict = user.model_dump()
+    user_dict["is_owner"] = is_admin  # effective admin (flag OR configured ADMIN_TELEGRAM_ID)
     try:
-        hit_dict = hit.model_dump()
-        hit_dict["three_ds_bypassed"] = str(body.threeDSBypassed or "").lower() in ("true", "1")
-        user_dict = user.model_dump()
-        user_dict["is_owner"] = is_admin  # effective admin (flag OR configured ADMIN_TELEGRAM_ID)
         text = format_hit(hit_dict, user_dict, admin_view=False)
     except Exception as _e:
-        raise
+        log.error("format_hit failed, using fallback text: %s", _e)
+        _st = "CHARGED" if is_charged else "LIVE"
+        text = f"⚜️ <b>SEMEX</b> — {_st} ✅ (formatting error — see dashboard)"
 
     # Telegram's photo-caption limit (1024) applies to VISIBLE text, not the HTML
     # markup we send (tags + link hrefs don't count). Measure visible length so the

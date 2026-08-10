@@ -67,8 +67,13 @@ async def db_nuke(body: NukeBody, owner: User = Depends(require_owner)):
 async def stats(admin: User = Depends(require_admin)):
     db = get_db()
     users_total = await db.users.count_documents({})
+    # "active" = a plan not yet expired OR a lifetime VIP (extend with days<0 sets
+    # plan="VIP" and plan_expires_at=None); the latter must not be excluded.
     users_active = await db.users.count_documents(
-        {"plan_expires_at": {"$gt": datetime.now(timezone.utc)}}
+        {"$or": [
+            {"plan_expires_at": {"$gt": datetime.now(timezone.utc)}},
+            {"plan": "VIP", "plan_expires_at": None},
+        ]}
     )
     users_admin_ids = await db.users.count_documents({"is_admin": True})
     users_banned = await db.users.count_documents({"is_banned": True})
