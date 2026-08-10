@@ -12,3 +12,6 @@ SEMEX mobile lag/jank is a PAINT problem, not JS. The costs are (1) animating la
 
 ## Why
 Removing blur/animation on small screens is display-only and reversible; panels keep their dark translucent backgrounds so legibility is preserved. This avoids rewriting layout to chase "lag."
+
+## Desktop (not just mobile)
+The extension dashboard/popup runs on DESKTOP, where the mobile `@media` overrides never trigger — so the full paint cost hit every desktop user, not just phones. Compounding mechanism: the 3 ambient `.glow` orbs animate transform/opacity behind the many `backdrop-filter` glass panels, forcing every panel to re-blur its backdrop each frame. Current fixes in place: orbs are STATIC on desktop (dropped the infinite `semexGlowPulse`; still visible for ambiance), and the base `--blur-glass` was lowered (24px→16px) so scroll re-blur is cheaper. The checkout overlay drops `backdrop-filter` while `.is-dragging` so dragging on the merchant page stays smooth. Any future "add a subtle pulse back" request re-introduces the per-frame re-blur — keep orbs static or move them out from behind the glass.
