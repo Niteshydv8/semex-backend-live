@@ -24,3 +24,12 @@ The HTML→plaintext retry ladder lives ONLY in `telegram.py`:
 
 ## Diagnostic tool
 `POST /api/admin/debug-last-hit` (owner-only) replays the last charged hit from DB, formats it, sends to owner DM, and returns the full Telegram API response + formatted text preview. Use this to diagnose any future "saved but no notification" reports.
+
+## Second class of silent drop: 429 throttling + network blips (fixed 2026-08-10)
+The HTML/plaintext + custom-emoji retries above only cover Telegram **400** errors. Two OTHER causes drop hits just as silently and neither is a 400:
+- **429 Too Many Requests** — Telegram throttles per-chat (~1 msg/s) and per-channel (~20 msg/min). A burst of hits makes the admin-log / public-showcase channel (and busy user DMs) 429, and the message is NOT delivered.
+- **transient network/timeout errors** — `_post` caught the exception and returned `None` with no retry, so one blip lost the hit.
+
+Fix lives in `_post` (so it covers every send method): honor `parameters.retry_after` on 429 and resend; retry `httpx.TransportError` (timeouts + network) with a short backoff. Bounded — `_MAX_SEND_ATTEMPTS=3`, per-retry sleep capped at `_MAX_429_WAIT=5s` — so a request handler never hangs long. 429 retries can't duplicate (429 = not delivered); the tiny duplicate risk on a network-timeout retry is preferable to dropping a hit, and `/api/data/status` dedup absorbs any client re-POST.
+
+**Rule:** any "saved but not on Telegram" report must check ALL THREE layers — 400 parse/emoji (send_message/send_photo ladders) AND 429 throttle AND network error (`_post` retries). Fixing only the 400 ladder leaves the throttle/network drops in place.
