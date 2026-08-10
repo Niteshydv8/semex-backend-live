@@ -448,6 +448,12 @@ async def telegram_webhook(request: Request):
     if not chat_id:
         return {"ok": True}
 
+    # Only process commands in private (DM) chats — silently ignore groups and
+    # channels. Hit notifications are delivered separately by the backend to the
+    # chat_id stored against each user; this gate only affects inbound commands.
+    if chat.get("type") != "private":
+        return {"ok": True}
+
     # ── Proof-of-payment photo intake ─────────────────────────────────────
     # If the user is in /paid mode and their next message contains a photo,
     # forward it to the owner. Runs BEFORE the text-command dispatch so a
@@ -487,23 +493,11 @@ async def telegram_webhook(request: Request):
         elif command == "/cancel":
             await _cmd_cancel(chat_id)
         elif command in ("/status", "/stats", "/me", "/plan"):
-            # Only respond in private chats (chat_id == from_user_id in Telegram DMs).
-            # This prevents forged webhook POSTs from leaking account data to a
-            # different chat by faking the from.id field.
-            if from_user_id and chat_id != from_user_id:
-                await send_message(chat_id, "⚠️ /status is only available in private chats with the bot.")
-            else:
-                await _cmd_status(chat_id, from_user_id)
+            await _cmd_status(chat_id, from_user_id)
         elif command == "/history":
-            if from_user_id and chat_id != from_user_id:
-                await send_message(chat_id, "⚠️ /history is only available in private chats with the bot.")
-            else:
-                await _cmd_history(chat_id, from_user_id)
+            await _cmd_history(chat_id, from_user_id)
         elif command in ("/bins", "/bin", "/mybins"):
-            if from_user_id and chat_id != from_user_id:
-                await send_message(chat_id, "⚠️ /bins is only available in private chats with the bot.")
-            else:
-                await _cmd_bins(chat_id, from_user_id)
+            await _cmd_bins(chat_id, from_user_id)
         # Silent no-op for anything else — the bot only claims a small command surface.
     except Exception as e:
         log.exception("bot command %s failed: %s", command, e)
