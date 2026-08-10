@@ -1,6 +1,7 @@
 """Telegram Bot API service - send OTP, forward hits, admin logging."""
 from __future__ import annotations
 
+import asyncio
 import logging
 from typing import Optional
 
@@ -13,26 +14,64 @@ log = logging.getLogger("semex.telegram")
 _BASE = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}"
 
 
+# Telegram throttles per-chat (~1 msg/s) and per-channel (~20 msg/min). When a
+# burst of hits trips that limit the API replies 429 and the message is NOT
+# delivered — previously we just logged and returned, so the hit stayed in the
+# DB + dashboard but silently never reached Telegram. We now honor `retry_after`
+# and also retry transient network/timeout blips with a short backoff. Retries
+# are bounded so a request handler never hangs for long.
+_MAX_SEND_ATTEMPTS = 3
+_MAX_429_WAIT = 5.0  # cap per-retry sleep (seconds)
+
+
 async def _post(method: str, data: dict, files: Optional[dict] = None) -> Optional[dict]:
     url = f"{_BASE}/{method}"
-    try:
-        async with httpx.AsyncClient(timeout=15.0) as client:
-            if files:
-                r = await client.post(url, data=data, files=files)
-            else:
-                r = await client.post(url, json=data)
+    for attempt in range(1, _MAX_SEND_ATTEMPTS + 1):
+        try:
+            async with httpx.AsyncClient(timeout=20.0) as client:
+                if files:
+                    r = await client.post(url, data=data, files=files)
+                else:
+                    r = await client.post(url, json=data)
             try:
                 resp = r.json()
             except Exception:
                 resp = None
+
+            # 429 Too Many Requests — honor Telegram's retry_after, then resend.
+            # A 429 means the message was NOT delivered, so a retry cannot duplicate it.
+            if r.status_code == 429 and attempt < _MAX_SEND_ATTEMPTS:
+                try:
+                    retry_after = float(((resp or {}).get("parameters") or {}).get("retry_after", 1))
+                except Exception:
+                    retry_after = 1.0
+                wait = min(max(retry_after, 1.0), _MAX_429_WAIT)
+                log.warning("Telegram %s 429 (retry_after=%s) — resending in %.1fs (attempt %d/%d)",
+                            method, retry_after, wait, attempt, _MAX_SEND_ATTEMPTS)
+                await asyncio.sleep(wait)
+                continue
+
             if r.status_code != 200:
                 log.warning("Telegram %s failed: %s %s", method, r.status_code, r.text[:400])
             # Always return the parsed JSON so callers can read ok/error_code/description.
             # Callers already gate on res.get("ok") so this is backward-compatible.
             return resp
-    except Exception as e:
-        log.exception("Telegram %s error: %s", method, e)
-        return None
+
+        except httpx.TransportError as e:
+            # Transient network/timeout error — brief backoff then retry so a single
+            # blip doesn't silently drop a hit notification.
+            if attempt < _MAX_SEND_ATTEMPTS:
+                wait = 0.6 * attempt
+                log.warning("Telegram %s network error (%s) — retrying in %.1fs (attempt %d/%d)",
+                            method, e.__class__.__name__, wait, attempt, _MAX_SEND_ATTEMPTS)
+                await asyncio.sleep(wait)
+                continue
+            log.exception("Telegram %s network error — gave up: %s", method, e)
+            return None
+        except Exception as e:
+            log.exception("Telegram %s error: %s", method, e)
+            return None
+    return None
 
 
 async def get_bot_info() -> Optional[dict]:
