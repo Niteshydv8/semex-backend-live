@@ -34,3 +34,7 @@ async def init_indexes() -> None:
     await db.user_proxies.create_index("telegram_id")
     await db.rate_limits.create_index("expires_at", expireAfterSeconds=0)
     await db.rate_limits.create_index([("key", 1), ("window", 1)])
+    # Durable Telegram outbox: unique dedup_key gives idempotent enqueue; the
+    # (status, next_attempt_at) index drives the worker's "next due" query.
+    await db.telegram_outbox.create_index("dedup_key", unique=True)
+    await db.telegram_outbox.create_index([("status", 1), ("next_attempt_at", 1)])

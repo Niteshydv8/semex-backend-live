@@ -21,6 +21,7 @@ from routes.telegram_bot import router as telegram_bot_router
 from routes.user import router as user_router
 from security import decode_token
 from services.expiry_watcher import start_expiry_task, stop_expiry_task
+from services.telegram_outbox import start_outbox_task, stop_outbox_task
 from services.telegram import send_message
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
@@ -30,7 +31,9 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name
 async def lifespan(app: FastAPI):
     await init_indexes()
     start_expiry_task()
+    start_outbox_task()
     yield
+    stop_outbox_task()
     stop_expiry_task()
 
 

