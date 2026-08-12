@@ -4,7 +4,8 @@ description: Which statuses get forwarded to Telegram, and the rule to never tou
 ---
 
 ## Forwarding contract (backend routes/data.py)
-- **Forwarded to Telegram** (DM + admin log + public showcase): only when status normalizes to `charged/success/approved/succeeded/captured` (CHARGED) or `live/ccn_live/3d_live` (LIVE).
+- **Forwarded to Telegram**: only when status normalizes to `charged/success/approved/succeeded/captured` (CHARGED) or `live/ccn_live/3d_live` (LIVE) — including live-class variants like insufficient_funds.
+- Admin-log routing (changed Aug 2026, owner-approved): CHARGED → admin log **pinned** + user DM + public showcase. LIVE/3DS-LIVE → admin log **unpinned, with screenshot photo when available** + user DM (no public showcase, no pin). Admin users' own hits never go to the admin log.
 - Any other status is **saved but NOT broadcast**. So giving an outcome its own status string that is not in those sets is how you "record but don't send."
 
 ## 3DS challenge = its own label, NOT "Live"

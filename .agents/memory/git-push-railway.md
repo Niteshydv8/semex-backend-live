@@ -1,19 +1,18 @@
 ---
-name: Git push for SEMEX backend (Railway auto-deploy)
-description: How to push commits to the SEMEX GitHub remote; raw git push fails auth.
+name: Git push for SEMEX backend
+description: How to push to GitHub (auto-redeploys Railway) — raw git push fails; use the GitHub connector via Git Data API replay.
 ---
 
-Raw `git push origin main` fails with "Invalid username or token / Password authentication is not supported". Use the managed `gitPush({ branch: "main" })` CodeExecution callback instead — it authenticates via the connected GitHub connector and succeeds.
+Pushing `main` to origin (github.com/Niteshydv8/semexbackend) auto-redeploys the Railway backend.
 
-**Why:** The workspace has no usable git credential helper for HTTPS pushes; the connector-backed helper is the only working path.
+**Current working method (Aug 2026):** raw `git push` fails auth, and the old `gitPush` CodeExecution callback no longer exists. Instead: user authorizes the **GitHub connector** (ProposeIntegration), then replay local commits through `conn.proxyFetch` against the Git Data API:
+1. Upload blobs (`POST /repos/.../git/blobs`, base64) — 502s from the proxy are transient, retry per blob.
+2. Per commit (oldest first): `POST /git/trees` with `base_tree` + changed entries, then `POST /git/commits`, then `PATCH /git/refs/heads/main` (force:false).
+3. Verify remote main sha == local HEAD; then `git update-ref refs/remotes/origin/main <sha>` locally (fetch needs auth too).
 
-**How to apply:** After committing locally (plain `git commit` works fine), push with `await gitPush({ branch: "main" })`. The SEMEX backend repo (github.com/Niteshydv8/semexbackend) is wired to Railway, which auto-redeploys the backend on push. Extension zips live in the same repo but are only for distribution — Railway ignores them.
+**Why:** with byte-exact trees/messages the replayed commit SHAs are identical to local, so local and remote stay in perfect sync.
 
-## Workspace `main` can diverge from `origin/main` — reconcile before pushing
-Because raw CLI pushes fail (above) while task-agent work merges straight to `origin/main` via the platform, local `main` drifts: it piles up local commits that never reached origin, while origin gains task-agent "Task N" commits the workspace lacks. `gitPush` then returns `PUSH_REJECTED` / `CLI_ERROR` (non-fast-forward) — this is **NOT** an auth failure. The callback auth works fine; only raw CLI `git fetch/push` lacks credentials.
-
-**Reconcile flow (NEVER force-push — it would wipe origin's task-agent commits off production):**
-1. `gitPull({ branch: "main" })` — its authenticated fetch refreshes the local `origin/main` ref even though the callback then aborts on `MERGE_CONFLICT`, leaving a clean tree.
-2. `git merge origin/main` locally (no auth needed) and resolve conflicts.
-3. The same feature often lands twice — once merged into local as a single "Task N" commit, once as the task-agent's own commits on origin — so local is usually a **superset** (same work, later-refined: e.g. added BIN/card masking, server-authoritative settings sync, extra invoice fields). Verify per conflicted file that origin has nothing local lacks (`git diff HEAD origin/main -- <file>` should show only older/superseded lines), then take local with `git checkout --ours <file>`. Prove nothing was lost/added: `git diff <pre-merge-HEAD> <merge-commit>` must be **empty**.
-4. `gitPush({ branch: "main" })` — now a clean fast-forward.
+**Gotchas that cost retries:**
+- Commit message must be byte-exact from `git cat-file commit` (keep the trailing newline — a `.trim()` changed every SHA and forced a ref reset).
+- Tree delete-entries need a valid mode (`100644`) with `sha: null`, not the `000000` from `git diff-tree` output.
+- Advance the ref only after each commit verifies; if a replay half-completes, force-PATCH the ref back to base and redo with corrected payloads.

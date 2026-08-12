@@ -103,8 +103,8 @@ description = "Same, no obfuscation. Keep private."
 id = "HSlTbLMbdHSHKeodQWdxx"
 uri = "file://SEMEX_complete.zip"
 type = "unspecified"
-title = "SEMEX Complete — Final Build"
-description = "All fixes + BIN detail row + proxy IP row + bypass toast. 140 files, backend + extension."
+title = "SEMEX Complete (extension + backend) — refreshed"
+description = "Full project archive rebuilt with the latest backend change: LIVE/3DS-LIVE hits now forward to the admin log unpinned with screenshots (non-admin users only). Extension is v2.8.5 (multi-gateway overlay, expanded random-name pool)."
 
 [[outputs]]
 id = "hXgdTgfj52KQrpbPB_PO5"
