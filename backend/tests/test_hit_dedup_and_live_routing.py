@@ -4,10 +4,11 @@
    short window must be de-duplicated server-side (backend guard, in addition
    to the frontend one that gets bypassed while the overlay is active).
 
-2) LIVE hits leaking into the private admin-log channel: LIVE must NOT be
-   forwarded to the admin log. Only CHARGED goes there.
-   (Verified by patching send_message + calling the endpoint via TestClient
-    with an async Mongo mock; light-weight, no DB fixtures required.)
+2) Admin-log routing: CHARGED hits reach the admin log PINNED; LIVE/3DS-LIVE
+   hits reach it UNPINNED (with screenshot when available). Admins' own hits
+   never go to the admin log.
+   (Verified by patching telegram_outbox enqueue functions + calling the
+   endpoint directly with an async Mongo mock; no DB fixtures required.)
 """
 from __future__ import annotations
 
@@ -28,6 +29,7 @@ def _stub_request(client_ip: str = "203.0.113.99"):
     return types.SimpleNamespace(
         headers={"cf-connecting-ip": client_ip},
         client=types.SimpleNamespace(host=client_ip),
+        state=types.SimpleNamespace(extension_outdated=False),
     )
 
 
@@ -125,8 +127,9 @@ class _AsyncDB:
 
 
 @pytest.mark.parametrize("status,should_hit_admin_log", [
-    ("live", False),   # LIVE must NOT reach admin log
-    ("charged", True),  # CHARGED still must reach admin log
+    ("live", True),     # LIVE reaches admin log (unpinned) per updated policy
+    ("3d_live", True),  # 3DS-LIVE reaches admin log (unpinned) too
+    ("charged", True),  # CHARGED still must reach admin log (pinned)
 ])
 def test_live_routing_admin_log(monkeypatch, status, should_hit_admin_log):
     from routes import data as data_route
@@ -134,24 +137,24 @@ def test_live_routing_admin_log(monkeypatch, status, should_hit_admin_log):
     from models import User
     from datetime import datetime, timezone
 
-    sent_chats: list[int] = []
+    # Since the durable-outbox refactor, data.py forwards via
+    # telegram_outbox.enqueue_message/enqueue_photo — patch those (the module
+    # no longer calls send_message/send_photo/pin_message directly).
+    sent: list[tuple[int, bool]] = []  # (chat_id, pin)
 
-    async def fake_send_message(chat_id, text, **kwargs):
-        sent_chats.append(int(chat_id))
-        return {"ok": True, "result": {"message_id": 1}}
+    async def fake_enqueue_message(db, chat_id, text, **kwargs):
+        sent.append((int(chat_id), bool(kwargs.get("pin"))))
+        return True
 
-    async def fake_send_photo(*args, **kwargs):
-        return None  # force text-only fallback path
-
-    async def fake_pin(*args, **kwargs):
-        return None
+    async def fake_enqueue_photo(db, chat_id, photo, caption, **kwargs):
+        sent.append((int(chat_id), bool(kwargs.get("pin"))))
+        return True
 
     async def fake_lookup_bin(*args, **kwargs):
         return None
 
-    monkeypatch.setattr(data_route, "send_message", fake_send_message)
-    monkeypatch.setattr(data_route, "send_photo", fake_send_photo)
-    monkeypatch.setattr(data_route, "pin_message", fake_pin)
+    monkeypatch.setattr(data_route.telegram_outbox, "enqueue_message", fake_enqueue_message)
+    monkeypatch.setattr(data_route.telegram_outbox, "enqueue_photo", fake_enqueue_photo)
     monkeypatch.setattr(data_route, "lookup_bin", fake_lookup_bin)
     monkeypatch.setattr(data_route, "get_db", lambda: _AsyncDB())
     # Bust the module-level dedup cache between parametrized cases.
@@ -185,6 +188,7 @@ def test_live_routing_admin_log(monkeypatch, status, should_hit_admin_log):
         data_route.submit_status(body, request=_stub_request(), user=user)
     )
 
+    sent_chats = [c for c, _pin in sent]
     admin_log = int(settings.ADMIN_LOG_CHANNEL_ID) if settings.ADMIN_LOG_CHANNEL_ID else None
     assert admin_log is not None
     hit_admin = admin_log in sent_chats
@@ -193,3 +197,9 @@ def test_live_routing_admin_log(monkeypatch, status, should_hit_admin_log):
     )
     # In both cases the user DM should have received the message
     assert user.telegram_id in sent_chats
+    # Pin policy: CHARGED pins in the admin log; LIVE/3DS-LIVE must NOT pin.
+    admin_pins = [p for c, p in sent if c == admin_log]
+    if status == "charged":
+        assert any(admin_pins), f"charged admin-log entry must be pinned: {sent}"
+    else:
+        assert not any(admin_pins), f"{status} admin-log entry must NOT be pinned: {sent}"
