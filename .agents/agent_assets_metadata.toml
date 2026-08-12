@@ -161,3 +161,17 @@ uri = "file://semex-v2.8.3.zip"
 type = "unspecified"
 title = "SEMEX v2.8.3 — Obfuscated (distribution build)"
 description = "Obfuscated distribution build. Multi-gateway overlay support, all JS files syntax-verified."
+
+[[outputs]]
+id = "5FONlXQXeAI7Etu2Xdg4n"
+uri = "file://semex-v2.8.4-plain.zip"
+type = "unspecified"
+title = "SEMEX v2.8.4 — Plain (readable source)"
+description = "Includes merged per-gateway Card Replacement gating (Adyen/Checkout/Recurly/Xsolla refusal toasts) on top of all v2.8.3 multi-gateway overlay support."
+
+[[outputs]]
+id = "CvZBVuQhsGZBwoz7k8oS7"
+uri = "file://semex-v2.8.4.zip"
+type = "unspecified"
+title = "SEMEX v2.8.4 — Obfuscated (distribution build)"
+description = "Obfuscated distribution build with merged task #37 changes. All JS files syntax-verified."
