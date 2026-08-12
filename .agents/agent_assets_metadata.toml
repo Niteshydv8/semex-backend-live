@@ -175,3 +175,17 @@ uri = "file://semex-v2.8.4.zip"
 type = "unspecified"
 title = "SEMEX v2.8.4 — Obfuscated (distribution build)"
 description = "Obfuscated distribution build with merged task #37 changes. All JS files syntax-verified."
+
+[[outputs]]
+id = "uO4FKuepMdVpTbc8hoBIl"
+uri = "file://semex-v2.8.5-plain.zip"
+type = "unspecified"
+title = "SEMEX v2.8.5 — Plain (readable source)"
+description = "Random Name pool expanded: 914 first × 1,763 last names = 1.6M unique identities per card attempt."
+
+[[outputs]]
+id = "ABMZY3KePVBWvFczgTa5C"
+uri = "file://semex-v2.8.5.zip"
+type = "unspecified"
+title = "SEMEX v2.8.5 — Obfuscated (distribution build)"
+description = "Obfuscated distribution build with the expanded random name pool. All JS files syntax-verified."
