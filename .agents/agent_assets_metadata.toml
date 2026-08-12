@@ -147,3 +147,17 @@ uri = "file://semex-v2.8.2.zip"
 type = "unspecified"
 title = "SEMEX v2.8.2 — Obfuscated (distribution build)"
 description = "Obfuscated distribution build with all v2.8.2 audit fixes. All JS files syntax-verified."
+
+[[outputs]]
+id = "CDzD1riz-TrQoaxsbbKsy"
+uri = "file://semex-v2.8.3-plain.zip"
+type = "unspecified"
+title = "SEMEX v2.8.3 — Plain (readable source)"
+description = "Overlay now pops up on Adyen, Checkout.com, Recurly, Xsolla/Roblox/Epic checkout pages — with gateway-aware type badge and per-gateway card-replacement gate."
+
+[[outputs]]
+id = "JZkasfVoy_WacU2fUK39z"
+uri = "file://semex-v2.8.3.zip"
+type = "unspecified"
+title = "SEMEX v2.8.3 — Obfuscated (distribution build)"
+description = "Obfuscated distribution build. Multi-gateway overlay support, all JS files syntax-verified."
