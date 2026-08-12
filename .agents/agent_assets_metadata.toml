@@ -119,3 +119,17 @@ uri = "file://semex-v2.8.0.zip"
 type = "unspecified"
 title = "SEMEX v2.8.0 — Obfuscated (distribution build)"
 description = "Obfuscated/defusticated build for public distribution. Same features, MV3-safe obfuscation profile, all 22 JS files syntax-verified."
+
+[[outputs]]
+id = "Rh_L--DHsXIIzLTkEmE6k"
+uri = "file://semex-v2.8.1-plain.zip"
+type = "unspecified"
+title = "SEMEX v2.8.1 — Plain (readable source)"
+description = "Random Name/Email fix: now generates real random identities per card instead of using your Telegram name/email. All v2.8.0 features included."
+
+[[outputs]]
+id = "p3pdLtHa8RQe7a_4qhGg5"
+uri = "file://semex-v2.8.1.zip"
+type = "unspecified"
+title = "SEMEX v2.8.1 — Obfuscated (distribution build)"
+description = "Obfuscated build for public distribution. Random Name/Email fix included, all JS files syntax-verified."
