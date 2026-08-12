@@ -98,3 +98,10 @@ uri = "file://semex-v2.5.1-plain.zip"
 type = "unspecified"
 title = "SEMEX Extension v2.5.1 plain (domain-fix rebuild)"
 description = "Same, no obfuscation. Keep private."
+
+[[outputs]]
+id = "HSlTbLMbdHSHKeodQWdxx"
+uri = "file://SEMEX_complete.zip"
+type = "unspecified"
+title = "SEMEX Complete — Backend + Extension"
+description = "Full source: semex/ (extension), backend/ (FastAPI), tests, guides, scripts. 140 files, all cleaned and fixed."
