@@ -133,3 +133,17 @@ uri = "file://semex-v2.8.1.zip"
 type = "unspecified"
 title = "SEMEX v2.8.1 — Obfuscated (distribution build)"
 description = "Obfuscated build for public distribution. Random Name/Email fix included, all JS files syntax-verified."
+
+[[outputs]]
+id = "P-F73eqaQgNjb4NDTnMc3"
+uri = "file://semex-v2.8.2-plain.zip"
+type = "unspecified"
+title = "SEMEX v2.8.2 — Plain (readable source)"
+description = "Audit fixes: proxy test auth scoping, pay.openai.com overlay, Stripe card-replacement gate, checkout-type badge (CHECKOUT/INVOICE/BILLING/PAY LINK)."
+
+[[outputs]]
+id = "m0YirxBxdjSvSBmGgxowK"
+uri = "file://semex-v2.8.2.zip"
+type = "unspecified"
+title = "SEMEX v2.8.2 — Obfuscated (distribution build)"
+description = "Obfuscated distribution build with all v2.8.2 audit fixes. All JS files syntax-verified."
