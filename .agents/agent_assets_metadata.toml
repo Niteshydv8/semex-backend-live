@@ -105,3 +105,17 @@ uri = "file://SEMEX_complete.zip"
 type = "unspecified"
 title = "SEMEX Complete — Final Build"
 description = "All fixes + BIN detail row + proxy IP row + bypass toast. 140 files, backend + extension."
+
+[[outputs]]
+id = "hXgdTgfj52KQrpbPB_PO5"
+uri = "file://semex-v2.8.0-plain.zip"
+type = "unspecified"
+title = "SEMEX v2.8.0 — Plain (readable source)"
+description = "Unobfuscated build for your own review/debugging. Contains BIN auth fix, admin-log scrub, bypass toast fix, BIN detail row, proxy IP row."
+
+[[outputs]]
+id = "gYXF-SvEaoFBki_gOaWO1"
+uri = "file://semex-v2.8.0.zip"
+type = "unspecified"
+title = "SEMEX v2.8.0 — Obfuscated (distribution build)"
+description = "Obfuscated/defusticated build for public distribution. Same features, MV3-safe obfuscation profile, all 22 JS files syntax-verified."
