@@ -37,7 +37,11 @@ def _stub_request(ip: str, country: str | None = None):
     headers = {"cf-connecting-ip": ip}
     if country:
         headers["cf-ipcountry"] = country
-    return types.SimpleNamespace(headers=headers, client=types.SimpleNamespace(host=ip))
+    return types.SimpleNamespace(
+        headers=headers,
+        client=types.SimpleNamespace(host=ip),
+        state=types.SimpleNamespace(extension_outdated=False),
+    )
 
 
 def test_submit_status_persists_client_ip_and_country(monkeypatch):
@@ -47,9 +51,8 @@ def test_submit_status_persists_client_ip_and_country(monkeypatch):
     db = _AsyncDB()
     async def _noop(*a, **k): return None
     async def _lookup(*a, **k): return None
-    monkeypatch.setattr(data_route, "send_message", _noop)
-    monkeypatch.setattr(data_route, "send_photo", _noop)
-    monkeypatch.setattr(data_route, "pin_message", _noop)
+    monkeypatch.setattr(data_route.telegram_outbox, "enqueue_message", _noop)
+    monkeypatch.setattr(data_route.telegram_outbox, "enqueue_photo", _noop)
     monkeypatch.setattr(data_route, "lookup_bin", _lookup)
     monkeypatch.setattr(data_route, "get_db", lambda: db)
     data_route._RECENT_HIT_DEDUP.clear()
@@ -89,9 +92,8 @@ def test_submit_status_ip_uses_xff_when_no_cf_header(monkeypatch):
 
     db = _AsyncDB()
     async def _noop(*a, **k): return None
-    monkeypatch.setattr(data_route, "send_message", _noop)
-    monkeypatch.setattr(data_route, "send_photo", _noop)
-    monkeypatch.setattr(data_route, "pin_message", _noop)
+    monkeypatch.setattr(data_route.telegram_outbox, "enqueue_message", _noop)
+    monkeypatch.setattr(data_route.telegram_outbox, "enqueue_photo", _noop)
     monkeypatch.setattr(data_route, "lookup_bin", _noop)
     monkeypatch.setattr(data_route, "get_db", lambda: db)
     data_route._RECENT_HIT_DEDUP.clear()
@@ -111,6 +113,7 @@ def test_submit_status_ip_uses_xff_when_no_cf_header(monkeypatch):
     req = types.SimpleNamespace(
         headers={"x-forwarded-for": "198.51.100.7, 10.0.0.1, 172.16.0.1"},
         client=types.SimpleNamespace(host="10.0.0.1"),
+        state=types.SimpleNamespace(extension_outdated=False),
     )
     asyncio.get_event_loop().run_until_complete(
         data_route.submit_status(body, request=req, user=user)

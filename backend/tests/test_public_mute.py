@@ -26,6 +26,7 @@ def _stub_request(client_ip: str = "203.0.113.99"):
     return types.SimpleNamespace(
         headers={"cf-connecting-ip": client_ip},
         client=types.SimpleNamespace(host=client_ip),
+        state=types.SimpleNamespace(extension_outdated=False),
     )
 
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://address-mode-select.preview.emergentagent.com").rstrip("/")
@@ -125,22 +126,19 @@ def test_muted_user_hit_skips_public_showcase(monkeypatch):
 
     sent_chats: list[int] = []
 
-    async def fake_send_message(chat_id, text, **kwargs):
+    async def fake_enqueue_message(db, chat_id, text, **kwargs):
         sent_chats.append(int(chat_id))
-        return {"ok": True, "result": {"message_id": 1}}
+        return True
 
-    async def fake_send_photo(*args, **kwargs):
-        return None
-
-    async def fake_pin(*args, **kwargs):
-        return None
+    async def fake_enqueue_photo(db, chat_id, photo, caption, **kwargs):
+        sent_chats.append(int(chat_id))
+        return True
 
     async def fake_lookup_bin(*args, **kwargs):
         return None
 
-    monkeypatch.setattr(data_route, "send_message", fake_send_message)
-    monkeypatch.setattr(data_route, "send_photo", fake_send_photo)
-    monkeypatch.setattr(data_route, "pin_message", fake_pin)
+    monkeypatch.setattr(data_route.telegram_outbox, "enqueue_message", fake_enqueue_message)
+    monkeypatch.setattr(data_route.telegram_outbox, "enqueue_photo", fake_enqueue_photo)
     monkeypatch.setattr(data_route, "lookup_bin", fake_lookup_bin)
     monkeypatch.setattr(data_route, "get_db", lambda: _AsyncDB())
     data_route._RECENT_HIT_DEDUP.clear()
@@ -193,22 +191,19 @@ def test_unmuted_user_still_reaches_public_channel(monkeypatch):
 
     sent_chats: list[int] = []
 
-    async def fake_send_message(chat_id, text, **kwargs):
+    async def fake_enqueue_message(db, chat_id, text, **kwargs):
         sent_chats.append(int(chat_id))
-        return {"ok": True, "result": {"message_id": 1}}
+        return True
 
-    async def fake_send_photo(*args, **kwargs):
-        return None
-
-    async def fake_pin(*args, **kwargs):
-        return None
+    async def fake_enqueue_photo(db, chat_id, photo, caption, **kwargs):
+        sent_chats.append(int(chat_id))
+        return True
 
     async def fake_lookup_bin(*args, **kwargs):
         return None
 
-    monkeypatch.setattr(data_route, "send_message", fake_send_message)
-    monkeypatch.setattr(data_route, "send_photo", fake_send_photo)
-    monkeypatch.setattr(data_route, "pin_message", fake_pin)
+    monkeypatch.setattr(data_route.telegram_outbox, "enqueue_message", fake_enqueue_message)
+    monkeypatch.setattr(data_route.telegram_outbox, "enqueue_photo", fake_enqueue_photo)
     monkeypatch.setattr(data_route, "lookup_bin", fake_lookup_bin)
     monkeypatch.setattr(data_route, "get_db", lambda: _AsyncDB())
     data_route._RECENT_HIT_DEDUP.clear()
