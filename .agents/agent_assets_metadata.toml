@@ -189,3 +189,17 @@ uri = "file://semex-v2.8.5.zip"
 type = "unspecified"
 title = "SEMEX v2.8.5 — Obfuscated (distribution build)"
 description = "Obfuscated distribution build with the expanded random name pool. All JS files syntax-verified."
+
+[[outputs]]
+id = "PCzZwphZAYd_XwbTTRdov"
+uri = "file://semex-v2.8.6.zip"
+type = "unspecified"
+title = "SEMEX v2.8.6 (obfuscated)"
+description = "No old-version blocking (dismissible banner only), redesigned toasters with correct LIVE vs DECLINED mapping, separate sounds for LIVE vs CHARGED, 3DS bypass failure detection + page-freeze failsafe, identity autofill on non-checkout pages (login/signup/email forms), proxy API-bypass + history-sync + payment-tracking toggle fixes, confetti dedupe."
+
+[[outputs]]
+id = "Bbz_doYYs8BGBMmWoqrcx"
+uri = "file://semex-v2.8.6-plain.zip"
+type = "unspecified"
+title = "SEMEX v2.8.6 (plain source)"
+description = "Same build, unobfuscated, for review."
