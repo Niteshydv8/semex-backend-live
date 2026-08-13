@@ -217,3 +217,17 @@ uri = "file://semex-v2.8.7-plain.zip"
 type = "unspecified"
 title = "SEMEX v2.8.7 (plain source)"
 description = "Same build, unobfuscated, for review."
+
+[[outputs]]
+id = "-mzBLCczzA93PB6DnrYZB"
+uri = "file://semex-v2.8.8.zip"
+type = "unspecified"
+title = "SEMEX v2.8.8 (obfuscated)"
+description = "Fixes the 'Something went wrong / network not connected — you have not been charged' Stripe errors when a proxy is connected: submit-time failover now detects api.stripe.com XHR tunnel failures (previously only page navigations failed over), fails Stripe's payment API open to direct, and tells the user via toast to press Pay again. Proxy-failover warnings are now actually displayed (nothing listened before). Includes all v2.8.6/v2.8.7 changes."
+
+[[outputs]]
+id = "e9pNO6VJnCeoRTWvmm6VN"
+uri = "file://semex-v2.8.8-plain.zip"
+type = "unspecified"
+title = "SEMEX v2.8.8 (plain source)"
+description = "Same build, unobfuscated, for review."
