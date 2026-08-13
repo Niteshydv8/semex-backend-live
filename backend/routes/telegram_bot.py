@@ -288,7 +288,7 @@ async def _cmd_savebin(chat_id: int, from_user_id: int | None, args: list[str]) 
         await db.user_bins.insert_one(b.to_mongo())
     except Exception as e:
         if "duplicate" in str(e).lower():
-            await send_message(chat_id, f"⚠️ BIN <code>{bin_clean[:8]}</code> is already in your list.")
+            await send_message(chat_id, f"⚠️ <code>{bin_clean}</code> is already in your list.")
             return
         raise
     # Live-push to any open extension dashboards so the new BIN appears instantly.

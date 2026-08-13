@@ -575,7 +575,11 @@ async def submit_screenshot(body: ScreenshotBody, user: User = Depends(get_curre
             hit = None
     if hit is not None:
         try:
-            await db.hits.update_one({"_id": hit["_id"]}, {"$set": {"screenshot_b64": body.screenshot}})
+            # v2.9.3: ownership-scoped update (was bare _id — TOCTOU-fragile).
+            await db.hits.update_one(
+                {"_id": hit["_id"], "telegram_id": user.telegram_id},
+                {"$set": {"screenshot_b64": body.screenshot}},
+            )
         except Exception:
             pass
 
@@ -603,6 +607,9 @@ async def submit_screenshot(body: ScreenshotBody, user: User = Depends(get_curre
             telegram_outbox.enqueue_photo(db, settings.ADMIN_LOG_CHANNEL_ID, body.screenshot, caption,
                                           dedup_key=f"shot:{shot_key}:admin")
         )
-    await asyncio.gather(*tasks)
+    # return_exceptions: one destination's insert failure must not cancel the
+    # other or turn into a 500 (enqueue itself already swallows+logs, this is
+    # belt-and-braces against gather cancellation semantics).
+    await asyncio.gather(*tasks, return_exceptions=True)
     telegram_outbox.kick()
     return {"success": True}

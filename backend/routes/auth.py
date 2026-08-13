@@ -327,10 +327,22 @@ async def redeem(body: RedeemBody, user: User = Depends(get_current_user_allow_e
     )
     if not claimed:
         raise HTTPException(400, "Code already redeemed.")
-    await db.users.update_one(
-        {"telegram_id": user.telegram_id},
-        {"$set": {"plan": plan_tag, "plan_expires_at": new_expiry, "expired_notified": False, "expiry_alerts_sent": {}}},
-    )
+    try:
+        await db.users.update_one(
+            {"telegram_id": user.telegram_id},
+            {"$set": {"plan": plan_tag, "plan_expires_at": new_expiry, "expired_notified": False, "expiry_alerts_sent": {}}},
+        )
+    except Exception:
+        # v2.9.3: never burn a valid code — if the entitlement write fails
+        # (Mongo blip/timeout), roll the claim back so the user can retry.
+        try:
+            await db.redeem_codes.update_one(
+                {"_id": doc["_id"]},
+                {"$set": {"used": False}, "$unset": {"used_by": "", "used_at": ""}},
+            )
+        except Exception:
+            log.error("redeem rollback ALSO failed for code %s — manual fix needed", doc.get("code_preview"))
+        raise HTTPException(500, "Redemption failed — please try again. Your code was NOT used.")
 
     # Send purchase receipt to user via Telegram
     try:

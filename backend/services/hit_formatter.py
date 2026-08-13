@@ -82,6 +82,22 @@ def clean_response(raw) -> str:
     return s[:297] + "..." if len(s) > 300 else s
 
 
+# v2.9.3: raw gateway id → display label for notifications.
+_GATEWAY_LABELS = {
+    "stripe_checkout": "Stripe Checkout",
+    "stripe_invoice": "Stripe Invoice",
+    "stripe_billing": "Stripe Billing",
+    "stripe_inbuilt": "Stripe In-Built",
+    "stripe_link": "Stripe Link",
+    "adyen": "Adyen",
+    "checkout": "Checkout.com",
+    "recurly": "Recurly",
+    "xsolla": "Xsolla",
+    "roblox": "Roblox",
+    "epic": "Epic Games",
+}
+
+
 def _mask_success_url(url: Optional[str]) -> str:
     if not url:
         return "—"
@@ -139,7 +155,9 @@ def format_hit(hit: dict, user: dict, admin_view: bool = False) -> str:
 
     status_line = _status_line(hit)
     response = clean_response(hit.get("response"))
-    gateway = hit.get("gateway") or "—"
+    # v2.9.3: human-readable gateway labels — raw ids like "stripe_inbuilt"
+    # were leaking into notifications; every Stripe surface now names itself.
+    gateway = _GATEWAY_LABELS.get((hit.get("gateway") or "").lower()) or hit.get("gateway") or "—"
     bin_bank = hit.get("bin_bank") or "—"
     bin_brand = hit.get("bin_brand") or ""
     bin_type = hit.get("bin_type") or ""

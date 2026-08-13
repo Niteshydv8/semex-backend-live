@@ -53,7 +53,10 @@ async def db_nuke(body: NukeBody, owner: User = Depends(require_owner)):
 
     db = get_db()
     wipes: dict[str, int] = {}
-    for coll_name in ("users", "sessions", "hits", "redeem_codes", "user_bins", "news"):
+    # v2.9.3: wipe BOTH news collection names — the routes historically used
+    # "news" while tests/docs expected "news_posts"; deleting only one left
+    # data behind despite reporting success.
+    for coll_name in ("users", "sessions", "hits", "redeem_codes", "user_bins", "news", "news_posts"):
         try:
             r = await db[coll_name].delete_many({})
             wipes[coll_name] = r.deleted_count
@@ -78,8 +81,10 @@ async def stats(admin: User = Depends(require_admin)):
     users_admin_ids = await db.users.count_documents({"is_admin": True})
     users_banned = await db.users.count_documents({"is_banned": True})
     hits_total = await db.hits.count_documents({})
+    # v2.9.3: include "captured" — data.py treats it as charged and /hits lists
+    # it, so stats previously undercounted.
     hits_charged = await db.hits.count_documents(
-        {"status": {"$in": ["charged", "success", "approved", "succeeded"]}}
+        {"status": {"$in": ["charged", "success", "approved", "succeeded", "captured"]}}
     )
     codes_unused = await db.redeem_codes.count_documents({"used": False})
     codes_used = await db.redeem_codes.count_documents({"used": True})
