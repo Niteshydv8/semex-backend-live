@@ -522,8 +522,10 @@ async def submit_status(
             except Exception as e:
                 log.warning("public showcase enqueue failed: %s", e)
 
+    # v2.9.2: user DM attaches the screenshot for LIVE hits too (was CHARGED
+    # only) — the extension now captures silently for both.
     await asyncio.gather(
-        _enqueue_forward(user.telegram_id, text, pin=is_charged, key_prefix="user"),
+        _enqueue_forward(user.telegram_id, text, pin=is_charged, key_prefix="user", with_photo=True),
         _fwd_admin_or_owner(),
         _fwd_public(),
     )
