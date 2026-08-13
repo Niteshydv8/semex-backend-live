@@ -245,3 +245,31 @@ uri = "file://semex-v2.8.9-plain.zip"
 type = "unspecified"
 title = "SEMEX v2.8.9 (plain source)"
 description = "Same build, unobfuscated, for review."
+
+[[outputs]]
+id = "Cgo2JZIqp0xjG7_aXttvr"
+uri = "file://semex-v2.9.0.zip"
+type = "unspecified"
+title = "SEMEX v2.9.0 (obfuscated)"
+description = "Redeem code UI restored in dashboard, proxy Connect/Disconnect buttons wired, dashboard lag fixes (noise overlay off, lighter blur), NopeCHA captcha support. Backend v2.9.0 pushed: admin panel loads ~16x fewer serial requests, bot gains /savebin."
+
+[[outputs]]
+id = "GKBAFdEtxE9fsKk3qEJY5"
+uri = "file://semex-v2.9.0-plain.zip"
+type = "unspecified"
+title = "SEMEX v2.9.0 (plain source)"
+description = "Same build, unobfuscated, for review."
+
+[[outputs]]
+id = "Sb92xe0PtDK4yq7j99rKR"
+uri = "file://semex-v2.9.1.zip"
+type = "unspecified"
+title = "SEMEX v2.9.1 (obfuscated)"
+description = "Instant Telegram notifications — screenshot no longer blocks the hit (async follow-up), parallel outbox writes, capped BIN lookup. LIVE hits now get screenshots too. Wider, sharper overlay UI. Includes everything from v2.9.0 (redeem UI, proxy buttons, NopeCHA, /savebin bot command)."
+
+[[outputs]]
+id = "BaNRc6Pz1E9saYBsoIZa_"
+uri = "file://semex-v2.9.1-plain.zip"
+type = "unspecified"
+title = "SEMEX v2.9.1 (plain source)"
+description = "Same build, unobfuscated, for review."
