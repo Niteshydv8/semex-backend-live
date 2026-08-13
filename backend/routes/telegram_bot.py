@@ -233,7 +233,8 @@ async def _cmd_help(chat_id: int) -> None:
         "<b>📊 Your account:</b>\n"
         "/status – plan, expiry & hit counters\n"
         "/history – last 5 charged hits\n"
-        "/bins – your saved BINs\n\n"
+        "/bins – your saved BINs\n"
+        "/savebin 414720 [label] – save a BIN to your extension list\n\n"
         "<b>🚀 Getting started:</b>\n"
         "/start – onboarding\n"
         "/get – download the extension .zip\n"
@@ -244,6 +245,62 @@ async def _cmd_help(chat_id: int) -> None:
         "Any issues? Message the owner directly."
     )
     await send_message(chat_id, text)
+
+
+async def _cmd_savebin(chat_id: int, from_user_id: int | None, args: list[str]) -> None:
+    """Save a BIN from the bot straight into the same `user_bins` collection the
+    extension reads via GET /api/user/bins — saved BINs appear in the checkout
+    overlay quick-switcher on the next sync. Mirrors routes/user.py POST /bins.
+    """
+    from db import get_db
+    from models import UserBin
+    from services.bin_lookup import lookup_bin
+    from services.sync import sync_manager
+
+    tid = from_user_id or chat_id
+    bin_clean = "".join(c for c in (args[0] if args else "") if c.isdigit())[:19]
+    label = (" ".join(args[1:]).strip()[:40] or None) if len(args) > 1 else None
+    if len(bin_clean) < 6:
+        await send_message(chat_id, "Usage: /savebin &lt;BIN&gt; [label]\nExample: <code>/savebin 414720 work</code>")
+        return
+
+    meta = {}
+    try:
+        m = await lookup_bin(bin_clean[:8])
+        if m:
+            meta = m
+    except Exception:
+        meta = {}
+
+    db = get_db()
+    try:
+        b = UserBin(
+            telegram_id=tid,
+            bin=bin_clean,
+            label=label,
+            brand=meta.get("brand"),
+            card_type=meta.get("cardType"),
+            level=meta.get("level"),
+            bank=meta.get("bank"),
+            country=meta.get("country"),
+            country_code=meta.get("countryCode"),
+        )
+        await db.user_bins.insert_one(b.to_mongo())
+    except Exception as e:
+        if "duplicate" in str(e).lower():
+            await send_message(chat_id, f"⚠️ BIN <code>{bin_clean[:8]}</code> is already in your list.")
+            return
+        raise
+    # Live-push to any open extension dashboards so the new BIN appears instantly.
+    sync_manager.publish(tid, "bins")
+
+    meta_bits = " · ".join(x for x in [meta.get("brand"), meta.get("level"), meta.get("bank"), meta.get("country")] if x)
+    label_txt = f" ({label})" if label else ""
+    await send_message(
+        chat_id,
+        f"✅ BIN <code>{bin_clean[:8]}</code>{label_txt} saved — it will show in the extension's BIN list."
+        + (f"\n{meta_bits}" if meta_bits else ""),
+    )
 
 
 # ─── Self-service account commands ────────────────────────────────────────────
@@ -498,6 +555,8 @@ async def telegram_webhook(request: Request):
             await _cmd_history(chat_id, from_user_id)
         elif command in ("/bins", "/bin", "/mybins"):
             await _cmd_bins(chat_id, from_user_id)
+        elif command in ("/savebin", "/addbin"):
+            await _cmd_savebin(chat_id, from_user_id, text.split()[1:])
         # Silent no-op for anything else — the bot only claims a small command surface.
     except Exception as e:
         log.exception("bot command %s failed: %s", command, e)

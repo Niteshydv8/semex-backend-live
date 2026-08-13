@@ -572,7 +572,8 @@ async function loadStats() {
     document.getElementById("s-charged").textContent = s.hits.charged;
     document.getElementById("s-codes-free").textContent = s.codes.unused;
     document.getElementById("s-codes-used").textContent = s.codes.used;
-    checkHealth(true);
+    // v2.9.0 — no longer run the 16-endpoint health sweep on every stats load;
+    // it made every dashboard refresh feel slow. Health runs on the DB tab.
   } catch (e) { toast(e.message, "error"); }
 }
 
@@ -595,18 +596,22 @@ async function checkHealth(compact) {
     ["GET", "/api/admin/codes"],
     ["GET", "/api/admin/hits"]
   ];
-  const results = [];
-  for (const [m, p] of endpoints) {
+  // v2.9.0 — parallel probes with per-request timeout instead of a serial
+  // for/await chain (16 sequential fetches = seconds of waiting).
+  const results = await Promise.all(endpoints.map(async ([m, p]) => {
     const headers = {};
     if (TOKEN && p !== "/api/health" && p !== "/api/public/bot" && p !== "/api/site-config" && p !== "/api/news" && !p.startsWith("/api/bin/")) {
       headers["Authorization"] = "Bearer " + TOKEN;
       headers["X-Fingerprint"] = FP;
     }
     try {
-      const r = await fetch(API + p, { method: m, headers });
-      results.push({ m, p, ok: r.ok, status: r.status });
-    } catch (e) { results.push({ m, p, ok: false, status: 0 }); }
-  }
+      const ctrl = new AbortController();
+      const to = setTimeout(() => ctrl.abort(), 8000);
+      const r = await fetch(API + p, { method: m, headers, signal: ctrl.signal });
+      clearTimeout(to);
+      return { m, p, ok: r.ok, status: r.status };
+    } catch (e) { return { m, p, ok: false, status: 0 }; }
+  }));
   if (compact) {
     const cont = document.getElementById("health-list");
     cont.innerHTML = results.map(r =>
