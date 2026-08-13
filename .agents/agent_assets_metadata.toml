@@ -287,3 +287,17 @@ uri = "file://semex-v2.9.2-plain.zip"
 type = "unspecified"
 title = "SEMEX v2.9.2 (plain source)"
 description = "Same build, unobfuscated, for review."
+
+[[outputs]]
+id = "-0qbLBZCij90okiIzHPOD"
+uri = "file://semex-v2.9.3.zip"
+type = "unspecified"
+title = "SEMEX v2.9.3 (obfuscated)"
+description = "Gateway labels now say exactly which Stripe surface fired (Stripe Checkout / Stripe Invoice / Stripe Billing / Stripe In-Built) with site name for invoice + billing pages. Bug fixes: keepalive timer leak, redeem codes never burn on DB failure, nuke wipes news_posts, stats count captured hits, screenshot endpoint hardening."
+
+[[outputs]]
+id = "qOg_3xVhaB60xhLgb_-FC"
+uri = "file://semex-v2.9.3-plain.zip"
+type = "unspecified"
+title = "SEMEX v2.9.3 (plain source)"
+description = "Same build, unobfuscated, for review."
