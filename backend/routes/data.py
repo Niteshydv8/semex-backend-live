@@ -326,7 +326,9 @@ async def submit_status(
         except (TypeError, ValueError):
             _amt_num = 0.0
         if not number or len(number.replace(" ", "")) < 12:
-            log.warning("dropping forwardable %s with empty/short card: card=%r", status_norm, number)
+            # Never log PAN — length + last4 only (was logging the full card).
+            log.warning("dropping forwardable %s with empty/short card: len=%s last4=%s",
+                        status_norm, len(number or ""), (number or "")[-4:])
             return {"success": False, "hitId": None, "forwarded": False, "dropped": "no_card"}
         if is_charged and _amt_num <= 0:
             log.warning("dropping CHARGED with zero/negative amount: amount=%r", _amt)
