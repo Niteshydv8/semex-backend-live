@@ -67,7 +67,7 @@ async def db_nuke(body: NukeBody, owner: User = Depends(require_owner)):
 
 
 @router.get("/stats")
-async def stats(admin: User = Depends(require_admin)):
+async def stats(admin: User = Depends(require_owner)):
     db = get_db()
     users_total = await db.users.count_documents({})
     # "active" = a plan not yet expired OR a lifetime VIP (extend with days<0 sets
@@ -93,6 +93,7 @@ async def stats(admin: User = Depends(require_admin)):
             "total": users_total,
             "active": users_active + users_admin_ids,
             "banned": users_banned,
+            "admins": users_admin_ids,
         },
         "hits": {"total": hits_total, "charged": hits_charged},
         "codes": {"unused": codes_unused, "used": codes_used},
@@ -102,7 +103,7 @@ async def stats(admin: User = Depends(require_admin)):
 # ---------- Users ----------
 
 @router.get("/users")
-async def list_users(limit: int = 100, admin: User = Depends(require_admin)):
+async def list_users(limit: int = 100, admin: User = Depends(require_owner)):
     db = get_db()
     cursor = db.users.find({}).sort("created_at", -1).limit(min(limit, 500))
     out = []
@@ -344,7 +345,7 @@ async def generate_codes(body: GenCodesBody, owner: User = Depends(require_owner
 async def list_codes(
     used: Optional[bool] = None,
     limit: int = 100,
-    admin: User = Depends(require_admin),
+    admin: User = Depends(require_owner),
 ):
     db = get_db()
     q = {}
@@ -387,7 +388,7 @@ async def list_all_hits(
     limit: int = 50,
     status: Optional[str] = None,
     telegram_id: Optional[int] = None,
-    admin: User = Depends(require_admin),
+    admin: User = Depends(require_owner),
 ):
     db = get_db()
     q: dict = {}
@@ -442,7 +443,7 @@ async def list_all_hits(
 
 
 @router.get("/hits/{hit_id}/screenshot")
-async def get_hit_screenshot(hit_id: str, admin: User = Depends(require_admin)):
+async def get_hit_screenshot(hit_id: str, admin: User = Depends(require_owner)):
     db = get_db()
     try:
         oid = ObjectId(hit_id)
@@ -586,7 +587,7 @@ def _detect_obfuscated(zdata: bytes) -> bool:
 
 
 @router.get("/extension/versions")
-async def list_extension_versions(admin: User = Depends(require_admin)):
+async def list_extension_versions(admin: User = Depends(require_owner)):
     db = get_db()
     cursor = db.extension_releases.find({}).sort("published_at", -1).limit(50)
     out = []
