@@ -231,3 +231,17 @@ uri = "file://semex-v2.8.8-plain.zip"
 type = "unspecified"
 title = "SEMEX v2.8.8 (plain source) — verified"
 description = "Same verified build, unobfuscated, for review."
+
+[[outputs]]
+id = "UBk3slPO_SIXbEnr1Qh53"
+uri = "file://semex-v2.8.9.zip"
+type = "unspecified"
+title = "SEMEX v2.8.9 (obfuscated)"
+description = "Adds NopeCHA support for Stripe hCaptcha: new provider selector in Captcha settings (2Captcha or NopeCHA) — the API key is now routed to the matching service's API instead of always 2Captcha. Includes all v2.8.6–v2.8.8 fixes."
+
+[[outputs]]
+id = "MN2xcEP3AaYd88Y65u2mC"
+uri = "file://semex-v2.8.9-plain.zip"
+type = "unspecified"
+title = "SEMEX v2.8.9 (plain source)"
+description = "Same build, unobfuscated, for review."
