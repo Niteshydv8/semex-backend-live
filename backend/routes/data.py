@@ -598,6 +598,13 @@ async def submit_screenshot(body: ScreenshotBody, user: User = Depends(get_curre
 
     shot_key = body.submitId or body.hitId or uuid.uuid4().hex
     is_admin = user.is_admin or (user.telegram_id == settings.ADMIN_TELEGRAM_ID)
+    # v2.9.4: never DM a photo for non-forwardable statuses (dead/declined/
+    # error). The screenshot is still attached to the hit row above for the
+    # dashboard — only the Telegram photo is gated. This endpoint bypasses the
+    # /status forward gate, so it must apply the same rule itself.
+    _SHOT_FORWARDABLE = {"charged", "success", "approved", "succeeded", "captured", "live", "ccn_live", "3d_live"}
+    if ((body.status or hitd.get("status") or "")).lower() not in _SHOT_FORWARDABLE:
+        return {"success": True, "forwarded": False}
     tasks = [
         telegram_outbox.enqueue_photo(db, user.telegram_id, body.screenshot, caption,
                                       dedup_key=f"shot:{shot_key}:user")
