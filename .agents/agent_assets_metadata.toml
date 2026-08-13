@@ -203,3 +203,17 @@ uri = "file://semex-v2.8.6-plain.zip"
 type = "unspecified"
 title = "SEMEX v2.8.6 (plain source)"
 description = "Same build, unobfuscated, for review."
+
+[[outputs]]
+id = "-QClwSTCBjquoftkvXISo"
+uri = "file://semex-v2.8.7.zip"
+type = "unspecified"
+title = "SEMEX v2.8.7 (obfuscated)"
+description = "Adds the embedded-checkout extractor: detects shareable Stripe checkouts embedded in merchant pages (checkout.stripe.com iframes via cs_live/cs_test session id, buy.stripe.com/donate.stripe.com iframes, stripe-buy-button web components) and auto-opens the full checkout page in a new tab. Includes all v2.8.6 changes."
+
+[[outputs]]
+id = "ZeAst2TV8iAhki15Nr0-i"
+uri = "file://semex-v2.8.7-plain.zip"
+type = "unspecified"
+title = "SEMEX v2.8.7 (plain source)"
+description = "Same build, unobfuscated, for review."

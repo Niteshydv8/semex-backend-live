@@ -18,3 +18,4 @@
 - [SEMEX anti-fingerprint breaks Cloudflare](semex-cloudflare-antifingerprint.md) — AF canvas/WebGL patches corrupt CF challenge POW; exclude challenges.cloudflare.com + /cdn-cgi/challenge-platform in manifest AND runtime-guard AF; captcha-solver must not retry-loop on CF.
 - [SEMEX Xsolla CR/CVV coupling](semex-xsolla-cr-cvv-coupling.md) — Xsolla card replacement + CVV bypass share one xps_encrypted_card re-encrypt path; gating CR must gate the substitution itself (3 points).
 - [SEMEX authed-fetch refresh](semex-authed-fetch-refresh.md) — every authed call must refresh-on-401 via serverClient.authedFetch or it dies silently after the 15-min token TTL; SSE stream needs bespoke reconnect.
+- [SEMEX embedded-checkout extractor](semex-checkout-extractor.md) — auto-open detected shareable Stripe embeds in new tabs (owner accepted tab popping); Payment Element has no URL by design.

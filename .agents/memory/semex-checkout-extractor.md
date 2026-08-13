@@ -1,0 +1,15 @@
+---
+name: SEMEX embedded-checkout extractor
+description: Owner-approved design — auto-open every detected embedded shareable Stripe checkout in a new tab; Stripe-only; Payment Element has no URL by design.
+---
+
+## Decisions (owner, v2.8.7, Aug 2026)
+- Behavior: **auto-open immediately** when an embedded shareable checkout is detected. Owner explicitly accepted tabs popping on pricing pages — do NOT "fix" multi-tab behavior into a toast/gesture gate without asking.
+- Scope: **Stripe only** (checkout.stripe.com cs_live_/cs_test_ extraction, buy/donate.stripe.com links, stripe-buy-button shadow DOM). Do not add Whop/Paddle/etc. unless asked.
+- SEMEX's strength is Stripe's hosted checkout; merchant-page "locked" checkouts get reopened as full checkout pages so the whole pipeline (overlay/fill/capture) applies.
+
+**Why:** extension only activates on checkout pages; embedded checkouts on arbitrary merchant pages were invisible to it.
+
+**How to apply:**
+- True embedded Stripe **Payment Element / Embedded Checkout has NO shareable URL** — impossible to reopen; keep the in-built fill path (`__SEMEX_LAST_BILLING` recovery) for those. Never promise otherwise.
+- The background `SEMEX_OPEN_CHECKOUT_TAB` allow-list regex must include any host the extractor can emit, or tabs silently never open.
