@@ -329,3 +329,17 @@ uri = "file://semex-v2.9.5-plain.zip"
 type = "unspecified"
 title = "SEMEX v2.9.5 (plain source)"
 description = "Same build, unobfuscated, for review."
+
+[[outputs]]
+id = "y5cNs_GpUoyWQDyt912ZA"
+uri = "file://semex-v2.9.6.zip"
+type = "unspecified"
+title = "SEMEX v2.9.6 (obfuscated)"
+description = "Fallback screenshot path now saves locally — on phones/Kiwi the first capture usually fails and the fallback ran, which never downloaded the image; live-hit shots now land in Downloads. Local filename now carries the real status (live/charged) instead of hardcoded 'charged'."
+
+[[outputs]]
+id = "lSvhQguV1IHX3C73CXrbL"
+uri = "file://semex-v2.9.6-plain.zip"
+type = "unspecified"
+title = "SEMEX v2.9.6 (plain source)"
+description = "Same build, unobfuscated, for review."
