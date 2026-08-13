@@ -51,6 +51,16 @@ _BACKOFF_SCHEDULE = [5, 15, 60, 300, 900, 3600]
 # pool on the next pass.
 _CLAIM_STALE_SECONDS = 90
 
+# _ids of documents that Telegram has CONFIRMED delivery of, but whose
+# "delivered" transition has not yet been persisted (a database hiccup at the
+# worst possible moment). While an id lives here, the message has already been
+# sent, so it MUST NOT be reclaimed by the stale-claim sweeper or re-sent — a
+# background task retries the delivered-mark indefinitely until it lands. This
+# in-memory guard closes the duplicate-send window for a live process; only an
+# actual process crash (where Telegram has no idempotency key anyway) falls back
+# to the documented at-least-once behavior.
+_confirmed_awaiting_mark: set = set()
+
 
 def _now() -> datetime:
     return datetime.now(timezone.utc)
@@ -151,10 +161,19 @@ async def _deliver(doc: dict) -> bool:
 async def _drain_once(db) -> int:
     """Process one batch of due documents. Returns number delivered."""
     now = _now()
-    # Reclaim stale claims (worker crashed mid-send) back to pending.
+    # Reclaim stale claims (worker crashed mid-send) back to pending — but NEVER
+    # reclaim a row whose send Telegram already confirmed and which is still
+    # awaiting its delivered-mark, or we would re-send an already-delivered
+    # message. Those ids are excluded here and retried by their background task.
     try:
+        reclaim_filter = {
+            "status": "sending",
+            "claimed_at": {"$lt": now - timedelta(seconds=_CLAIM_STALE_SECONDS)},
+        }
+        if _confirmed_awaiting_mark:
+            reclaim_filter["_id"] = {"$nin": list(_confirmed_awaiting_mark)}
         await db.telegram_outbox.update_many(
-            {"status": "sending", "claimed_at": {"$lt": now - timedelta(seconds=_CLAIM_STALE_SECONDS)}},
+            reclaim_filter,
             {"$set": {"status": "pending"}},
         )
     except Exception as e:
@@ -179,12 +198,12 @@ async def _drain_once(db) -> int:
             ok = False
 
         if ok:
-            await db.telegram_outbox.update_one(
-                {"_id": doc["_id"]},
-                {"$set": {"status": "delivered", "delivered_at": _now()},
-                 "$inc": {"attempts": 1}},
-            )
-            delivered += 1
+            # CRITICAL: Telegram has already accepted the send. If this update
+            # fails, the row stays "sending" and the stale-claim sweeper would
+            # later reclaim it → the SAME message is sent twice. So we retry the
+            # delivered-mark hard, loudly, before giving up to reconciliation.
+            if await _mark_delivered(db, doc):
+                delivered += 1
         else:
             # NEVER give up: reschedule with capped exponential backoff so a
             # prolonged outage or remediable failure is ridden out, not dropped.
@@ -198,11 +217,96 @@ async def _drain_once(db) -> int:
             if attempts % 12 == 0:
                 log.error("outbox still undelivered after %d attempts (dedup_key=%s)",
                           attempts, doc.get("dedup_key"))
-            await db.telegram_outbox.update_one(
-                {"_id": doc["_id"]},
-                {"$set": update, "$inc": {"attempts": 1}},
-            )
+            # If this reschedule update fails, the row is stranded in "sending".
+            # Wrap it loudly; the stale-claim sweeper will reclaim it, but log so
+            # the stall is visible rather than silent.
+            try:
+                await db.telegram_outbox.update_one(
+                    {"_id": doc["_id"]},
+                    {"$set": update, "$inc": {"attempts": 1}},
+                )
+            except Exception as e:
+                log.error(
+                    "outbox reschedule update FAILED (dedup_key=%s); row left in "
+                    "'sending', will be reclaimed by stale-claim sweeper: %s",
+                    doc.get("dedup_key"), e,
+                )
     return delivered
+
+
+async def _persist_delivered_mark(db, doc: dict) -> None:
+    await db.telegram_outbox.update_one(
+        {"_id": doc["_id"]},
+        {"$set": {"status": "delivered", "delivered_at": _now()},
+         "$inc": {"attempts": 1}},
+    )
+
+
+async def _mark_delivered(db, doc: dict) -> bool:
+    """Mark a successfully-sent document delivered.
+
+    Telegram has already accepted the send by the time this runs, so within this
+    live process the row must never become eligible for a resend again. We add
+    the id to `_confirmed_awaiting_mark` — which makes the stale-claim sweeper
+    skip it — BEFORE the first update await, so even a hung/slow database call
+    (one that outlasts the 90s stale threshold) cannot let a concurrent drain
+    reclaim and re-send the row. The guard is cleared only once a terminal
+    persisted state is confirmed. On failure the mark is retried indefinitely in
+    the background.
+
+    Durability scope: this guard is process-local. A hard process crash or
+    restart between Telegram acceptance and the persisted mark still falls back
+    to the documented at-least-once behavior (Telegram exposes no idempotency
+    key), so a rare duplicate is possible only in that crash window — not on an
+    ordinary database hiccup.
+
+    Returns True only if the row was marked delivered inline (happy path)."""
+    dedup_key = doc.get("dedup_key")
+    # Guard FIRST, before any await, so no concurrent sweeper pass can reclaim
+    # this already-delivered row even if the update below hangs.
+    _confirmed_awaiting_mark.add(doc["_id"])
+    try:
+        await _persist_delivered_mark(db, doc)
+        _confirmed_awaiting_mark.discard(doc["_id"])
+        return True
+    except Exception as e:
+        log.error(
+            "outbox delivered-mark FAILED after Telegram accepted send "
+            "(dedup_key=%s): %s — row held back from resend, retrying "
+            "indefinitely in background", dedup_key, e,
+        )
+        asyncio.create_task(_retry_delivered_mark_forever(db, doc))
+        return False
+
+
+async def _retry_delivered_mark_forever(db, doc: dict) -> None:
+    """Retry the delivered-mark until it lands. The id stays in
+    `_confirmed_awaiting_mark` (so the sweeper never resends the row) for the
+    whole duration, and is cleared only once the terminal state is persisted."""
+    dedup_key = doc.get("dedup_key")
+    delay = 1.0
+    attempt = 0
+    try:
+        while True:
+            await asyncio.sleep(delay)
+            delay = min(delay * 2, float(_CLAIM_STALE_SECONDS) / 2)
+            attempt += 1
+            try:
+                await _persist_delivered_mark(db, doc)
+                log.info(
+                    "outbox delivered-mark recovered after %d retries (dedup_key=%s)",
+                    attempt, dedup_key,
+                )
+                return
+            except Exception as e:
+                if attempt % 10 == 0:
+                    log.critical(
+                        "outbox delivered-mark still failing after %d retries "
+                        "(dedup_key=%s); row held back from resend: %s",
+                        attempt, dedup_key, e,
+                    )
+    finally:
+        _confirmed_awaiting_mark.discard(doc["_id"])
 
 
 def kick() -> None:
