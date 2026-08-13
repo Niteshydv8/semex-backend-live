@@ -19,3 +19,4 @@
 - [SEMEX Xsolla CR/CVV coupling](semex-xsolla-cr-cvv-coupling.md) — Xsolla card replacement + CVV bypass share one xps_encrypted_card re-encrypt path; gating CR must gate the substitution itself (3 points).
 - [SEMEX authed-fetch refresh](semex-authed-fetch-refresh.md) — every authed call must refresh-on-401 via serverClient.authedFetch or it dies silently after the 15-min token TTL; SSE stream needs bespoke reconnect.
 - [SEMEX embedded-checkout extractor](semex-checkout-extractor.md) — auto-open detected shareable Stripe embeds in new tabs (owner accepted tab popping); Payment Element has no URL by design.
+- [SEMEX notification design](semex-notification-design.md) — screenshot must ride INSIDE the hit message (photo+caption, tight ~6s budget; text-first was rejected); Stripe surface labels come from page hostname + gate, not response URL.
