@@ -25,6 +25,13 @@ log = logging.getLogger("semex.bot")
 
 router = APIRouter(prefix="/api/telegram", tags=["telegram-bot"])
 
+if not (getattr(settings, "TELEGRAM_WEBHOOK_SECRET", "") or "").strip():
+    log.critical(
+        "TELEGRAM_WEBHOOK_SECRET is not set — the webhook endpoint accepts "
+        "unauthenticated/forged POSTs. Set the env var and re-run setWebhook "
+        "with secret_token."
+    )
+
 
 EXTENSION_ZIP_CANDIDATES = [
     "/app/semex-v2.2.0.zip",
@@ -497,6 +504,26 @@ async def telegram_webhook(request: Request):
     except Exception as e:
         log.warning("webhook received non-json body: %s", e)
         return {"ok": True}
+
+    # ── Replay dedup ───────────────────────────────────────────────────────
+    # Telegram retries undelivered updates and a forged POST could replay an
+    # old one. Atomically claim each update_id — first claimer dispatches,
+    # every duplicate is silently acked.
+    _update_id = update.get("update_id")
+    if _update_id is not None:
+        try:
+            from db import get_db
+            _claimed = await get_db().tg_updates.find_one_and_update(
+                {"_id": int(_update_id)},
+                {"$setOnInsert": {"seen_at": __import__("time").time()}},
+                upsert=True,
+                return_document=False,  # pymongo ReturnDocument.BEFORE
+            )
+            if _claimed is not None:
+                return {"ok": True}  # duplicate delivery/replay — drop
+        except Exception as e:
+            # Never let the dedup store break command handling.
+            log.warning("webhook replay-guard failed (processing anyway): %s", e)
 
     message = update.get("message") or update.get("edited_message") or {}
     text: str = (message.get("text") or "").strip()

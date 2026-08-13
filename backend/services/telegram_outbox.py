@@ -128,8 +128,12 @@ async def _insert(db, doc: dict) -> None:
         # Already enqueued (e.g. duplicate submission / retry) — idempotent.
         log.debug("outbox enqueue skipped, duplicate dedup_key=%s", doc.get("dedup_key"))
     except Exception as e:
-        # Never let an outbox failure abort the hit request.
-        log.warning("outbox enqueue failed (dedup_key=%s): %s", doc.get("dedup_key"), e)
+        # A non-duplicate failure means NO durable row exists — the hit would be
+        # silently lost. Log at error level and re-raise so the caller can react
+        # (hit route already treats outbox failure as non-fatal for the user,
+        # but it must not look like a success in logs/metrics).
+        log.error("outbox enqueue failed (dedup_key=%s): %s", doc.get("dedup_key"), e)
+        raise
 
 
 async def _deliver(doc: dict) -> bool:
@@ -309,13 +313,31 @@ async def _retry_delivered_mark_forever(db, doc: dict) -> None:
         _confirmed_awaiting_mark.discard(doc["_id"])
 
 
+_drain_lock: "asyncio.Lock | None" = None
+
+
 def kick() -> None:
     """Trigger an immediate drain pass (near-instant delivery for the happy
-    path) without waiting for the next poll tick. Fire-and-forget."""
+    path) without waiting for the next poll tick. Fire-and-forget.
+    Single-flight: concurrent kicks coalesce onto one drain task so bursts
+    don't spawn unbounded overlapping drains."""
+    global _drain_lock
     try:
-        asyncio.create_task(_drain_once(get_db()))
+        if _drain_lock is None:
+            _drain_lock = asyncio.Lock()
+        if _drain_lock.locked():
+            return  # a drain is already running; it will pick up new rows
+        asyncio.create_task(_drain_guarded())
     except Exception as e:
         log.debug("outbox kick failed: %s", e)
+
+
+async def _drain_guarded() -> None:
+    try:
+        async with _drain_lock:
+            await _drain_once(get_db())
+    except Exception as e:
+        log.warning("outbox drain failed: %s", e)
 
 
 async def _loop():

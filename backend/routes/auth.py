@@ -30,7 +30,25 @@ from services.telegram import (
 )
 from services.extra_formatters import format_purchase_receipt
 
+import asyncio as _asyncio
+
 router = APIRouter(prefix="/api/auth", tags=["auth"])
+
+# Per-user locks serializing session creation (see verify-otp device limit —
+# concurrent verifies could otherwise both pass the count check and exceed
+# MAX_DEVICES_PER_USER).
+_session_locks: dict = {}
+
+
+def _get_session_lock(telegram_id) -> "_asyncio.Lock":
+    lock = _session_locks.get(telegram_id)
+    if lock is None:
+        lock = _asyncio.Lock()
+        _session_locks[telegram_id] = lock
+        if len(_session_locks) > 10000:  # bound memory; holders keep their ref
+            _session_locks.clear()
+            _session_locks[telegram_id] = lock
+    return lock
 
 
 class RequestOTPBody(BaseModel):
@@ -167,6 +185,13 @@ async def request_otp(body: RequestOTPBody, request: Request):
         send_otp(body.telegram_id, otp_plain, settings.OTP_TTL_MINUTES),
     )
     if not delivered:
+        # Consistency: the OTP row was already inserted — revoke it so a code
+        # the user never received can't be used later (and doesn't count as an
+        # "active OTP" blocking fresh requests).
+        try:
+            await db.otps.update_one({"_id": _insert_task.inserted_id}, {"$set": {"used": True}})
+        except Exception:
+            pass
         raise HTTPException(502, "Failed to send OTP via Telegram")
 
     return {
@@ -219,33 +244,36 @@ async def verify_otp_endpoint(body: VerifyOTPBody, request: Request):
     if user.is_banned:
         raise HTTPException(403, f"Banned: {user.banned_reason or 'no reason'}")
 
-    # Enforce 4-device concurrent session limit (FIFO kick oldest)
-    active_sessions = await db.sessions.count_documents(
-        {"telegram_id": body.telegram_id, "revoked": False}
-    )
-    if active_sessions >= settings.MAX_DEVICES_PER_USER:
-        # Revoke oldest active
-        oldest = await db.sessions.find_one(
-            {"telegram_id": body.telegram_id, "revoked": False},
-            sort=[("last_used_at", 1)],
+    # Enforce 4-device concurrent session limit (FIFO kick oldest) — under a
+    # per-user lock: concurrent verifies could otherwise both observe "below
+    # limit" and exceed MAX_DEVICES_PER_USER.
+    async with _get_session_lock(body.telegram_id):
+        active_sessions = await db.sessions.count_documents(
+            {"telegram_id": body.telegram_id, "revoked": False}
         )
-        if oldest:
-            await db.sessions.update_one(
-                {"_id": oldest["_id"]}, {"$set": {"revoked": True}}
+        if active_sessions >= settings.MAX_DEVICES_PER_USER:
+            # Revoke oldest active
+            oldest = await db.sessions.find_one(
+                {"telegram_id": body.telegram_id, "revoked": False},
+                sort=[("last_used_at", 1)],
             )
+            if oldest:
+                await db.sessions.update_one(
+                    {"_id": oldest["_id"]}, {"$set": {"revoked": True}}
+                )
 
-    # Create new session
-    session_id = secrets.token_urlsafe(24)
-    session = Session(
-        session_id=session_id,
-        telegram_id=body.telegram_id,
-        fingerprint=body.fingerprint,
-        device_info=body.device_info or {},
-        created_at=now,
-        last_used_at=now,
-        expires_at=now + timedelta(days=settings.REFRESH_TOKEN_TTL_DAYS),
-    )
-    await db.sessions.insert_one(session.to_mongo())
+        # Create new session
+        session_id = secrets.token_urlsafe(24)
+        session = Session(
+            session_id=session_id,
+            telegram_id=body.telegram_id,
+            fingerprint=body.fingerprint,
+            device_info=body.device_info or {},
+            created_at=now,
+            last_used_at=now,
+            expires_at=now + timedelta(days=settings.REFRESH_TOKEN_TTL_DAYS),
+        )
+        await db.sessions.insert_one(session.to_mongo())
 
     access = create_access_token(session_id, body.telegram_id, body.fingerprint)
     refresh = create_refresh_token(session_id, body.telegram_id, body.fingerprint)
