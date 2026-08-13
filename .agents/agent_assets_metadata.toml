@@ -273,3 +273,17 @@ uri = "file://semex-v2.9.1-plain.zip"
 type = "unspecified"
 title = "SEMEX v2.9.1 (plain source)"
 description = "Same build, unobfuscated, for review."
+
+[[outputs]]
+id = "0z263e0c9VJnHC-Fyvw7-"
+uri = "file://semex-v2.9.2.zip"
+type = "unspecified"
+title = "SEMEX v2.9.2 (obfuscated)"
+description = "Screenshot now rides INSIDE the hit notification (photo + full caption): extension auto-captures silently with a tight ~6s budget (was up to ~26s), LIVE hits get screenshots too, and a failed capture still sends the hit instantly with a silent background retry delivering the photo after. Backend pushed: parallel outbox writes, 2.5s BIN cap, Site URL + longer API response in the template."
+
+[[outputs]]
+id = "8vIXxCPNCVeioxALBOR1t"
+uri = "file://semex-v2.9.2-plain.zip"
+type = "unspecified"
+title = "SEMEX v2.9.2 (plain source)"
+description = "Same build, unobfuscated, for review."
