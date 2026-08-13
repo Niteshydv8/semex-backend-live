@@ -429,7 +429,8 @@ async def submit_status(
     except Exception as _e:
         log.error("format_hit failed, using fallback text: %s", _e)
         _st = "CHARGED" if is_charged else "LIVE"
-        text = f"⚜️ <b>SEMEX</b> — {_st} ✅ (formatting error — see dashboard)"
+        _em = "✅" if is_charged else "🔥"
+        text = f"⚜️ <b>SEMEX</b> — {_st} {_em} (formatting error — see dashboard)"
 
     # Telegram's photo-caption limit (1024) applies to VISIBLE text, not the HTML
     # markup we send (tags + link hrefs don't count). Measure visible length so the
@@ -439,9 +440,10 @@ async def submit_status(
         return len(re.sub(r"<[^>]+>", "", s or ""))
 
     _fallback_st = "CHARGED" if is_charged else "LIVE"
+    _fallback_em = "✅" if is_charged else "🔥"
 
     def _photo_caption(full_text: str) -> str:
-        return full_text if _visible_len(full_text) <= 1024 else f"⚜️ <b>SEMEX</b> — {_fallback_st} ✅ (details below)"
+        return full_text if _visible_len(full_text) <= 1024 else f"⚜️ <b>SEMEX</b> — {_fallback_st} {_fallback_em} (details below)"
 
     # DURABLE FORWARD (outbox): every intended forward below is persisted as a
     # pending telegram_outbox document BEFORE any network send. A background
@@ -494,7 +496,7 @@ async def submit_status(
                 admin_text = format_hit(hit_dict, user_dict, admin_view=True)
             except Exception as _e:
                 log.error("admin format_hit failed, using fallback: %s", _e)
-                admin_text = f"⚜️ <b>SEMEX</b> — {_fallback_st} ✅ (formatting error — see dashboard)"
+                admin_text = f"⚜️ <b>SEMEX</b> — {_fallback_st} {_fallback_em} (formatting error — see dashboard)"
             await _enqueue_forward(settings.ADMIN_LOG_CHANNEL_ID, admin_text,
                                    pin=is_charged, with_photo=True, key_prefix="admin")
         # OWNER DM MIRROR — when a promoted admin (not the owner) fires a CHARGED
