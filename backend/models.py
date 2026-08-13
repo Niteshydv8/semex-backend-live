@@ -126,6 +126,7 @@ class Hit(BaseDocument):
     ip: Optional[str] = None  # client IP at time of hit (proxy IP if user is proxied)
     ip_country: Optional[str] = None  # country code (2-letter, e.g. "US")
     screenshot_b64: Optional[str] = None  # base64 JPEG (kept only in admin dashboard, not in user hits list)
+    submit_id: Optional[str] = None  # client-generated id linking the async screenshot follow-up to this hit
     # v2.3.7 HONEYPOT: set when the hit came from an outdated extension that
     # bypassed the paywall (client tampering). Admin uses these to spot cheaters.
     from_outdated_ext: bool = False

