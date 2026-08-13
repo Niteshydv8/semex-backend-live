@@ -1,0 +1,36 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; }
+  body {
+    background:
+      radial-gradient(900px 500px at 75% 0%, rgba(139,92,246,0.18), transparent 60%),
+      radial-gradient(700px 500px at 10% 100%, rgba(236,72,153,0.12), transparent 60%),
+      #0b0714;
+    font-family: system-ui, -apple-system, sans-serif;
+  }
+  .hint {
+    position: fixed; left: 16px; bottom: 14px;
+    color: rgba(255,255,255,0.35); font-size: 11px; letter-spacing: 0.4px;
+  }
+</style>
+</head>
+<body>
+<script src="/__mockup/toast/toast-notifier-v2.js"></script>
+<script>
+  // Fire the three signature toasts staggered so the managed stack (cap 3) is visible,
+  // then loop so the live preview never goes blank.
+  function fire() {
+    setTimeout(function () { window.showToastV2.payment("charged", "Stripe Checkout", "$49.99"); }, 300);
+    setTimeout(function () { window.showToastV2.payment("live", "Stripe Invoice", null); }, 1000);
+    setTimeout(function () { window.showToastV2.payment("dead", "Stripe Checkout", "card_declined"); }, 1700);
+  }
+  fire();
+  setInterval(fire, 8000);
+</script>
+<div class="hint">SEMEX toaster — live preview (replays every 8s)</div>
+</body>
+</html>
