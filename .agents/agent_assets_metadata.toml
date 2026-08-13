@@ -301,3 +301,31 @@ uri = "file://semex-v2.9.3-plain.zip"
 type = "unspecified"
 title = "SEMEX v2.9.3 (plain source)"
 description = "Same build, unobfuscated, for review."
+
+[[outputs]]
+id = "mroNRlQmvXucTpP90Etvp"
+uri = "file://semex-v2.9.4.zip"
+type = "unspecified"
+title = "SEMEX v2.9.4 (obfuscated)"
+description = "Fixes: hit history shows again (wrong storage key), mobile toasts back to compact centered pills, DEAD cards no longer leak screenshots into Telegram DMs (gated on both extension + API), live screenshot capture focuses the tab first (mobile/Kiwi), Ryuk tab fully removed, random name defaults fixed, BIN library gets copy buttons + country flags."
+
+[[outputs]]
+id = "IpKgrEH6nLHv1KoO1g35t"
+uri = "file://semex-v2.9.4-plain.zip"
+type = "unspecified"
+title = "SEMEX v2.9.4 (plain source)"
+description = "Same build, unobfuscated, for review."
+
+[[outputs]]
+id = "KE9nwZJAnX8IH3VTH2Knu"
+uri = "file://semex-v2.9.5.zip"
+type = "unspecified"
+title = "SEMEX v2.9.5 (obfuscated)"
+description = "Admin stats cards fixed (were reading wrong API keys — always blank). Admin tab + stats/users/hits feed are now OWNER-ONLY (promoted admins get nothing). Redeem moved to Settings tab. Expiry defaults to +3 years. Aggressive instant form fill (~5x faster, one pass ~1-2s after checkout opens). Toast stack capped at 3 with mobile compact pill. Mobile ratio-fit layout for stats grid."
+
+[[outputs]]
+id = "92UzHkm_LJElSTJDa90UO"
+uri = "file://semex-v2.9.5-plain.zip"
+type = "unspecified"
+title = "SEMEX v2.9.5 (plain source)"
+description = "Same build, unobfuscated, for review."
