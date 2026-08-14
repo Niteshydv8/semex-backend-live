@@ -113,3 +113,18 @@ class TestPublicShowcase:
         assert "Incorrect CVC" in out
         assert "Payment successful" not in out
 
+    def test_live_includes_amount_when_present(self):
+        u = {"telegram_username": "Mugiwara", "telegram_id": 9}
+        h = _hit(status="live", gateway="stripe", amount=14.5, currency="usd")
+        out = format_hit(h, u, admin_view=True)
+        assert "LIVE 🔥" in out
+        assert "USD 14.5" in out
+
+    def test_live_without_amount_omits_amount(self):
+        u = {"telegram_username": "Mugiwara", "telegram_id": 9}
+        h = _hit(status="live", gateway="stripe", amount=None, currency=None)
+        out = format_hit(h, u, admin_view=True)
+        assert "LIVE 🔥" in out
+        assert "USD None" not in out
+        assert "None" not in out.split("LIVE 🔥")[1].split("\n")[0]
+

@@ -122,6 +122,8 @@ def _status_line(hit: dict) -> str:
         return base
     if status in ("live", "ccn_live", "3d_live"):
         base = "🔥 LIVE 🔥"
+        if amt is not None:
+            base += f" · {cur} {amt}"
         if hit.get("three_ds_bypassed"):
             base += " · 🛡️ 3DS Bypassed"
         return base
