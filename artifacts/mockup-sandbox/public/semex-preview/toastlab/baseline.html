@@ -1,28 +1,22 @@
- IS TAKING SS <!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SEMEX Toaster</title>
+<title>SEMEX Toaster — A · Current Stitch</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 <style>
   * { margin: 0; box-sizing: border-box; }
   html, body { height: 100%; }
-  body {
-    font-family: 'Inter', system-ui, sans-serif;
-    background-color: #0a0c10;
+  body { font-family: 'Inter', system-ui, sans-serif; background-color: #0a0c10;
     background-image: radial-gradient(circle at 50% 0%, #1f2937 0%, transparent 70%),
                       radial-gradient(circle at 100% 100%, #1e1b4b 0%, transparent 50%);
-    overflow: hidden;
-  }
+    overflow: hidden; }
 </style>
 </head>
 <body>
-<script src="toast-notifier-v2.js"></script>
+<script src="../toast-notifier-v2.js"></script>
 <script>
-  // Pure toaster preview — the real extension toasts, no demo chrome.
-  // Long duration so the stack stays up for viewing (real toasts live 5s).
   var STAY = 60 * 60 * 1000;
   function show() {
     window.showToastV2({ type: "bypass", title: "STRIPE BYPASS", subtitle: "Automated process initiated", hitting: true, duration: STAY });
@@ -30,19 +24,16 @@
       window.showToastV2({ type: "live", title: "LIVE — STRIPE", subtitle: "Card live", duration: STAY });
     }, 250);
     setTimeout(function () {
-      window.showToastV2({
-        type: "charged", title: "CHARGED — STRIPE", duration: STAY,
+      window.showToastV2({ type: "charged", title: "CHARGED — STRIPE", duration: STAY,
         rows: [
           { label: "GATEWAY", value: "STRIPE" },
           { label: "RESPONSE", value: "Payment successful", tone: "good" },
           { label: "ID", value: "pi_3SJm9vLkdJvNnInc2Jexample", tone: "mono" }
-        ]
-      });
+        ] });
     }, 500);
   }
   if (document.readyState === "complete") show();
   else window.addEventListener("load", function () { setTimeout(show, 150); });
-  // Re-fire if the stack ever empties (e.g. user closes them).
   setInterval(function () {
     var c = document.getElementById("semex-toast-container");
     if (!c || !c.children.length) show();
