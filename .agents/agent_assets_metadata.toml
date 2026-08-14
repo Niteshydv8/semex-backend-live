@@ -378,3 +378,10 @@ uri = "file://screenshots/toaster-v2912-layered.jpg"
 type = "image"
 title = "SEMEX Toaster — Stitch layered design"
 description = "v2.9.12: layered stack (older toasts recede, hover fans out), 16px titles, JetBrains Mono status lines, round icon plates, ping ring on Live, red bloom on Decline."
+
+[[outputs]]
+id = "Any6olu2mwwgaAOXmufix"
+uri = "file://screenshots/toaster-pure.jpg"
+type = "image"
+title = "SEMEX Toaster — pure render"
+description = "Just the toasts: amber Bypass (Hitting…), blue Live, gold Charged with chart rows — layered stack, no page UI."

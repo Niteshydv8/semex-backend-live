@@ -3,82 +3,50 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SEMEX — Toaster Preview</title>
+<title>SEMEX Toaster</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@400;600;800&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
 <style>
   * { margin: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
   body {
-    min-height: 100vh;
     font-family: 'Inter', system-ui, sans-serif;
-    background: radial-gradient(1200px 700px at 75% 15%, #2a1a4e 0%, transparent 60%),
-                radial-gradient(900px 600px at 15% 85%, #3b1042 0%, transparent 55%),
-                #0c0916;
-    color: #ece8f5;
-    padding: 48px 40px;
+    background-color: #0a0c10;
+    background-image: radial-gradient(circle at 50% 0%, #1f2937 0%, transparent 70%),
+                      radial-gradient(circle at 100% 100%, #1e1b4b 0%, transparent 50%);
+    overflow: hidden;
   }
-  h1 { font-family: 'Outfit', sans-serif; font-weight: 800; font-size: 30px; letter-spacing: .01em; }
-  h1 span { background: linear-gradient(90deg,#a78bfa,#f472b6); -webkit-background-clip: text; background-clip: text; color: transparent; }
-  p.sub { margin-top: 6px; color: #9a91b5; font-size: 14px; }
-  .grid { margin-top: 30px; display: flex; flex-wrap: wrap; gap: 10px; max-width: 640px; }
-  button {
-    font: 600 13px 'Inter', sans-serif; color: #ece8f5; cursor: pointer;
-    padding: 10px 16px; border-radius: 12px; border: 1px solid rgba(255,255,255,.14);
-    background: rgba(255,255,255,.06); backdrop-filter: blur(8px);
-    transition: background .15s, transform .1s;
-  }
-  button:hover { background: rgba(255,255,255,.13); }
-  button:active { transform: scale(.97); }
-  .note { margin-top: 26px; font-size: 12.5px; color: #6f6690; max-width: 640px; line-height: 1.6; }
-  code { font-family: 'JetBrains Mono', monospace; color: #c4b5fd; }
 </style>
 </head>
 <body>
-  <h1>SEMEX <span>Toaster Preview</span></h1>
-  <p class="sub">v2.9.10 liquid-glass notifier — exactly as it renders on checkout pages. Click a type to fire it.</p>
-  <div class="grid">
-    <button data-fire="charged">✓ Charged</button>
-    <button data-fire="live">● Live</button>
-    <button data-fire="3d_live">● 3DS Live</button>
-    <button data-fire="3ds">🛡 3DS Challenge</button>
-    <button data-fire="dead">✕ Dead</button>
-    <button data-fire="bypass">⚡ Bypass</button>
-    <button data-fire="security">🔐 Security</button>
-    <button data-fire="subscription">💎 Subscription</button>
-    <button data-fire="expired">○ Expired</button>
-    <button data-fire="warning">⚠ Warning</button>
-    <button data-fire="sequence">▶ Full sequence</button>
-  </div>
-  <p class="note">These are the real toasts from <code>content/toast-notifier-v2.js</code> — same CSS, same chart rows, same slide-in. The stack is capped at 3, so fire a few in a row to see rotation. On a charged hit you also get the confetti burst (deduped against the overlay's own confetti).</p>
-
 <script src="toast-notifier-v2.js"></script>
 <script>
-  function fire(kind) {
-    var T = window.showToastV2;
-    switch (kind) {
-      case "charged":      return window.showToast("charged", "STRIPE", "pi_3SJm9vLkdJvNnInc2Jexample");
-      case "live":         return window.showToast("live", "ADYEN", "Authorised — AVS match");
-      case "3d_live":      return window.showToast("3d_live", "STRIPE", "seti_1PqXw2LkdJvNnIncexample");
-      case "3ds":          return window.showToast("3ds", "STRIPE", null);
-      case "dead":         return window.showToast("dead", "CHECKOUT", "card_declined — insufficient_funds");
-      case "bypass":       return T.bypass("stripe", ["CVV", "3DS"]);
-      case "security":     return T.security("Stripe Security", "Fingerprint randomized");
-      case "subscription": return T.subscription("Subscription Active", "Jounce Pro — $24.00/mo");
-      case "expired":      return window.showToast("expired", "STRIPE", "Session expired — reopen checkout");
-      case "warning":      return window.showToast({ messageType: "CARD_REPLACEMENT_OFF", gateway: "xsolla" });
-    }
+  // Pure toaster preview — the real extension toasts, no demo chrome.
+  // Long duration so the stack stays up for viewing (real toasts live 5s).
+  var STAY = 60 * 60 * 1000;
+  function show() {
+    window.showToastV2({ type: "bypass", title: "STRIPE BYPASS", subtitle: "Automated process initiated", hitting: true, duration: STAY });
+    setTimeout(function () {
+      window.showToastV2({ type: "live", title: "LIVE — STRIPE", subtitle: "Card live", duration: STAY });
+    }, 250);
+    setTimeout(function () {
+      window.showToastV2({
+        type: "charged", title: "CHARGED — STRIPE", duration: STAY,
+        rows: [
+          { label: "GATEWAY", value: "STRIPE" },
+          { label: "RESPONSE", value: "Payment successful", tone: "good" },
+          { label: "ID", value: "pi_3SJm9vLkdJvNnInc2Jexample", tone: "mono" }
+        ]
+      });
+    }, 500);
   }
-  document.querySelectorAll("[data-fire]").forEach(function (btn) {
-    btn.addEventListener("click", function () {
-      var k = btn.getAttribute("data-fire");
-      if (k !== "sequence") return fire(k);
-      var seq = ["bypass", "live", "charged"];
-      seq.forEach(function (s, i) { setTimeout(function () { fire(s); }, i * 900); });
-    });
-  });
-  // Auto-demo on load so a screenshot shows the design immediately.
-  setTimeout(function () { fire("bypass"); }, 400);
-  setTimeout(function () { fire("charged"); }, 1100);
+  if (document.readyState === "complete") show();
+  else window.addEventListener("load", function () { setTimeout(show, 150); });
+  // Re-fire if the stack ever empties (e.g. user closes them).
+  setInterval(function () {
+    var c = document.getElementById("semex-toast-container");
+    if (!c || !c.children.length) show();
+  }, 3000);
 </script>
 </body>
 </html>
