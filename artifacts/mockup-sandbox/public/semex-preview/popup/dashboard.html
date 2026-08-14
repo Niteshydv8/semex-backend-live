@@ -1,0 +1,1010 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEMEX — Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&family=Outfit:wght@400;600;800&display=swap">
+    <link rel="stylesheet" href="dashboard.css">
+</head>
+
+<body>
+    <!-- Ambient glow blobs (liquid glass depth) -->
+    <div class="ambient-glows" aria-hidden="true">
+        <div class="glow glow-purple"></div>
+        <div class="glow glow-pink"></div>
+        <div class="glow glow-deep"></div>
+    </div>
+
+    <div class="app-container container">
+        <!-- ============ SIDEBAR ============ -->
+        <aside class="sidebar">
+            <div class="brand">
+                <img src="../icons/logo.png" alt="SEMEX" class="brand-logo">
+                <div class="brand-text">
+                    <span class="brand-name">SEMEX</span>
+                    <span class="brand-tag">Checkout Automation</span>
+                </div>
+            </div>
+
+            <nav class="tabs" data-testid="sidebar-nav">
+                <button class="tab active" data-tab="bypass" data-testid="nav-bypass">
+                    <svg viewBox="0 0 24 24" class="nav-ico"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg>
+                    <span>Bypass</span>
+                </button>
+                <button class="tab" data-tab="history" data-testid="nav-history">
+                    <svg viewBox="0 0 24 24" class="nav-ico"><path d="M3 3v18h18"/><path d="m7 14 4-4 3 3 5-6"/></svg>
+                    <span>History</span>
+                </button>
+                <button class="tab" data-tab="news" data-testid="nav-news">
+                    <svg viewBox="0 0 24 24" class="nav-ico"><path d="M4 4h16v16H4z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
+                    <span>News</span>
+                </button>
+                <button class="tab" data-tab="bins" data-testid="nav-bins">
+                    <svg viewBox="0 0 24 24" class="nav-ico"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18M7 15h3"/></svg>
+                    <span>BINs</span>
+                </button>
+                <button class="tab" data-tab="captcha" data-testid="nav-captcha">
+                    <svg viewBox="0 0 24 24" class="nav-ico"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6l-8-4z"/><path d="m9 12 2 2 4-4"/></svg>
+                    <span>Captcha</span>
+                </button>
+                <button class="tab" data-tab="proxy" data-testid="nav-proxy">
+                    <svg viewBox="0 0 24 24" class="nav-ico"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 3 2.5 15 0 18M12 3c-2.5 3-2.5 15 0 18"/></svg>
+                    <span>Proxy</span>
+                </button>
+                <button class="tab" data-tab="settings" data-testid="nav-settings">
+                    <svg viewBox="0 0 24 24" class="nav-ico"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.6-2-3.4-2.4 1a7 7 0 0 0-1.7-1L14.5 3h-4l-.3 2.9a7 7 0 0 0-1.7 1l-2.4-1-2 3.4 2 1.6a7 7 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 1.7 1l.3 2.9h4l.3-2.9a7 7 0 0 0 1.7-1l2.4 1 2-3.4-2-1.6c.1-.3.1-.7.1-1z"/></svg>
+                    <span>Settings</span>
+                </button>
+                                <button class="tab hidden" data-tab="admin" data-testid="nav-admin" id="nav-admin">
+                    <svg viewBox="0 0 24 24" class="nav-ico"><path d="M12 2 4 5v6c0 5 3.5 8.5 8 11 4.5-2.5 8-6 8-11V5l-8-3z"/><path d="M9 12h6M12 9v6"/></svg>
+                    <span>Admin</span>
+                </button>
+            </nav>
+
+            <div class="sidebar-footer">
+                <div class="status-footer" id="status-footer">
+                    <div class="sys-stat">
+                        <div class="sys-dot" id="sys-dot"></div>
+                        <span class="sys-text" id="sys-text">Connecting...</span>
+                    </div>
+                    <span class="version-text" id="version-text">v...</span>
+                </div>
+                <a href="https://t.me/SemexAutoxBot" target="_blank" class="support-link" data-testid="contact-support">
+                    Contact Support
+                </a>
+                <div class="copyright">© 2025 SEMEX</div>
+            </div>
+        </aside>
+
+        <!-- ============ MAIN CONTENT ============ -->
+        <main class="main-content">
+            <!-- Topbar -->
+            <header class="topbar">
+                <div class="topbar-title">
+                    <h1 id="page-title">Dashboard</h1>
+                    <p class="topbar-sub">Real-time hit forwarding &amp; automation control</p>
+                </div>
+
+                <div class="topbar-right">
+                    <!-- Session wins streak badge -->
+                    <div id="session-wins-badge" class="wins-badge hidden" title="Charged hits this session" data-testid="session-wins-badge">
+                        <svg class="wins-flame" viewBox="0 0 24 24"><path d="M12 2c1 3-1.5 4.5-1.5 7A2.5 2.5 0 0 0 13 11c1.5 0 2-1 2-1 .5 2 2 3 2 5.5A5.5 5.5 0 1 1 6.5 15c0-3 2-4 2.5-6 .3-1.2 0-2.5 3-7z"/></svg>
+                        <span id="session-wins-count">0</span>
+                        <span class="wins-label">wins</span>
+                    </div>
+
+                    <!-- Notification Bell -->
+                    <div id="notif-bell" class="notif-bell" title="Notifications" data-testid="notif-bell">
+                        <svg viewBox="0 0 24 24">
+                            <path
+                                d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z">
+                            </path>
+                        </svg>
+                        <div class="notif-badge hidden" id="notif-badge">0</div>
+                    </div>
+
+                    <!-- User Badge -->
+                    <div id="user-badge" class="user-info-group hidden">
+                        <div class="user-badge-row" id="user-badge-container" title="User">
+                            <img id="user-avatar" src="../icons/default-avatar.png" class="user-avatar">
+                            <div class="user-meta">
+                                <div class="user-name" id="user-name">User</div>
+                                <span id="user-plan" class="plan-badge"></span>
+                            </div>
+                            <button id="logout-btn" class="logout-btn" title="Logout" data-testid="logout-btn">
+                                <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></svg>
+                            </button>
+                            <div class="user-tooltip" id="user-tooltip">
+                                <span id="tooltip-username">User</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </header>
+
+            <!-- Notification Dropdown -->
+            <div class="notif-dropdown hidden" id="notif-dropdown">
+                <div class="notif-dropdown-header">
+                    <span>Notifications</span>
+                    <span class="notif-clear-all" id="notif-clear-all" data-testid="notif-clear-all">Clear All</span>
+                </div>
+                <div class="notif-list" id="notif-list">
+                    <div class="notif-empty">No new notifications</div>
+                </div>
+            </div>
+
+            <!-- Announcement Banner -->
+            <div class="announcement-banner hidden" id="announcement-banner">
+                <div class="announcement-icon">
+                    <svg viewBox="0 0 24 24"><path d="M3 11l18-5v12L3 14v-3zM11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>
+                </div>
+                <div class="announcement-text" id="announcement-text">Announcement message here</div>
+                <button class="announcement-dismiss" id="announcement-dismiss" title="Dismiss"
+                    data-testid="announcement-dismiss">&times;</button>
+            </div>
+
+            <!-- Redeem Code -->
+            <!-- Subscription Status Banner -->
+            <div class="trial-banner hidden" id="trial-banner">
+                <div class="trial-banner-content">
+                    <div class="trial-icon" id="trial-icon">
+                        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                    </div>
+                    <div class="trial-info">
+                        <div class="trial-title" id="trial-title">Premium Active</div>
+                        <div class="trial-countdown" id="trial-countdown">Loading...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Statistics -->
+            <div class="stats" id="stats-section">
+                <div class="stat" data-stat="total">
+                    <div class="stat-val blue" id="total-cards">0</div>
+                    <div class="stat-label">Attempts</div>
+                </div>
+                <div class="stat" data-stat="charged">
+                    <div class="stat-val green" id="stats-charged">0</div>
+                    <div class="stat-label">Charged</div>
+                </div>
+                <div class="stat" data-stat="live">
+                    <div class="stat-val purple" id="stats-ccn">0</div>
+                    <div class="stat-label">Live</div>
+                </div>
+                <div class="stat" data-stat="dead">
+                    <div class="stat-val red" id="stats-dead">0</div>
+                    <div class="stat-label">Dead</div>
+                </div>
+            </div>
+
+            <div id="last-hit-result"></div>
+
+            <!-- Tab Content -->
+            <div class="tab-content">
+                <!-- Bypass Tab -->
+                <div id="bypass-tab" class="tab-panel active">
+                    <div class="bento">
+                        <div class="section span-2">
+                            <div class="section-header">
+                                <h2>1. BIN / CC List</h2>
+                                <div class="mode-toggle">
+                                    <button class="mode-btn active" id="bin-mode-btn" data-mode="bin">BIN</button>
+                                    <button class="mode-btn" id="cc-list-mode-btn" data-mode="ccList">CC List</button>
+                                </div>
+                            </div>
+                            <div class="section-content">
+                                <div id="bin-mode-content">
+                                    <div class="bin-cvv-row">
+                                        <div class="bin-group">
+                                            <label for="bin-input">BIN</label>
+                                            <div class="bin-input-wrap">
+                                                <input type="text" id="bin-input" placeholder="44304400" autocomplete="off"
+                                                    spellcheck="false">
+                                                <button type="button" id="save-bin-btn" data-testid="save-bin-btn"
+                                                    title="Save this BIN to your cloud profile" class="btn-mini-gradient">SAVE</button>
+                                            </div>
+                                        </div>
+                                        <div class="cvv-group">
+                                            <label for="cvv-input">CVV</label>
+                                            <input type="text" id="cvv-input" placeholder="RND" maxlength="4"
+                                                autocomplete="off" spellcheck="false">
+                                        </div>
+                                    </div>
+                                    <div class="expiry-selectors">
+                                        <div class="expiry-group">
+                                            <label for="expiry-month-select">Expiry Month</label>
+                                            <select id="expiry-month-select">
+                                                <option value="RND">RND</option>
+                                                <option value="01">01</option>
+                                                <option value="02">02</option>
+                                                <option value="03">03</option>
+                                                <option value="04">04</option>
+                                                <option value="05">05</option>
+                                                <option value="06">06</option>
+                                                <option value="07">07</option>
+                                                <option value="08">08</option>
+                                                <option value="09">09</option>
+                                                <option value="10">10</option>
+                                                <option value="11">11</option>
+                                                <option value="12">12</option>
+                                            </select>
+                                        </div>
+                                        <div class="expiry-group">
+                                            <label for="expiry-year-select">Expiry Year</label>
+                                            <select id="expiry-year-select">
+                                                <option value="RND">RND</option>
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <p class="bypass-hint"><code>RND</code> = Random value generated per card. AMEX BINs (34/37) auto-detected.</p>
+                                </div>
+                                <div id="cc-list-mode-content" class="hidden">
+                                    <div class="cc-list-header">
+                                        <label for="cc-list-input">CC List</label>
+                                        <span class="cc-badge" id="cc-list-counter">0 cards</span>
+                                    </div>
+                                    <textarea id="cc-list-input"
+                                        placeholder="Paste cards (any format: pipe, colon, space, comma)&#10;Luhn validation + expired filter applied automatically"></textarea>
+                                    <p class="bypass-hint">Supports: <code>4242...|12|25|123</code> or <code>4242... 12 25 123</code></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="section">
+                            <div class="section-header">
+                                <h2>2. Card Replacement</h2>
+                                <label class="toggle">
+                                    <input type="checkbox" id="card-replacement-toggle">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="section-content hidden" id="card-replacement-content">
+                                <div class="gateway-selector">
+                                    <label class="gateway-option"><input type="checkbox" id="card-replacement-stripe" data-gateway="stripe"><span>Stripe</span></label>
+                                    <label class="gateway-option"><input type="checkbox" id="card-replacement-adyen" data-gateway="adyen"><span>Adyen</span></label>
+                                    <label class="gateway-option"><input type="checkbox" id="card-replacement-checkout" data-gateway="checkout"><span>Checkout.com</span></label>
+                                    <label class="gateway-option"><input type="checkbox" id="card-replacement-recurly" data-gateway="recurly"><span>Recurly</span></label>
+                                    <label class="gateway-option"><input type="checkbox" id="card-replacement-xsolla" data-gateway="xsolla"><span>Xsolla</span></label>
+                                </div>
+                                <p class="bypass-hint">Auto-uses next card from CC List when one fails. Required for <strong>Automation Mode</strong>.</p>
+                                <div id="card-replacement-hint" class="hint warning hidden">Add BIN or CC List above to use Card Replacement.</div>
+                            </div>
+                        </div>
+
+                        <div class="section">
+                            <div class="section-header">
+                                <h2>3. CVV Bypass</h2>
+                                <label class="toggle">
+                                    <input type="checkbox" id="cvv-bypass-toggle">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="section-content hidden" id="cvv-bypass-content">
+                                <div class="gateway-selector">
+                                    <label class="gateway-option"><input type="checkbox" id="cvv-stripe" data-gateway="stripe"><span>Stripe</span></label>
+                                    <label class="gateway-option"><input type="checkbox" id="cvv-adyen" data-gateway="adyen"><span>Adyen</span></label>
+                                    <label class="gateway-option"><input type="checkbox" id="cvv-checkout" data-gateway="checkout"><span>Checkout.com</span></label>
+                                    <label class="gateway-option"><input type="checkbox" id="cvv-recurly" data-gateway="recurly"><span>Recurly</span></label>
+                                    <label class="gateway-option"><input type="checkbox" id="cvv-xsolla" data-gateway="xsolla"><span>Xsolla</span></label>
+                                </div>
+                                <p class="bypass-hint"><code>cvc_required</code> error? Disable this bypass for that gateway.</p>
+                            </div>
+                        </div>
+
+                        <div class="section">
+                            <div class="section-header">
+                                <h2>4. Payment User Agent Bypass</h2>
+                                <label class="toggle">
+                                    <input type="checkbox" id="payment-user-agent-bypass-toggle">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="section-content hidden" id="payment-user-agent-bypass-content">
+                                <p class="info-text">Stripe only</p>
+                                <p class="bypass-hint"><code>ua_required</code> error? Disable this bypass.</p>
+                            </div>
+                        </div>
+
+                        <div class="section">
+                            <div class="section-header">
+                                <h2>5. Stripe Security Bypass</h2>
+                                <label class="toggle">
+                                    <input type="checkbox" id="stripe-security-bypass-toggle">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="section-content hidden" id="stripe-security-bypass-content">
+                                <div class="gateway-selector">
+                                    <label class="gateway-option"><input type="checkbox" id="security-pasted" checked><span>Pasted Fields</span></label>
+                                    <label class="gateway-option"><input type="checkbox" id="security-timing" checked><span>Time Tracking</span></label>
+                                    <label class="gateway-option"><input type="checkbox" id="security-tracking" checked><span>Tracking IDs</span></label>
+                                    <label class="gateway-option"><input type="checkbox" id="security-zip" checked><span>Zip Code</span></label>
+                                </div>
+                                <p class="info-text">Stripe only</p>
+                                <p class="bypass-hint">Advanced: Makes automation harder to detect. Keep default <strong>ON</strong> recommended.</p>
+                            </div>
+                        </div>
+
+                        <div class="section" id="three-ds-bypass-section">
+                            <div class="section-header">
+                                <h2>6. 3DS Bypass <span class="premium-badge" id="three-ds-bypass-lock" style="display:none;">🔒 PREMIUM</span></h2>
+                                <label class="toggle">
+                                    <input type="checkbox" id="three-ds-bypass-toggle">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="section-content hidden" id="three-ds-bypass-content">
+                                <p class="info-text">Stripe only</p>
+                                <p class="bypass-hint">Experimental: <code>3ds_bypass_failed</code> is normal sometimes. Card will be re-added to list on 3DS fail.</p>
+                            </div>
+                            <div class="section-content" id="three-ds-bypass-locked-note" style="display:none;">
+                                <p class="bypass-hint" style="color:#ffcc80;">🔒 <b>3DS Bypass is a Premium feature.</b> Upgrade to MONTHLY / YEARLY / LIFETIME in the bot to unlock it. Type <code>/buy</code> in @<span id="three-ds-bot-handle">SemexBot</span>.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- History Tab -->
+                <div id="history-tab" class="tab-panel">
+                    <div class="section">
+                        <div class="section-header">
+                            <h2>Transaction History</h2>
+                        </div>
+                        <div class="section-content">
+                            <div class="history-actions">
+                                <button type="button" class="btn-action btn-blur active" id="historyBlurToggle" data-testid="history-blur-toggle">
+                                    <span id="historyBlurIcon">◉</span> <span id="historyBlurText">Unblur</span>
+                                </button>
+                                <button type="button" class="btn-action btn-copy" id="historyCopyBtn" data-testid="history-copy-btn">Copy</button>
+                                <button type="button" class="btn-action btn-export" id="historyExportBtn" data-testid="history-export-btn">Export</button>
+                                <button type="button" class="btn-action btn-danger" id="historyClearBtn" data-testid="history-clear-btn">Clear</button>
+                            </div>
+                            <div class="history-filters" id="historyFilterContainer">
+                                <button type="button" class="filter-btn active" data-filter="all">All</button>
+                                <button type="button" class="filter-btn" data-filter="charged">Charged</button>
+                                <button type="button" class="filter-btn" data-filter="live">Live</button>
+                                <button type="button" class="filter-btn" data-filter="dead">Dead</button>
+                            </div>
+                            <div class="history-list blurred" id="historyList">
+                                <div class="empty-state">
+                                    <div class="empty-icon">—</div>
+                                    <div>No transactions yet</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- News Tab -->
+                <div id="news-tab" class="tab-panel">
+                    <div class="section">
+                        <div class="section-header">
+                            <h2>Latest News &amp; BINs</h2>
+                            <button class="news-refresh-btn" id="news-refresh-btn" title="Refresh" data-testid="news-refresh-btn">Refresh</button>
+                        </div>
+                        <div class="section-content">
+                            <div class="news-list" id="news-list">
+                                <div class="news-loading">Loading...</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Saved BINs Library Tab -->
+                <div id="bins-tab" class="tab-panel">
+                    <div class="section">
+                        <div class="section-header">
+                            <div class="header-stack">
+                                <h2>Saved BINs Library</h2>
+                                <div class="mono-dim">Your named BINs — synced across devices, auto-detected brand/type/bank/country</div>
+                            </div>
+                            <div class="proxy-row" style="gap:8px;">
+                                <input type="search" id="saved-bins-search" class="form-input" placeholder="Search BIN, name, bank, country…" data-testid="saved-bins-search" style="min-width:220px;">
+                                <button id="saved-bins-add-btn" class="btn-mini-gradient" data-testid="saved-bins-add-btn">+ Save current BIN</button>
+                                <button id="saved-bins-refresh-btn" class="small-button" data-testid="saved-bins-refresh-btn">Refresh</button>
+                            </div>
+                        </div>
+                        <div class="section-content">
+                            <div id="saved-bins-list" class="saved-bins-list" data-testid="saved-bins-list">
+                                <div class="saved-bins-empty">Loading your saved BINs…</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Captcha Tab -->
+                <div id="captcha-tab" class="tab-panel">
+                    <div class="section">
+                        <div class="section-header">
+                            <h2>Captcha Solving</h2>
+                            <label class="toggle">
+                                <input type="checkbox" id="captcha-solving-toggle">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="section-content hidden" id="captcha-solving-content">
+                            <p class="bypass-hint"><strong>Cloudflare Warning:</strong> Auto-pauses on Cloudflare challenge pages to prevent infinite loops.</p>
+
+                            <div class="subsection">
+                                <div class="subsection-header">
+                                    <h3>Captcha API</h3>
+                                    <span id="nopecha-status-badge" class="status-pill">Not Set</span>
+                                </div>
+                                <div class="subsection-content">
+                                    <div class="inline-field">
+                                        <label for="captcha-provider">Provider</label>
+                                        <select id="captcha-provider">
+                                            <option value="2captcha">2Captcha</option>
+                                            <option value="nopecha">NopeCHA</option>
+                                        </select>
+                                    </div>
+                                    <div class="inline-field">
+                                        <label for="nopecha-api-key">API Key</label>
+                                        <input type="text" id="nopecha-api-key" placeholder="Enter your API key" autocomplete="off" spellcheck="false">
+                                    </div>
+                                    <p class="bypass-hint">Key from <a href="https://2captcha.com" target="_blank">2captcha.com</a> or <a href="https://nopecha.com" target="_blank">nopecha.com</a> — it must match the selected provider. Required for hCaptcha token solving.</p>
+                                </div>
+                            </div>
+
+                            <div class="subsection">
+                                <div class="subsection-header">
+                                    <h3>hCaptcha</h3>
+                                    <label class="toggle">
+                                        <input type="checkbox" id="hcaptcha-enabled">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="subsection-content hidden" id="hcaptcha-content">
+                                    <p class="bypass-hint warn-text">Enable only on checkout pages. Enabling on all pages may cause Cloudflare infinite loops!</p>
+                                    <label class="checkbox-label"><input type="checkbox" id="hcaptcha-tap-based" checked><span>Tap-based solving (auto-click checkbox)</span></label>
+                                    <label class="checkbox-label"><input type="checkbox" id="hcaptcha-2captcha" checked><span>Auto-solve via token API (uses provider selected above) — needs API key</span></label>
+                                    <label class="checkbox-label"><input type="checkbox" id="hcaptcha-fallback-manual" checked><span>Fallback to manual if image challenge appears</span></label>
+                                </div>
+                            </div>
+
+                            <div class="subsection">
+                                <div class="subsection-header">
+                                    <h3>reCAPTCHA v2</h3>
+                                    <label class="toggle">
+                                        <input type="checkbox" id="recaptcha-enabled">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <div class="subsection-content hidden" id="recaptcha-content">
+                                    <label class="checkbox-label"><input type="checkbox" id="recaptcha-auto-open" checked><span>Auto-open (click checkbox automatically)</span></label>
+                                    <label class="checkbox-label"><input type="checkbox" id="recaptcha-auto-solve" checked><span>Auto-solve (solve image challenges via API)</span></label>
+                                    <p class="bypass-hint">Auto-solve requires NopeCHA API key above</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Proxy Tab -->
+                <div id="proxy-tab" class="tab-panel">
+                    <div class="section">
+                        <div class="section-header">
+                            <div class="header-stack">
+                                <h2>Proxy Management</h2>
+                                <div id="current-ip-display" class="hidden mono-dim">Current IP: <span class="loading-dots">...</span></div>
+                            </div>
+                            <label class="toggle">
+                                <input type="checkbox" id="proxy-rotation-toggle">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="section-content">
+                            <div class="subsection">
+                                <label for="proxy-input">Proxy Address</label>
+                                <input type="text" id="proxy-input" placeholder="host:port or host:port:user:pass" autocomplete="off" spellcheck="false">
+                                <div class="proxy-row">
+                                    <div class="proxy-type-field">
+                                        <label for="proxy-type-select">Type</label>
+                                        <select id="proxy-type-select">
+                                            <option value="http">HTTP/S</option>
+                                            <option value="socks4">SOCKS4</option>
+                                            <option value="socks5">SOCKS5</option>
+                                        </select>
+                                    </div>
+                                    <button id="test-proxy-btn" class="small-button" data-testid="test-proxy-btn">Test</button>
+                                    <button id="activate-proxy-btn" class="small-button" data-testid="activate-proxy-btn">Connect</button>
+                                    <button id="disable-proxy-btn" class="small-button" data-testid="disable-proxy-btn">Disconnect</button>
+                                </div>
+                                <label class="checkbox-label"><input type="checkbox" id="auto-save-live" checked><span>Auto save live proxy</span></label>
+                            </div>
+
+                            <div id="proxy-test-results" class="hidden proxy-results"></div>
+
+                            <div class="subsection hidden" id="rotation-settings">
+                                <label for="rotation-mode">Rotation Mode</label>
+                                <select id="rotation-mode" class="full-width">
+                                    <option value="sequential">Sequential</option>
+                                    <option value="random">Random</option>
+                                </select>
+                                <label for="rotation-interval">Interval (minutes)</label>
+                                <input type="number" id="rotation-interval" min="1" value="5" class="full-width">
+                            </div>
+
+                            <div class="subsection">
+                                <h3>Saved Proxies</h3>
+                                <div id="saved-proxy-list"></div>
+                            </div>
+
+                            <div id="proxy-status-display" class="hidden proxy-status-card">
+                                <div class="proxy-status-inner">
+                                    <span id="proxy-geo-flag" class="proxy-flag">🌍</span>
+                                    <div>
+                                        <div id="proxy-geo-country" class="proxy-country">Not Connected</div>
+                                        <div id="proxy-geo-ip" class="proxy-ip">-</div>
+                                    </div>
+                                    <div class="proxy-status-right">
+                                        <div id="proxy-geo-latency" class="proxy-latency">-</div>
+                                        <div id="proxy-geo-city" class="proxy-city">-</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- IP Fraud Check -->
+                            <div class="subsection ip-check-subsection">
+                                <div class="ip-check-header">
+                                    <h3>Check My IP</h3>
+                                    <span class="ip-check-hint">Detects VPN / proxy / fraud risk</span>
+                                </div>
+                                <div class="ip-check-row">
+                                    <input type="text" id="ip-check-input" placeholder="Enter IP (or leave blank for your own)" autocomplete="off" spellcheck="false" data-testid="ip-check-input">
+                                    <button id="ip-check-btn" class="small-button" data-testid="ip-check-btn">Check</button>
+                                </div>
+                                <div id="ip-check-result" class="ip-check-result hidden" data-testid="ip-check-result"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings Tab -->
+                <div id="settings-tab" class="tab-panel">
+                    <div class="section">
+                        <div class="section-header">
+                            <div class="header-stack">
+                                <h2>Redeem Code</h2>
+                                <div class="mono-dim">Have a plan code? Redeem it here</div>
+                            </div>
+                        </div>
+                        <div class="section-content">
+                            <div class="redeem-banner" id="redeem-banner">
+                                            <span class="redeem-icon">🎁</span>
+                                            <input type="text" id="redeem-code-input" class="redeem-input" placeholder="Have a code? Enter it here" autocomplete="off" spellcheck="false" data-testid="redeem-code-input">
+                                            <button id="redeem-code-btn" class="small-button" data-testid="redeem-code-btn">Redeem</button>
+                                            <span id="redeem-status" class="redeem-status hidden"></span>
+                                        </div>
+                        </div>
+                    </div>
+
+                    <div class="bento">
+                        <div class="section">
+                            <div class="section-header"><h2>Screenshot Settings</h2></div>
+                            <div class="section-content">
+                                <label class="checkbox-label"><input type="checkbox" id="screenshot-save-locally" checked><span>Save screenshots locally (Downloads folder)</span></label>
+                                <p class="info-text">When OFF, you receive text notifications only.</p>
+                                <div class="slider-block">
+                                    <label for="screenshot-delay">Screenshot Delay: <span id="screenshot-delay-value" class="accent-pink">1.0s</span></label>
+                                    <input type="range" id="screenshot-delay" min="0" max="30" step="1" value="10">
+                                    <div class="slider-scale"><span>0.0s (instant)</span><span>3.0s (max)</span></div>
+                                    <p class="info-text">Wait this long AFTER a charged hit before capturing screenshot (lets page fully render).</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="section">
+                            <div class="section-header"><h2>Celebration Effects</h2></div>
+                            <div class="section-content">
+                                <div class="toggle-row">
+                                    <label for="celebration-confetti">Confetti on CHARGED hit</label>
+                                    <label class="toggle">
+                                        <input type="checkbox" id="celebration-confetti" checked data-testid="celebration-confetti-toggle">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <p class="info-text">Bursts purple/pink/green confetti across the page when a card charges.</p>
+                                <div class="toggle-row">
+                                    <label for="celebration-sound">Sound on CHARGED / LIVE hit</label>
+                                    <label class="toggle">
+                                        <input type="checkbox" id="celebration-sound" checked data-testid="celebration-sound-toggle">
+                                        <span class="toggle-slider"></span>
+                                    </label>
+                                </div>
+                                <p class="info-text">Plays a short success chime on winning hits.</p>
+                                <div class="slider-block" id="celebration-volume-block">
+                                    <label for="celebration-volume">Sound Volume: <span id="celebration-volume-value" class="accent-pink">100%</span></label>
+                                    <input type="range" id="celebration-volume" min="0" max="100" step="5" value="100" data-testid="celebration-volume">
+                                    <div class="slider-scale"><span>Mute</span><span>Max</span></div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="section span-2">
+                            <div class="section-header"><h2>Utilities</h2></div>
+                            <div class="section-content">
+                                <div class="subsection">
+                                    <div class="subsection-header"><h3>Address Generator</h3></div>
+                                    <div class="subsection-content">
+                                        <label class="checkbox-label"><input type="checkbox" id="address-follow-proxy"><span>Use proxy country for address generation</span></label>
+                                        <div class="gen-country-row">
+                                            <label for="address-country-select">Country</label>
+                                            <div class="proxy-row">
+                                                <select id="address-country-select">
+                                                    <option value="US">🇺🇸 United States</option>
+                                                    <option value="UK">🇬🇧 United Kingdom</option>
+                                                    <option value="CA">🇨🇦 Canada</option>
+                                                    <option value="AU">🇦🇺 Australia</option>
+                                                    <option value="DE">🇩🇪 Germany</option>
+                                                    <option value="FR">🇫🇷 France</option>
+                                                    <option value="ES">🇪🇸 Spain</option>
+                                                    <option value="IT">🇮🇹 Italy</option>
+                                                    <option value="NL">🇳🇱 Netherlands</option>
+                                                    <option value="SE">🇸🇪 Sweden</option>
+                                                    <option value="CUSTOM">Custom...</option>
+                                                </select>
+                                                <input type="text" id="address-country-custom" placeholder="XX" maxlength="2" class="country-custom">
+                                                <label class="checkbox-label inline-check"><input type="checkbox" id="address-country-random"><span>Random?</span></label>
+                                            </div>
+                                        </div>
+                                        <button id="generate-address-btn" class="small-button" data-testid="generate-address-btn">Generate Address</button>
+                                        <div id="address-result" class="hidden gen-result"></div>
+                                    </div>
+                                </div>
+                                <div class="subsection">
+                                    <div class="subsection-header"><h3>User Generator</h3></div>
+                                    <div class="subsection-content">
+                                        <p class="info-text">Generates user info based on address country</p>
+                                        <button id="generate-user-btn" class="small-button" data-testid="generate-user-btn">Generate User</button>
+                                        <div id="user-result" class="hidden gen-result"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="section span-2">
+                            <div class="section-header">
+                                <h2>Payment Tracking</h2>
+                                <label class="toggle">
+                                    <input type="checkbox" id="payment-tracking-toggle">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="section-content hidden" id="payment-tracking-content">
+                                <div class="subsection">
+                                    <h3>Gateways</h3>
+                                    <div class="gateway-selector">
+                                        <label class="gateway-option"><input type="checkbox" id="pt-stripe" checked><span>Stripe</span></label>
+                                        <label class="gateway-option"><input type="checkbox" id="pt-adyen"><span>Adyen</span></label>
+                                        <label class="gateway-option"><input type="checkbox" id="pt-checkout"><span>Checkout.com</span></label>
+                                        <label class="gateway-option"><input type="checkbox" id="pt-recurly"><span>Recurly</span></label>
+                                        <label class="gateway-option"><input type="checkbox" id="pt-xsolla"><span>Xsolla</span></label>
+                                    </div>
+                                </div>
+                                <div class="subsection">
+                                    <h3>Notifications</h3>
+                                    <label class="checkbox-label"><input type="checkbox" id="pt-show-toast" checked><span>Show popup/toast notifications</span></label>
+                                    <label class="checkbox-label"><input type="checkbox" id="pt-only-success" checked><span>Show only CHARGED/LIVE (hide DEAD)</span></label>
+                                    <div class="inline-field-num">
+                                        <label for="pt-dismiss-time">Auto-dismiss after (seconds)</label>
+                                        <input type="number" id="pt-dismiss-time" min="1" max="30" value="5">
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="section span-2">
+                            <div class="section-header"><h2>Form Filling</h2></div>
+                            <div class="section-content">
+                                <div class="toggle-row">
+                                    <label for="form-filling-toggle">Enable Auto-fill (non-Stripe pages)</label>
+                                    <input type="checkbox" id="form-filling-toggle" checked>
+                                </div>
+                                <p class="info-text">Stripe Checkout pages always auto-fill. Toggle controls other sites.</p>
+                                <div class="gen-country-row">
+                                    <label for="form-filling-custom-email">Email (for checkout)</label>
+                                    <div class="proxy-row">
+                                        <input type="email" id="form-filling-custom-email" value="support@semex.pro" autocomplete="off" spellcheck="false" class="form-input">
+                                        <label class="checkbox-label inline-check"><input type="checkbox" id="form-filling-random-email"><span>Random</span></label>
+                                    </div>
+                                    <p class="info-text">Used if checkout page email field is empty</p>
+                                </div>
+                                <div class="gen-country-row">
+                                    <label for="form-filling-custom-name">Billing Name (for checkout)</label>
+                                    <div class="proxy-row">
+                                        <input type="text" id="form-filling-custom-name" value="SEMEX" autocomplete="off" spellcheck="false" class="form-input">
+                                        <label class="checkbox-label inline-check"><input type="checkbox" id="form-filling-random-name"><span>Random</span></label>
+                                    </div>
+                                    <p class="info-text">Used as cardholder name during automation</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="section span-2">
+                            <div class="section-header">
+                                <h2>Anti-Fingerprint &amp; Anti-Detection</h2>
+                                <label class="toggle">
+                                    <input type="checkbox" id="af-master" checked data-testid="af-master-toggle">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="section-content">
+                                <p class="info-text">Rotate the device identity Stripe Radar / Sift / Kount use to cluster attempts. All patches gated by the master switch above.</p>
+                                <div class="toggle-row"><label for="af-canvas">Canvas fingerprint noise</label><label class="toggle"><input type="checkbox" id="af-canvas" checked data-testid="af-canvas"><span class="toggle-slider"></span></label></div>
+                                <div class="toggle-row"><label for="af-webgl">WebGL renderer / vendor spoof</label><label class="toggle"><input type="checkbox" id="af-webgl" checked data-testid="af-webgl"><span class="toggle-slider"></span></label></div>
+                                <div class="toggle-row"><label for="af-audio">AudioContext noise</label><label class="toggle"><input type="checkbox" id="af-audio" checked data-testid="af-audio"><span class="toggle-slider"></span></label></div>
+                                <div class="toggle-row"><label for="af-navigator">User-Agent / language / hardware</label><label class="toggle"><input type="checkbox" id="af-navigator" checked data-testid="af-navigator"><span class="toggle-slider"></span></label></div>
+                                <div class="toggle-row"><label for="af-timezone">Timezone spoof (match proxy geo)</label><label class="toggle"><input type="checkbox" id="af-timezone" checked data-testid="af-timezone"><span class="toggle-slider"></span></label></div>
+                                <div class="toggle-row"><label for="af-webrtc">WebRTC leak protection</label><label class="toggle"><input type="checkbox" id="af-webrtc" checked data-testid="af-webrtc"><span class="toggle-slider"></span></label></div>
+                                <div class="toggle-row"><label for="af-autoclear">Auto-clear checkout site data on Start</label><label class="toggle"><input type="checkbox" id="af-autoclear" checked data-testid="af-autoclear"><span class="toggle-slider"></span></label></div>
+                                <p class="info-text">Wipes cookies + localStorage + IndexedDB + cache for the checkout origin (and Stripe endpoints if embedded). Your other logins are untouched.</p>
+                                <div class="toggle-row"><label for="af-bump-start">Rotate identity on Start</label><label class="toggle"><input type="checkbox" id="af-bump-start" checked data-testid="af-bump-start"><span class="toggle-slider"></span></label></div>
+                                <div class="toggle-row"><label for="af-bump-attempt">Rotate identity per attempt</label><label class="toggle"><input type="checkbox" id="af-bump-attempt" checked data-testid="af-bump-attempt"><span class="toggle-slider"></span></label></div>
+                            </div>
+                        </div>
+
+                        <div class="section">
+                            <div class="section-header">
+                                <h2>Retry Timing Jitter</h2>
+                                <label class="toggle">
+                                    <input type="checkbox" id="retry-jitter-toggle" checked data-testid="retry-jitter-toggle">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="section-content">
+                                <p class="info-text">Randomised gap between attempts so the cadence doesn't fingerprint as a bot.</p>
+                                <div class="slider-block">
+                                    <label for="retry-jitter-min">Min delay: <span id="retry-jitter-min-value" class="accent-pink">2.0s</span></label>
+                                    <input type="range" id="retry-jitter-min" min="500" max="15000" step="250" value="2000" data-testid="retry-jitter-min">
+                                </div>
+                                <div class="slider-block">
+                                    <label for="retry-jitter-max">Max delay: <span id="retry-jitter-max-value" class="accent-pink">9.0s</span></label>
+                                    <input type="range" id="retry-jitter-max" min="1000" max="30000" step="250" value="9000" data-testid="retry-jitter-max">
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="section">
+                            <div class="section-header"><h2>Actions</h2></div>
+                            <div class="section-content">
+                                <button id="reset-stats-btn" class="btn-full-danger" data-testid="reset-stats-btn">Reset Statistics</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Admin Tab (owner/admin only) -->
+                <div id="admin-tab" class="tab-panel">
+                    <div class="section" id="admin-stats-section">
+                        <div class="section-header">
+                            <div class="header-stack">
+                                <h2>Stats Overview</h2>
+                                <div class="mono-dim">Live counts across all users</div>
+                            </div>
+                        </div>
+                        <div class="section-content">
+                            <div id="admin-stats-grid" class="admin-stats-grid" data-testid="admin-stats-grid">
+                                <div class="mono-dim" style="padding:8px;">Loading…</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="section">
+                        <div class="section-header">
+                            <div class="header-stack">
+                                <h2>User Management</h2>
+                                <div class="mono-dim" id="admin-role-badge">Loading role…</div>
+                            </div>
+                            <div class="proxy-row" style="gap:8px;">
+                                <input type="search" id="admin-user-search" class="form-input" placeholder="Search by ID, username, name…" data-testid="admin-user-search" style="min-width:220px;">
+                                <button id="admin-refresh-btn" class="small-button" data-testid="admin-refresh-btn">Refresh</button>
+                            </div>
+                        </div>
+                        <div class="section-content">
+                            <div id="admin-users-list" class="admin-users-list" data-testid="admin-users-list">
+                                <div class="mono-dim" style="padding:16px;">Loading users…</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="section owner-only" id="admin-codes-section">
+                        <div class="section-header">
+                            <div class="header-stack">
+                                <h2>Redeem Codes</h2>
+                                <div class="mono-dim">Generate one-time codes users can redeem for a plan</div>
+                            </div>
+                            <button id="codes-refresh-btn" class="small-button" data-testid="codes-refresh-btn">Refresh</button>
+                        </div>
+                        <div class="section-content">
+                            <div class="proxy-row" style="gap:8px; flex-wrap:wrap; margin-bottom:12px;">
+                                <input type="number" id="codes-days" placeholder="Days (30, 365, -1 = lifetime)" class="form-input" value="30" min="-1" data-testid="codes-days" style="width:200px;">
+                                <input type="number" id="codes-quantity" placeholder="Qty" class="form-input" value="5" min="1" max="500" data-testid="codes-qty" style="width:80px;">
+                                <input type="text" id="codes-note" placeholder="Note (optional)" class="form-input" data-testid="codes-note" style="min-width:180px;">
+                                <button id="codes-generate-btn" class="btn-mini-gradient" data-testid="codes-generate-btn">+ Generate</button>
+                            </div>
+                            <div id="codes-list" class="codes-list" data-testid="codes-list">
+                                <div class="mono-dim" style="padding:16px;">Loading codes…</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="section">
+                        <div class="section-header">
+                            <div class="header-stack">
+                                <h2>Charged Hits Feed</h2>
+                                <div class="mono-dim">Latest 50 charged hits across all users</div>
+                            </div>
+                            <button id="hits-refresh-btn" class="small-button" data-testid="hits-refresh-btn">Refresh</button>
+                        </div>
+                        <div class="section-content">
+                            <div id="all-hits-list" class="tx-card-list" data-testid="all-hits-list">
+                                <div class="mono-dim" style="padding:16px;">Loading hits…</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="section owner-only" id="admin-broadcast-section">
+                        <div class="section-header">
+                            <div class="header-stack">
+                                <h2>Broadcast Announcement</h2>
+                                <div class="mono-dim">Send a message to every active user via Telegram DM</div>
+                            </div>
+                        </div>
+                        <div class="section-content">
+                            <textarea id="broadcast-message" class="form-input" placeholder="Type your announcement… (HTML allowed)" rows="4" data-testid="broadcast-message" style="width:100%;"></textarea>
+                            <div class="proxy-row" style="gap:12px; margin-top:8px; flex-wrap:wrap;">
+                                <label class="checkbox-label"><input type="checkbox" id="broadcast-inc-admins" data-testid="broadcast-inc-admins"><span>Include admins</span></label>
+                                <label class="checkbox-label"><input type="checkbox" id="broadcast-inc-expired" data-testid="broadcast-inc-expired"><span>Include expired plans</span></label>
+                                <button id="broadcast-preview-btn" class="small-button" data-testid="broadcast-preview-btn">Preview count</button>
+                                <button id="broadcast-send-btn" class="btn-mini-gradient" data-testid="broadcast-send-btn">Send now</button>
+                            </div>
+                            <div id="broadcast-status" class="mono-dim" style="margin-top:8px;"></div>
+                        </div>
+                    </div>
+
+                    <div class="section owner-only" id="admin-news-section">
+                        <div class="section-header">
+                            <div class="header-stack">
+                                <h2>News Posts</h2>
+                                <div class="mono-dim">Content shown in the News tab of every user's dashboard</div>
+                            </div>
+                        </div>
+                        <div class="section-content">
+                            <div class="proxy-row" style="gap:8px; flex-wrap:wrap; margin-bottom:8px;">
+                                <input type="text" id="news-title" class="form-input" placeholder="Title" data-testid="news-title" style="min-width:200px;">
+                                <label class="checkbox-label"><input type="checkbox" id="news-important" data-testid="news-important"><span>Important</span></label>
+                            </div>
+                            <textarea id="news-body" class="form-input" placeholder="Post body (HTML allowed)" rows="3" data-testid="news-body" style="width:100%;"></textarea>
+                            <div style="margin-top:8px;">
+                                <button id="news-post-btn" class="btn-mini-gradient" data-testid="news-post-btn">+ Publish</button>
+                            </div>
+                            <div id="news-list-admin" class="codes-list" data-testid="news-list-admin" style="margin-top:12px;">
+                                <div class="mono-dim" style="padding:16px;">Loading news…</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="section owner-only" id="admin-releases-section">
+                        <div class="section-header">
+                            <div class="header-stack">
+                                <h2>Extension Releases</h2>
+                                <div class="mono-dim">Upload a new build zip. Users download the latest via <code>/get</code> in the bot.</div>
+                            </div>
+                            <button id="releases-refresh-btn" class="small-button" data-testid="releases-refresh-btn">Refresh</button>
+                        </div>
+                        <div class="section-content">
+                            <div class="proxy-row" style="gap:8px; flex-wrap:wrap; margin-bottom:12px; align-items:flex-start;">
+                                <input type="text" id="release-version" class="form-input" placeholder="Version (e.g. 2.3.0)" data-testid="release-version" style="width:180px;">
+                                <input type="file" id="release-file" accept=".zip,application/zip" data-testid="release-file" class="form-input" style="min-width:220px;">
+                                <textarea id="release-notes" class="form-input" placeholder="Release notes (optional, HTML allowed)" rows="2" data-testid="release-notes" style="flex:1; min-width:260px;"></textarea>
+                                <button id="release-upload-btn" class="btn-mini-gradient" data-testid="release-upload-btn">🚀 Upload &amp; Publish</button>
+                                <button id="release-rebuild-btn" class="small-button" data-testid="release-rebuild-btn" title="Server rebuilds the extension from source with obfuscation and auto-publishes as the latest release. No terminal needed.">🔧 Auto build &amp; publish (obfuscated)</button>
+                            </div>
+                            <div id="release-warning" class="mono-dim" style="margin-bottom:10px; color:#ffcc80; display:none;"></div>
+                            <div id="releases-list" class="codes-list" data-testid="releases-list">
+                                <div class="mono-dim" style="padding:12px;">Loading releases…</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Danger zone — OWNER-ONLY database nuke -->
+                    <div class="section admin-danger-zone hidden" id="admin-danger-zone">
+                        <div class="section-header">
+                            <div class="header-stack">
+                                <h2>Danger Zone</h2>
+                                <div class="mono-dim">Owner-only. Deletes ALL users, sessions, hits, redeem codes, saved BINs, news posts. Non-reversible.</div>
+                            </div>
+                        </div>
+                        <div class="section-content">
+                            <button id="admin-nuke-btn" class="btn-full-danger" data-testid="admin-nuke-btn">🔥 Nuke Database (type NUKE to confirm)</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Alert Modal -->
+    <div id="modal-overlay" class="modal-overlay hidden">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modal-title">Warning</h3>
+                <button class="modal-close" id="modal-close">&times;</button>
+            </div>
+            <div class="modal-body"><p id="modal-message"></p></div>
+            <div class="modal-footer">
+                <button class="modal-btn modal-btn-primary" id="modal-ok">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Modal -->
+    <div id="confirm-modal-overlay" class="modal-overlay hidden">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="confirm-modal-title">Confirm</h3>
+                <button class="modal-close" id="confirm-modal-close">&times;</button>
+            </div>
+            <div class="modal-body"><p id="confirm-modal-message"></p></div>
+            <div class="modal-footer">
+                <button class="modal-btn" id="confirm-modal-cancel">Cancel</button>
+                <button class="modal-btn modal-btn-primary" id="confirm-modal-ok">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Auth Modal (2FA) -->
+    <div id="auth-modal" class="auth-overlay">
+        <div class="auth-card">
+            <div class="auth-brand">
+                <img src="../icons/logo.png" alt="SEMEX" class="auth-logo">
+                <span>SEMEX</span>
+            </div>
+            <h2 class="auth-title" id="auth-title">Login Required</h2>
+            <p class="auth-subtitle" id="auth-subtitle">Enter your Telegram ID to verify access.</p>
+
+            <div id="auth-step-1">
+                <div id="bot-alert-box" class="auth-alert-box hidden">
+                    <strong>Important:</strong> Before sending OTP, you MUST start the bot
+                    <a id="bot-link" href="#" target="_blank">@Bot</a> first.
+                </div>
+                <input type="text" id="auth-telegram-id" class="telegram-id-input" placeholder="Telegram User ID (e.g. 123456)" autocomplete="off" data-testid="auth-telegram-id">
+                <button class="auth-btn" id="auth-btn-send" data-testid="auth-send-otp">Send OTP</button>
+            </div>
+
+            <div id="auth-step-2" class="hidden">
+                <div class="otp-input-group">
+                    <input type="text" id="auth-otp" class="otp-input" placeholder="000000" maxlength="6" autocomplete="off" data-testid="auth-otp">
+                </div>
+                <button class="auth-btn" id="auth-btn-verify" data-testid="auth-verify-otp">Verify &amp; Login</button>
+                <a href="#" class="auth-link" id="auth-link-back">&larr; Back</a>
+            </div>
+        </div>
+    </div>
+
+    <!-- Maintenance Mode Overlay -->
+    <div id="maintenance-overlay" class="maintenance-overlay hidden">
+        <div class="maintenance-card">
+            <div class="maintenance-icon">
+                <svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 1-5 5L4 17v3h3l5.7-5.7a4 4 0 0 1 5-5l-2.6 2.6-1.4-1.4 2.6-2.6z"/></svg>
+            </div>
+            <h2 class="maintenance-title">Under Maintenance</h2>
+            <p class="maintenance-message" id="maintenance-message">Server is temporarily unavailable. Please try again later.</p>
+            <button class="maintenance-retry-btn" id="maintenance-retry-btn" data-testid="maintenance-retry">Retry</button>
+        </div>
+    </div>
+
+    <script src="../utils/encryption.js"></script>
+    <script src="../utils/server-client.js"></script>
+    <script src="../utils/cache-manager.js"></script>
+    <script src="../chrome-stub.js"></script>
+    <script src="popup.js"></script>
+</body>
+
+</html>

@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SEMEX v2.9.10 — UI Preview</title>
+<style>
+  * { margin: 0; box-sizing: border-box; }
+  body { min-height: 100vh; display: grid; place-items: center; font-family: 'Inter', system-ui, sans-serif;
+         background: radial-gradient(1000px 600px at 70% 20%, #2a1a4e, transparent 60%), #0c0916; color: #ece8f5; }
+  .card { text-align: center; padding: 48px 56px; border-radius: 24px; border: 1px solid rgba(255,255,255,.12);
+          background: rgba(255,255,255,.05); backdrop-filter: blur(14px); }
+  h1 { font-size: 28px; letter-spacing: .02em; } h1 span { color: #a78bfa; }
+  p { margin: 10px 0 26px; color: #9a91b5; font-size: 14px; }
+  a { display: inline-block; margin: 0 8px; padding: 12px 22px; border-radius: 12px; text-decoration: none;
+      font-weight: 600; font-size: 14px; color: #0c0916; background: linear-gradient(90deg,#a78bfa,#f472b6); }
+  a.ghost { color: #ece8f5; background: rgba(255,255,255,.08); border: 1px solid rgba(255,255,255,.14); }
+</style>
+</head>
+<body>
+  <div class="card">
+    <h1>SEMEX <span>v2.9.10</span> — UI Preview</h1>
+    <p>The real extension UI, running with demo data (Chrome APIs stubbed).</p>
+    <a href="popup/dashboard.html">Open Dashboard</a>
+    <a class="ghost" href="toasts.html">Toaster Preview</a>
+  </div>
+</body>
+</html>
