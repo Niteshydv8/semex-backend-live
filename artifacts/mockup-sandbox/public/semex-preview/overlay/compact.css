@@ -1,0 +1,101 @@
+/* SEMEX Overlay — COMPACT variant (v4.0 preview)
+ * Loaded AFTER overlay.css. Same markup, same data, ~half the height.
+ * Strategy: inline stats strip, 2-col details grid, tight paddings.
+ */
+
+#semex-overlay .overlay-full {
+  width: 248px !important;
+}
+
+/* ── header: slim ─────────────────────────────────────────── */
+#semex-overlay .full-header {
+  padding: 6px 10px !important;
+}
+#semex-overlay .full-brand-logo {
+  width: 20px !important;
+  height: 20px !important;
+  font-size: 11px !important;
+}
+#semex-overlay .full-brand-name { font-size: 12px !important; }
+#semex-overlay .full-brand-tag  { font-size: 8px !important; letter-spacing: .12em !important; }
+#semex-overlay .header-btn {
+  width: 20px !important;
+  height: 20px !important;
+  font-size: 10px !important;
+}
+
+/* ── body: tight rhythm ───────────────────────────────────── */
+#semex-overlay .full-body {
+  padding: 6px 10px 8px !important;
+  gap: 6px !important;
+}
+
+/* ── status: one compact line ─────────────────────────────── */
+#semex-overlay .full-status {
+  padding: 4px 8px !important;
+  font-size: 11px !important;
+  gap: 6px !important;
+  margin: 0 !important;
+}
+
+/* ── stats: single inline strip, no tiles ─────────────────── */
+#semex-overlay .full-stats {
+  display: flex !important;
+  align-items: baseline !important;
+  justify-content: space-between !important;
+  gap: 4px !important;
+  padding: 3px 8px !important;
+  margin: 0 !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-radius: 6px !important;
+}
+#semex-overlay .stats-toggle { display: none !important; }
+#semex-overlay .stat-div { display: none !important; }
+#semex-overlay .stat-item {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: baseline !important;
+  gap: 3px !important;
+  padding: 0 !important;
+}
+#semex-overlay .stat-label {
+  font-size: 8px !important;
+  text-transform: uppercase !important;
+  letter-spacing: .06em !important;
+  opacity: .55 !important;
+}
+#semex-overlay .stat-value { font-size: 12px !important; font-weight: 700 !important; }
+
+/* ── details: 2-column grid, no card chrome ───────────────── */
+#semex-overlay .full-details {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 0 10px !important;
+  padding: 4px 8px !important;
+  margin: 0 !important;
+  background: rgba(255, 255, 255, 0.04) !important;
+  border-radius: 6px !important;
+}
+#semex-overlay .detail-row {
+  display: flex !important;
+  justify-content: space-between !important;
+  padding: 1px 0 !important;
+  font-size: 10px !important;
+  border: none !important;
+}
+/* Card row spans both columns (it's the long value) */
+#semex-overlay .detail-row:first-child { grid-column: 1 / -1; }
+
+/* ── BIN switcher: tighter ────────────────────────────────── */
+#semex-overlay .full-binswitch { margin: 2px 0 0 !important; }
+
+/* ── controls: slim single row ────────────────────────────── */
+#semex-overlay .full-controls {
+  gap: 4px !important;
+  margin: 0 !important;
+}
+#semex-overlay .ctrl-btn {
+  padding: 5px 6px !important;
+  font-size: 10px !important;
+  border-radius: 6px !important;
+}

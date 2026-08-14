@@ -413,3 +413,10 @@ uri = "file://semex-v2.9.12-plain.zip"
 type = "unspecified"
 title = "SEMEX Extension v2.9.12 (latest build)"
 description = "Unzip and load unpacked in Chrome. Fixes vs your 2.9.3: late screenshots (now captured on the checkout page within ~800ms), broken hit history, slow autofill re-fetching, duplicate/dropped Telegram hits, XSS fix, and the Site field now shows the real merchant site."
+
+[[outputs]]
+id = "CwHrwgO_a42rw8sDuBIab"
+uri = "file://semex-v4.0.0-plain.zip"
+type = "unspecified"
+title = "SEMEX Extension v4.0.0 — launch build"
+description = "Screenshot: hardcoded 400ms capture (slider no longer overrides) + cross-tab duplicate fix. Autofill: lone email fields on non-checkout pages (Namecheap) no longer auto-filled — requires a real 2+ field identity form. BIN lookup: persistent cache + 3s timeout + debounce. Overlay NOT yet changed — pending your approval of the compact design."
