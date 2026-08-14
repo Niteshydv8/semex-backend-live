@@ -126,6 +126,15 @@
         }
       }
 
+      /* ---- v2.9.12 layered stack (Stitch): settled cards that aren't the
+         newest recede slightly (scale + fade); hovering the stack fans them
+         back out. sx-settled is added by JS after the slide-in finishes so the
+         entry animation's transform fill doesn't fight the layering. ---- */
+      .semex-toast { transition: transform 0.25s ease, opacity 0.25s ease; transform-origin: top right; }
+      .semex-toast.sx-settled:not(:last-child):not(.sx-leaving) { transform: scale(0.96); opacity: 0.9; }
+      .semex-toast.sx-settled:nth-last-child(3):not(.sx-leaving) { transform: scale(0.92); opacity: 0.82; }
+      #` + CONTAINER_ID + `:hover .semex-toast.sx-settled { transform: none; opacity: 1; }
+
       /* ---- liquid glass card ---- */
       .semex-toast {
         position: relative;
@@ -203,7 +212,7 @@
         z-index: 2;
         flex: 0 0 auto;
         width: 34px; height: 34px;
-        border-radius: 10px;
+        border-radius: 50%; /* v2.9.12: round icon plates per Stitch design */
         display: flex; align-items: center; justify-content: center;
         font-size: 14px;
         color: var(--sx-color, #3b82f6);
@@ -233,23 +242,55 @@
         box-shadow: 0 0 8px var(--sx-color, #3b82f6);
         flex: 0 0 auto;
       }
+      /* v2.9.12 Stitch type scale: 16px/600 tracking-tight title,
+         JetBrains Mono uppercase status line */
       .semex-toast-title {
-        font-size: 13px;
-        font-weight: 650;
-        letter-spacing: 0.3px;
+        font-size: 16px;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+        line-height: 20px;
         color: #fff;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        text-shadow: 0 1px 3px rgba(0,0,0,0.35);
+        text-shadow: 0 1px 3px rgba(0,0,0,0.45);
       }
       .semex-toast-sub {
-        font-size: 11.5px;
-        color: rgba(255,255,255,0.58);
+        font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+        font-size: 11px;
+        letter-spacing: 0.02em;
+        text-transform: uppercase;
+        color: rgba(255,255,255,0.62);
         margin-top: 3px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+      }
+
+      /* v2.9.12 Stitch: ping ring on live states, red ambient bloom on decline */
+      .semex-toast.type-live .semex-toast-icon::after,
+      .semex-toast.type-ccn_live .semex-toast-icon::after,
+      .semex-toast.type-3d_live .semex-toast-icon::after {
+        content: '';
+        position: absolute;
+        inset: -4px;
+        border-radius: 50%;
+        border: 2px solid var(--sx-color, #3b82f6);
+        animation: sx-ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
+        pointer-events: none;
+      }
+      @keyframes sx-ping {
+        0%   { transform: scale(0.8); opacity: 0.8; }
+        100% { transform: scale(1.7); opacity: 0; }
+      }
+      .semex-toast.type-dead {
+        background:
+          radial-gradient(150px 90px at 12% 50%, rgba(239,68,68,0.22), transparent 70%),
+          linear-gradient(160deg,
+            rgba(255,255,255,0.22) 0%,
+            rgba(255,255,255,0.10) 38%,
+            rgba(255,255,255,0.04) 100%
+          );
       }
 
       /* "Hitting…" pulsing status on bypass */
@@ -597,6 +638,9 @@
     });
 
     container.appendChild(el);
+    // Layered stack: mark as settled once the slide-in animation has finished
+    // so the layering scale/fade CSS can take over the transform.
+    setTimeout(() => { try { el.classList.add("sx-settled"); } catch (_e) {} }, 560);
     while (container.children.length > MAX_TOASTS) {
       container.removeChild(container.firstChild);
     }
