@@ -418,5 +418,5 @@ description = "Unzip and load unpacked in Chrome. Fixes vs your 2.9.3: late scre
 id = "CwHrwgO_a42rw8sDuBIab"
 uri = "file://semex-v4.0.0-plain.zip"
 type = "unspecified"
-title = "SEMEX Extension v4.0.0 — updated build"
-description = "Random-name autofill now draws from ~47M unique identities (middle initial + hyphenated surname combinatorics) in both fill paths; generation is synchronous so filling always has a complete identity before touching any field. All prior v4.0 fixes included: 400ms hardcoded screenshot delay, last4+site screenshot dedup, lone-field autofill gate, BIN lookup cache/timeout/debounce."
+title = "SEMEX Extension v4.0.0 — FINAL build (toaster + overlay ported)"
+description = "Approved designs are now in the real extension. Toaster: Terminal Trace — bypass blue, live gold, charged green, dead red, motion-blur entrance + aura glow, 5s lifetime, responsive. Overlay: compact terminal theme (252px), Start/Pause/Stop/Hide controls, Hide masks Card+BIN+IP, on-page BIN/CC segmented picker with library dropdown (saved BINs from backend / local CC list), ⇄ cycle button, and add-new field. CC list + mode stay local-only (never synced). Also includes: 400ms hardcoded screenshot delay, cross-tab screenshot dedup, lone-field autofill gate, BIN lookup cache/timeout, ~47M-combo random names."

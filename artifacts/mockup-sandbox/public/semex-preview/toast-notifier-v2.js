@@ -1,7 +1,10 @@
 (function () {
   "use strict";
-  /* SEMEX Toast Notifier v4 (v2.9.7 liquid-glass redesign)
-   * - Light frosted-white glass material: high-opacity blur, white gradient fill,
+  /* SEMEX Toast Notifier v4 (v4.0 Terminal Trace redesign — user-approved)
+   * - Dark terminal cards: mono type, per-status accent rail + aura glow,
+   *   motion-blur entrance (right→left) and blur exit.
+   * - Palette: bypass = blue, live = gold, charged = green, dead = red.
+   * - (legacy) Light frosted-white glass material: high-opacity blur, white gradient fill,
    *   strong specular inset highlights, defined shape border.
    * - Detail chart rows (GATEWAY / RESPONSE / CARD / TIME) on payment toasts.
    * - Stripe ID shown monospace when detail looks like sei_… / pi_….
@@ -19,18 +22,18 @@
   const _dedup = new Set();
   const DEDUP_WINDOW = 1000;
 
-  // v2.9.11: colors per the Liquid Glass Notification System guide —
-  // Success = gold, Live = blue, Decline = red, Bypass = amber.
+  // v4.0 Terminal Trace palette (user-approved):
+  // Charged = green, Live = gold, Bypass = blue, Decline = red.
   const TYPE_MAP = {
-    charged:      { icon: "✓",  color: "#facc15", glow: "rgba(250,204,21,0.38)",  label: "Payment Successful" },
-    success:      { icon: "✓",  color: "#facc15", glow: "rgba(250,204,21,0.38)",  label: "Success"            },
-    live:         { icon: "●",  color: "#3b82f6", glow: "rgba(59,130,246,0.32)",  label: "Card Live"          },
-    ccn_live:     { icon: "●",  color: "#3b82f6", glow: "rgba(59,130,246,0.32)",  label: "Card Live"          },
-    "3d_live":    { icon: "●",  color: "#3b82f6", glow: "rgba(59,130,246,0.32)",  label: "Card Live (3DS)"    },
+    charged:      { icon: "▲",  color: "#34d399", glow: "rgba(52,211,153,0.45)",  label: "Payment Successful" },
+    success:      { icon: "▲",  color: "#34d399", glow: "rgba(52,211,153,0.45)",  label: "Success"            },
+    live:         { icon: "●",  color: "#fbbf24", glow: "rgba(251,191,36,0.40)",  label: "Card Live"          },
+    ccn_live:     { icon: "●",  color: "#fbbf24", glow: "rgba(251,191,36,0.40)",  label: "Card Live"          },
+    "3d_live":    { icon: "●",  color: "#fbbf24", glow: "rgba(251,191,36,0.40)",  label: "Card Live (3DS)"    },
     "3ds":        { icon: "🛡", color: "#8b5cf6", glow: "rgba(139,92,246,0.32)",  label: "3DS Challenge"      },
-    dead:         { icon: "✕",  color: "#ef4444", glow: "rgba(239,68,104,0.28)",  label: "Card Declined"      },
+    dead:         { icon: "×",  color: "#f87171", glow: "rgba(248,113,113,0.38)", label: "Card Declined"      },
     expired:      { icon: "○",  color: "#6b7280", glow: "rgba(107,114,128,0.22)", label: "Session Expired"    },
-    bypass:       { icon: "⚡", color: "#f59e0b", glow: "rgba(245,158,11,0.30)",  label: "Bypass Activated"   },
+    bypass:       { icon: "▸", color: "#60a5fa", glow: "rgba(96,165,250,0.42)",  label: "Bypass Activated"   },
     security:     { icon: "🔐", color: "#8b5cf6", glow: "rgba(139,92,246,0.32)",  label: "Security Check"     },
     info:         { icon: "ℹ",  color: "#3b82f6", glow: "rgba(59,130,246,0.24)",  label: "Information"        },
     warning:      { icon: "⚠",  color: "#f59e0b", glow: "rgba(245,158,11,0.24)",  label: "Warning"            },
@@ -107,90 +110,50 @@
     st.textContent = `
       #` + CONTAINER_ID + ` {
         position: fixed;
-        top: 18px;
-        right: 18px;
+        top: 14px;
+        right: 14px;
         display: flex;
         flex-direction: column;
-        gap: 10px;
+        gap: 8px;
+        width: min(320px, calc(100vw - 28px));
         z-index: 2147483647;
         pointer-events: none;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Inter, sans-serif;
+        font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
         -webkit-font-smoothing: antialiased;
       }
-      @media (max-width: 480px) {
-        #` + CONTAINER_ID + ` {
-          left: 50%; right: auto; top: 12px;
-          transform: translateX(-50%);
-          width: min(352px, calc(100vw - 20px));
-        }
-      }
 
-      /* ---- v2.9.12 layered stack (Stitch): settled cards that aren't the
-         newest recede slightly (scale + fade); hovering the stack fans them
-         back out. sx-settled is added by JS after the slide-in finishes so the
-         entry animation's transform fill doesn't fight the layering. ---- */
+      /* layered stack: settled cards recede, hovering fans them back out */
       .semex-toast { transition: transform 0.25s ease, opacity 0.25s ease; transform-origin: top right; }
       .semex-toast.sx-settled:not(:last-child):not(.sx-leaving) { transform: scale(0.96); opacity: 0.9; }
       .semex-toast.sx-settled:nth-last-child(3):not(.sx-leaving) { transform: scale(0.92); opacity: 0.82; }
       #` + CONTAINER_ID + `:hover .semex-toast.sx-settled { transform: none; opacity: 1; }
 
-      /* ---- liquid glass card ---- */
+      /* ---- v4.0 Terminal Trace card ---- */
       .semex-toast {
         position: relative;
         display: flex;
         align-items: flex-start;
-        gap: 11px;
-        padding: 14px 36px 16px 14px;
-        border-radius: 16px;
-        min-width: 268px;
-        max-width: 348px;
+        gap: 10px;
+        padding: 10px 30px 12px 14px;
+        border-radius: 8px;
+        min-width: 0;
+        max-width: 100%;
         overflow: hidden;
         cursor: default;
         pointer-events: auto;
-
-        /* light frosted-white glass fill */
-        background:
-          linear-gradient(160deg,
-            rgba(255,255,255,0.22) 0%,
-            rgba(255,255,255,0.10) 38%,
-            rgba(255,255,255,0.04) 100%
-          );
-        backdrop-filter: blur(28px) saturate(200%) brightness(1.04);
-        -webkit-backdrop-filter: blur(28px) saturate(200%) brightness(1.04);
-
-        /* strong defined shape border */
-        border: 1px solid rgba(255,255,255,0.32);
-
-        /* specular top edge + depth shadows + accent glow */
+        background: rgba(10, 14, 12, 0.92);
+        backdrop-filter: blur(10px);
+        -webkit-backdrop-filter: blur(10px);
+        border: 1px solid #1c2420;
         box-shadow:
-          inset 0 1.5px 0 rgba(255,255,255,0.55),
-          inset 0 -1px 0 rgba(0,0,0,0.10),
-          inset 1px 0 0 rgba(255,255,255,0.14),
-          0 20px 44px -12px rgba(0,0,0,0.55),
-          0 4px 14px -4px rgba(0,0,0,0.35),
-          0 0 36px -8px var(--sx-glow, rgba(59,130,246,0.28));
-
-        color: #fff;
-        animation: sx-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+          0 0 26px var(--sx-glow, rgba(96,165,250,0.16)),
+          0 8px 24px rgba(0,0,0,0.55);
+        color: #d3e3d8;
+        animation: sx-in 0.55s cubic-bezier(0.16, 0.84, 0.28, 1) both,
+                   sx-aura 1.15s ease-out 0.40s;
       }
       .semex-toast.sx-leaving {
-        animation: sx-out 0.32s cubic-bezier(0.4, 0, 0.6, 1) both;
-      }
-
-      /* diagonal refraction band across the glass */
-      .semex-toast::after {
-        content: '';
-        position: absolute;
-        inset: 0;
-        pointer-events: none;
-        background: linear-gradient(
-          115deg,
-          transparent 28%,
-          rgba(255,255,255,0.07) 42%,
-          rgba(255,255,255,0.02) 52%,
-          transparent 62%
-        );
-        border-radius: inherit;
+        animation: sx-out 0.38s cubic-bezier(0.5, 0, 0.75, 0) both;
       }
 
       /* left accent rail */
@@ -199,27 +162,24 @@
         position: absolute;
         left: 0; top: 0; bottom: 0;
         width: 3px;
-        background: linear-gradient(180deg, var(--sx-color, #3b82f6), color-mix(in srgb, var(--sx-color, #3b82f6) 35%, transparent));
-        box-shadow: 0 0 14px var(--sx-glow, rgba(59,130,246,0.28));
-        border-radius: 3px 0 0 3px;
+        background: var(--sx-color, #60a5fa);
+        box-shadow: 0 0 12px var(--sx-glow, rgba(96,165,250,0.30));
         z-index: 1;
       }
 
-      /* icon plate */
+      /* icon plate — terminal square */
       .semex-toast-icon {
         position: relative;
         z-index: 2;
         flex: 0 0 auto;
-        width: 34px; height: 34px;
-        border-radius: 50%; /* v2.9.12: round icon plates per Stitch design */
+        width: 26px; height: 26px;
+        border-radius: 6px;
         display: flex; align-items: center; justify-content: center;
-        font-size: 14px;
-        color: var(--sx-color, #3b82f6);
-        background: color-mix(in srgb, var(--sx-color, #3b82f6) 16%, rgba(255,255,255,0.10));
-        border: 1px solid color-mix(in srgb, var(--sx-color, #3b82f6) 32%, rgba(255,255,255,0.18));
-        box-shadow:
-          inset 0 1px 0 rgba(255,255,255,0.22),
-          0 0 18px -4px var(--sx-glow, rgba(59,130,246,0.28));
+        font-size: 12px;
+        color: var(--sx-color, #60a5fa);
+        background: color-mix(in srgb, var(--sx-color, #60a5fa) 14%, transparent);
+        border: 1px solid color-mix(in srgb, var(--sx-color, #60a5fa) 35%, transparent);
+        box-shadow: 0 0 14px -4px var(--sx-glow, rgba(96,165,250,0.30));
       }
 
       /* body */
@@ -237,44 +197,38 @@
       .semex-toast-dot {
         width: 6px; height: 6px;
         border-radius: 50%;
-        background: var(--sx-color, #3b82f6);
-        box-shadow: 0 0 8px var(--sx-color, #3b82f6);
+        background: var(--sx-color, #60a5fa);
+        box-shadow: 0 0 8px var(--sx-color, #60a5fa);
         flex: 0 0 auto;
       }
-      /* v2.9.12 Stitch type scale: 16px/600 tracking-tight title,
-         JetBrains Mono uppercase status line */
       .semex-toast-title {
-        font-size: 16px;
-        font-weight: 600;
-        letter-spacing: -0.01em;
-        line-height: 20px;
-        color: #fff;
+        font-size: 12px;
+        font-weight: 700;
+        letter-spacing: 0.04em;
+        line-height: 1.35;
+        color: var(--sx-color, #d3e3d8);
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
-        text-shadow: 0 1px 3px rgba(0,0,0,0.45);
       }
       .semex-toast-sub {
-        font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
-        font-size: 11px;
-        letter-spacing: 0.02em;
-        text-transform: uppercase;
-        color: rgba(255,255,255,0.62);
+        font-size: 10.5px;
+        color: #88908a;
         margin-top: 3px;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
       }
 
-      /* v2.9.12 Stitch: ping ring on live states, red ambient bloom on decline */
+      /* ping ring on live states */
       .semex-toast.type-live .semex-toast-icon::after,
       .semex-toast.type-ccn_live .semex-toast-icon::after,
       .semex-toast.type-3d_live .semex-toast-icon::after {
         content: '';
         position: absolute;
         inset: -4px;
-        border-radius: 50%;
-        border: 2px solid var(--sx-color, #3b82f6);
+        border-radius: 8px;
+        border: 2px solid var(--sx-color, #fbbf24);
         animation: sx-ping 1.8s cubic-bezier(0, 0, 0.2, 1) infinite;
         pointer-events: none;
       }
@@ -283,20 +237,13 @@
         100% { transform: scale(1.7); opacity: 0; }
       }
       .semex-toast.type-dead {
-        background:
-          radial-gradient(150px 90px at 12% 50%, rgba(239,68,68,0.22), transparent 70%),
-          linear-gradient(160deg,
-            rgba(255,255,255,0.22) 0%,
-            rgba(255,255,255,0.10) 38%,
-            rgba(255,255,255,0.04) 100%
-          );
+        background: linear-gradient(160deg, rgba(248,113,113,0.08), rgba(10,14,12,0.92) 60%);
       }
 
       /* "Hitting…" pulsing status on bypass */
       .semex-toast-hitting {
-        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
         font-size: 10.5px;
-        color: #60a5fa;
+        color: var(--sx-color, #60a5fa);
         margin-top: 6px;
         display: flex;
         align-items: baseline;
@@ -309,74 +256,70 @@
       .semex-toast-hitting i:nth-child(3) { animation-delay: 0.4s; }
       @keyframes sx-dot { 0%, 60%, 100% { opacity: 0.2; } 30% { opacity: 1; } }
 
-      /* detail chart */
+      /* detail chart — dashed separator, mono rows */
       .semex-toast-chart {
-        margin-top: 9px;
-        padding-top: 8px;
-        border-top: 1px solid rgba(255,255,255,0.14);
+        margin-top: 7px;
+        padding-top: 6px;
+        border-top: 1px dashed #1e2a24;
         display: flex;
         flex-direction: column;
-        gap: 4px;
+        gap: 3px;
       }
       .semex-toast-row {
         display: flex;
         align-items: baseline;
-        gap: 8px;
+        justify-content: space-between;
+        gap: 10px;
       }
       .semex-toast-row-label {
-        flex: 0 0 70px;
+        flex: 0 0 auto;
         font-size: 9px;
         font-weight: 700;
-        letter-spacing: 1.1px;
-        color: rgba(255,255,255,0.38);
+        letter-spacing: 0.06em;
+        color: #5c6b62;
         text-transform: uppercase;
       }
       .semex-toast-row-value {
-        font-size: 12px;
+        font-size: 11px;
         font-weight: 500;
-        color: rgba(255,255,255,0.88);
+        color: #d3e3d8;
         word-break: break-all;
-        text-shadow: 0 1px 2px rgba(0,0,0,0.3);
+        text-align: right;
       }
       .semex-toast-row-value.tone-good  { color: #34d399; }
       .semex-toast-row-value.tone-warn  { color: #fbbf24; }
       .semex-toast-row-value.tone-bad   { color: #f87171; }
-      .semex-toast-row-value.tone-mono  {
-        font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-        font-size: 11px;
-        letter-spacing: 0.15px;
-      }
-      .semex-toast-row-value.tone-mono-good { color: #34d399; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; letter-spacing: 0.15px; }
-      .semex-toast-row-value.tone-mono-warn { color: #fbbf24; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; letter-spacing: 0.15px; }
-      .semex-toast-row-value.tone-mono-bad  { color: #f87171; font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11px; letter-spacing: 0.15px; }
+      .semex-toast-row-value.tone-mono  { font-size: 11px; letter-spacing: 0.02em; }
+      .semex-toast-row-value.tone-mono-good { color: #34d399; font-size: 11px; letter-spacing: 0.02em; }
+      .semex-toast-row-value.tone-mono-warn { color: #fbbf24; font-size: 11px; letter-spacing: 0.02em; }
+      .semex-toast-row-value.tone-mono-bad  { color: #f87171; font-size: 11px; letter-spacing: 0.02em; }
 
       /* close button */
       .semex-toast-close {
         position: absolute;
-        top: 8px; right: 9px;
+        top: 6px; right: 7px;
         z-index: 3;
-        width: 20px; height: 20px;
+        width: 18px; height: 18px;
         display: flex; align-items: center; justify-content: center;
-        border: none; border-radius: 6px;
+        border: none; border-radius: 5px;
         background: transparent;
-        color: rgba(255,255,255,0.38);
-        font-size: 15px; line-height: 1;
+        color: #5c6b62;
+        font-size: 13px; line-height: 1;
         cursor: pointer;
         transition: background 0.15s, color 0.15s;
         padding: 0;
       }
-      .semex-toast-close:hover { background: rgba(255,255,255,0.14); color: #fff; }
+      .semex-toast-close:hover { background: rgba(52,211,153,0.12); color: #34d399; }
 
       /* SEMEX watermark */
       .semex-toast-brand {
         position: absolute;
-        right: 11px; bottom: 7px;
+        right: 10px; bottom: 6px;
         z-index: 3;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Inter, sans-serif;
-        font-size: 7.5px;
+        font-size: 8px;
         font-weight: 700;
-        letter-spacing: 1.8px;
-        color: rgba(255,255,255,0.28);
+        letter-spacing: 0.18em;
+        color: #3a443c;
         pointer-events: none;
         text-transform: uppercase;
       }
@@ -385,17 +328,16 @@
       .semex-toast-bar-track {
         position: absolute;
         left: 0; right: 0; bottom: 0;
-        height: 2.5px;
-        background: rgba(255,255,255,0.07);
-        border-radius: 0 0 16px 16px;
+        height: 3px;
+        background: #10161c;
         overflow: hidden;
       }
       .semex-toast-bar {
         height: 100%; width: 100%;
-        background: linear-gradient(90deg, var(--sx-color, #3b82f6), color-mix(in srgb, var(--sx-color, #3b82f6) 55%, #fff));
+        background: var(--sx-color, #60a5fa);
         transform-origin: left;
         animation: sx-bar linear forwards;
-        box-shadow: 0 0 8px var(--sx-glow, rgba(59,130,246,0.28));
+        box-shadow: 0 0 8px var(--sx-glow, rgba(96,165,250,0.30));
       }
 
       /* 3DS security icon pulse */
@@ -404,14 +346,14 @@
         animation: sx-pulse-ring 2s infinite;
       }
       @keyframes sx-pulse-ring {
-        0%   { box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), 0 0 0 0 rgba(139,92,246,0.4); }
-        70%  { box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), 0 0 0 7px rgba(139,92,246,0); }
-        100% { box-shadow: inset 0 1px 0 rgba(255,255,255,0.22), 0 0 0 0 rgba(139,92,246,0); }
+        0%   { box-shadow: 0 0 0 0 rgba(139,92,246,0.4); }
+        70%  { box-shadow: 0 0 0 7px rgba(139,92,246,0); }
+        100% { box-shadow: 0 0 0 0 rgba(139,92,246,0); }
       }
 
       /* shake on dead/error */
       .semex-toast.anim-shake {
-        animation: sx-in 0.5s cubic-bezier(0.22, 1, 0.36, 1) both, sx-shake 0.45s cubic-bezier(.36,.07,.19,.97) 0.1s both;
+        animation: sx-in 0.55s cubic-bezier(0.16, 0.84, 0.28, 1) both, sx-shake 0.45s cubic-bezier(.36,.07,.19,.97) 0.15s both;
       }
       @keyframes sx-shake {
         10%, 90% { transform: translate3d(-1px, 0, 0); }
@@ -425,38 +367,42 @@
         content: '';
         position: absolute;
         top: 0; left: -100%; width: 50%; height: 100%;
-        background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.10) 50%, rgba(255,255,255,0) 100%);
+        background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0) 100%);
         transform: skewX(-22deg);
         animation: sx-shimmer 2.2s infinite;
         pointer-events: none;
       }
       @keyframes sx-shimmer { 0% { left: -100%; } 20%, 100% { left: 200%; } }
 
-      /* charged glow */
+      /* charged aura boost */
       .semex-toast.type-charged,
       .semex-toast.type-success {
         box-shadow:
-          inset 0 1.5px 0 rgba(255,255,255,0.55),
-          inset 0 -1px 0 rgba(0,0,0,0.10),
-          0 20px 44px -12px rgba(0,0,0,0.55),
-          0 0 42px -6px rgba(16,185,129,0.38);
+          0 0 34px rgba(52,211,153,0.35),
+          0 8px 24px rgba(0,0,0,0.55);
       }
 
-      /* keyframes */
+      /* v4.0 motion: blur slide right→left, aura flare on land, blur exit */
       @keyframes sx-in {
-        from { opacity: 0; transform: translateX(52px); }
-        to   { opacity: 1; transform: translateX(0); }
+        0%   { transform: translateX(70px) skewX(-6deg); opacity: 0; filter: blur(11px); }
+        55%  { opacity: 1; filter: blur(3px); }
+        100% { transform: none; opacity: 1; filter: blur(0); }
       }
       @keyframes sx-out {
-        to { opacity: 0; transform: translateX(32px); }
+        to { transform: translateX(70px); opacity: 0; filter: blur(9px); }
+      }
+      @keyframes sx-aura {
+        0%   { box-shadow: 0 0 0 var(--sx-glow, rgba(96,165,250,0.16)), 0 8px 24px rgba(0,0,0,0.55); }
+        40%  { box-shadow: 0 0 42px var(--sx-glow, rgba(96,165,250,0.16)), 0 8px 24px rgba(0,0,0,0.55); }
+        100% { box-shadow: 0 0 26px var(--sx-glow, rgba(96,165,250,0.16)), 0 8px 24px rgba(0,0,0,0.55); }
       }
       @keyframes sx-bar {
         from { transform: scaleX(1); }
         to   { transform: scaleX(0); }
       }
 
-      @media (max-width: 480px) {
-        .semex-toast { min-width: 0; max-width: 100%; }
+      @media (prefers-reduced-motion: reduce) {
+        .semex-toast, .semex-toast.sx-leaving { animation-duration: 0.01ms !important; }
       }
     `;
     document.head.appendChild(st);

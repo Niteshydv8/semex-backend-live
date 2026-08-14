@@ -1216,3 +1216,237 @@
     color: #c084fc !important;
     border: 1px solid rgba(168, 85, 247, 0.35);
 }
+
+/* ============================================================
+   v4.0 TERMINAL COMPACT PASS — user-approved compact v2 layout
+   matching Toaster B (Terminal Trace). Appended LAST so these
+   rules win over every earlier layout pass (incl. the 320px
+   FINAL pass above). Pill/dock states are untouched — every
+   rule here is scoped to .full-* / .binswitch-* only.
+   ============================================================ */
+#semex-overlay .overlay-full {
+    width: 252px !important;
+    border-radius: 12px !important;
+    background: rgba(10, 14, 12, 0.95) !important;
+    border: 1px solid #22302a !important;
+    box-shadow: 0 0 30px rgba(52, 211, 153, 0.10), 0 16px 40px rgba(0, 0, 0, 0.6) !important;
+}
+@media (max-width: 640px) {
+    #semex-overlay .overlay-full { width: min(300px, 92vw) !important; max-width: 92vw !important; }
+}
+
+/* header — slim, terminal green accent */
+#semex-overlay .full-header {
+    padding: 7px 10px !important;
+    border-bottom: 1px solid #1b2620 !important;
+    background: linear-gradient(180deg, rgba(52, 211, 153, 0.06), transparent) !important;
+}
+#semex-overlay .full-brand-logo {
+    width: 20px !important;
+    height: 20px !important;
+    border-radius: 6px !important;
+    font-size: 11px !important;
+    background: linear-gradient(135deg, #34d399, #059669) !important;
+    color: #04120c !important;
+    box-shadow: 0 0 12px rgba(52, 211, 153, 0.4) !important;
+}
+#semex-overlay .full-brand-name { font-size: 12px !important; letter-spacing: 0.02em !important; }
+#semex-overlay .full-brand-tag { font-size: 7.5px !important; letter-spacing: 0.14em !important; color: #64748b !important; }
+#semex-overlay .header-btn {
+    width: 20px !important;
+    height: 20px !important;
+    font-size: 9px !important;
+    border-radius: 5px !important;
+    border: 1px solid #22302a !important;
+    background: transparent !important;
+    color: #8b9a90 !important;
+}
+#semex-overlay .header-btn:hover { border-color: #34d399 !important; color: #34d399 !important; }
+
+/* body rhythm */
+#semex-overlay .full-body { padding: 7px 10px 9px !important; gap: 7px !important; }
+
+/* status — mono terminal line */
+#semex-overlay .full-status {
+    padding: 0 2px !important;
+    margin: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace !important;
+    font-size: 10.5px !important;
+    font-weight: 600 !important;
+    color: #34d399 !important;
+    gap: 7px !important;
+}
+
+/* stats — single inline strip */
+#semex-overlay .full-stats {
+    display: flex !important;
+    align-items: baseline !important;
+    justify-content: space-between !important;
+    gap: 4px !important;
+    padding: 4px 9px !important;
+    margin: 0 !important;
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid #1b2620 !important;
+    border-radius: 7px !important;
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace !important;
+}
+#semex-overlay .stats-toggle { display: none !important; }
+#semex-overlay .stat-div { display: none !important; }
+#semex-overlay .stat-item {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: baseline !important;
+    gap: 3px !important;
+    padding: 0 !important;
+    background: transparent !important;
+    border: none !important;
+}
+#semex-overlay .stat-label {
+    font-size: 7.5px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.06em !important;
+    color: #5c6b62 !important;
+}
+#semex-overlay .stat-value { font-size: 12px !important; font-weight: 700 !important; }
+
+/* details — 2-column grid, card row spans full width */
+#semex-overlay .full-details {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0 10px !important;
+    padding: 4px 9px !important;
+    margin: 0 !important;
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid #1b2620 !important;
+    border-radius: 7px !important;
+}
+#semex-overlay .detail-row {
+    display: flex !important;
+    justify-content: space-between !important;
+    gap: 6px !important;
+    padding: 1px 0 !important;
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace !important;
+    font-size: 10px !important;
+    border: none !important;
+    color: #5c6b62 !important;
+}
+#semex-overlay .detail-row:has(#detailCard) { grid-column: 1 / -1 !important; }
+#semex-overlay .detail-val { color: #cfe3d8 !important; font-weight: 500 !important; }
+
+/* ── BIN / CC picker (v4.0 controls) ── */
+#semex-overlay .full-binswitch {
+    margin: 0 !important;
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid #1b2620 !important;
+    border-radius: 7px !important;
+    padding: 6px 8px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+}
+#semex-overlay .binswitch-seg {
+    display: flex !important;
+    background: #0d130f !important;
+    border: 1px solid #22302a !important;
+    border-radius: 6px !important;
+    overflow: hidden !important;
+}
+#semex-overlay .seg-btn {
+    flex: 1 !important;
+    padding: 4px 0 !important;
+    font: 700 9.5px 'JetBrains Mono', ui-monospace, monospace !important;
+    letter-spacing: 0.08em !important;
+    background: transparent !important;
+    border: none !important;
+    color: #64748b !important;
+    cursor: pointer !important;
+}
+#semex-overlay .seg-btn.on { background: rgba(52, 211, 153, 0.14) !important; color: #34d399 !important; }
+#semex-overlay .binswitch-row { display: flex !important; gap: 5px !important; align-items: center !important; }
+#semex-overlay .binswitch-btn {
+    flex: 1 !important;
+    min-width: 0 !important;
+    background: #0d130f !important;
+    border: 1px solid #22302a !important;
+    border-radius: 6px !important;
+    color: #cfe3d8 !important;
+    font: 500 10px 'JetBrains Mono', ui-monospace, monospace !important;
+    padding: 4px 6px !important;
+}
+#semex-overlay .binswitch-btn.flash { border-color: #34d399 !important; box-shadow: 0 0 10px rgba(52, 211, 153, 0.35) !important; }
+#semex-overlay .binswitch-cyc {
+    width: 24px !important;
+    height: 22px !important;
+    flex: none !important;
+    border-radius: 6px !important;
+    cursor: pointer !important;
+    border: 1px solid #22302a !important;
+    background: transparent !important;
+    color: #34d399 !important;
+    font-size: 11px !important;
+    line-height: 1 !important;
+}
+#semex-overlay .binswitch-cyc:hover { border-color: #34d399 !important; box-shadow: 0 0 8px rgba(52, 211, 153, 0.3) !important; }
+#semex-overlay .binswitch-add { display: flex !important; gap: 5px !important; }
+#semex-overlay .binswitch-add input {
+    flex: 1 !important;
+    min-width: 0 !important;
+    background: #0d130f !important;
+    border: 1px dashed #2a3a32 !important;
+    border-radius: 6px !important;
+    color: #cfe3d8 !important;
+    font: 400 10px 'JetBrains Mono', ui-monospace, monospace !important;
+    padding: 4px 6px !important;
+    outline: none !important;
+}
+#semex-overlay .binswitch-add input::placeholder { color: #4a5a50 !important; }
+#semex-overlay .binswitch-add button {
+    flex: none !important;
+    padding: 0 9px !important;
+    border-radius: 6px !important;
+    cursor: pointer !important;
+    border: 1px solid #22302a !important;
+    background: rgba(52, 211, 153, 0.1) !important;
+    color: #34d399 !important;
+    font-size: 11px !important;
+}
+#semex-overlay .binswitch-menu {
+    font-family: 'JetBrains Mono', ui-monospace, monospace !important;
+    border: 1px solid #22302a !important;
+    background: rgba(10, 14, 12, 0.98) !important;
+    border-radius: 7px !important;
+}
+#semex-overlay .binswitch-item { font-size: 10px !important; color: #cfe3d8 !important; }
+#semex-overlay .binswitch-item.active { border-color: #34d399 !important; }
+#semex-overlay .binswitch-empty { font-size: 10px !important; color: #5c6b62 !important; }
+
+/* controls — terminal palette: start green, pause gold, stop red, hide gray */
+#semex-overlay .full-controls { gap: 5px !important; margin: 0 !important; }
+#semex-overlay .ctrl-btn {
+    padding: 5px 0 !important;
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    border-radius: 7px !important;
+    border: 1px solid #22302a !important;
+    background: transparent !important;
+    color: #9fb3a6 !important;
+}
+#semex-overlay .ctrl-btn.start {
+    background: rgba(52, 211, 153, 0.14) !important;
+    border-color: #2c4a3c !important;
+    color: #34d399 !important;
+    box-shadow: 0 0 10px rgba(52, 211, 153, 0.12) !important;
+}
+#semex-overlay .ctrl-btn.pause {
+    color: #fbbf24 !important;
+    border-color: #3a3524 !important;
+    background: rgba(251, 191, 36, 0.08) !important;
+}
+#semex-overlay .ctrl-btn.stop {
+    color: #f87171 !important;
+    border-color: #3a2626 !important;
+    background: rgba(248, 113, 113, 0.07) !important;
+}
+#semex-overlay .ctrl-btn.blur { color: #8b9a90 !important; }

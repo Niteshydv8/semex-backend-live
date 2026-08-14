@@ -62,11 +62,106 @@ var __name = (_0x211fb2, _0xfe5f16) => __defProp(_0x211fb2, "name", {
     }
   }
   __name(_semexActiveBin, "semexActiveBin");
+  function _semexCcLines() {
+    const _0xs = (window.__extensionSettings || {}).binOrCCList || {};
+    return String(_0xs.ccList || "").split("\n").map(_0xx => _0xx.trim()).filter(_0xx => _0xx.replace(/\D/g, "").length >= 10);
+  }
+  __name(_semexCcLines, "semexCcLines");
+  function _semexListMode() {
+    const _0xs = (window.__extensionSettings || {}).binOrCCList || {};
+    return _0xs.mode === "ccList" ? "ccList" : "bin";
+  }
+  __name(_semexListMode, "semexListMode");
+  function _semexMaskCc(_0xline) {
+    const _0xnum = String(_0xline).split("|")[0].replace(/\D/g, "");
+    return _0xnum.length >= 10 ? _0xnum.slice(0, 6) + "\u2022\u2022\u2022\u2022" + _0xnum.slice(-4) : String(_0xline).slice(0, 16);
+  }
+  __name(_semexMaskCc, "semexMaskCc");
+  function _semexSyncSeg() {
+    const _0xm = _semexListMode();
+    const _0xb = document.getElementById("segBinBtn"), _0xc = document.getElementById("segCcBtn");
+    if (_0xb) _0xb.classList.toggle("on", _0xm === "bin");
+    if (_0xc) _0xc.classList.toggle("on", _0xm === "ccList");
+    const _0xin = document.getElementById("binAddInput");
+    if (_0xin) _0xin.placeholder = _0xm === "ccList" ? "add new CC (num|mm|yy|cvv)" : "add new BIN (e.g. 424242)";
+  }
+  __name(_semexSyncSeg, "semexSyncSeg");
+  function _semexSetListMode(_0xmode) {
+    window.__extensionSettings = window.__extensionSettings || {};
+    window.__extensionSettings.binOrCCList = window.__extensionSettings.binOrCCList || {};
+    window.__extensionSettings.binOrCCList.mode = _0xmode;
+    window.postMessage({ type: "SEMEX_SET_LIST_MODE", mode: _0xmode }, "*");
+    _semexSyncSeg();
+    _semexUpdateBinLabel();
+    if (_semexBinMenuOpen) _semexRenderBinMenu();
+  }
+  __name(_semexSetListMode, "semexSetListMode");
+  function _semexApplyCc(_0xline) {
+    const _0xlines = _semexCcLines();
+    const _0xi = _0xlines.indexOf(_0xline);
+    if (_0xi > 0) {
+      _0xlines.splice(_0xi, 1);
+      _0xlines.unshift(_0xline);
+    }
+    window.__extensionSettings = window.__extensionSettings || {};
+    window.__extensionSettings.binOrCCList = window.__extensionSettings.binOrCCList || {};
+    window.__extensionSettings.binOrCCList.mode = "ccList";
+    window.__extensionSettings.binOrCCList.ccList = _0xlines.join("\n");
+    window.postMessage({ type: "SEMEX_SET_CC_ACTIVE", ccList: _0xlines.join("\n") }, "*");
+    _semexUpdateBinLabel();
+    _semexCloseBinMenu();
+    const _0xbtn = document.getElementById("binSwitchBtn");
+    if (_0xbtn) {
+      _0xbtn.classList.add("flash");
+      setTimeout(() => { try { _0xbtn.classList.remove("flash"); } catch (_0xe) {} }, 900);
+    }
+  }
+  __name(_semexApplyCc, "semexApplyCc");
+  async function _semexCycleItem() {
+    if (_semexListMode() === "ccList") {
+      const _0xlines = _semexCcLines();
+      if (_0xlines.length < 2) return;
+      _0xlines.push(_0xlines.shift());
+      _semexApplyCc(_0xlines[0]);
+      return;
+    }
+    if (!_semexSavedBins.length) {
+      const _0xres = await _semexFetchSavedBins();
+      _semexSavedBins = _0xres && _0xres.ok && Array.isArray(_0xres.bins) ? _0xres.bins : [];
+    }
+    if (_semexSavedBins.length < 2) return;
+    const _0xact = _semexActiveBin();
+    const _0xi = _semexSavedBins.findIndex(_0xx => String(_0xx.bin) === _0xact);
+    const _0xnext = _semexSavedBins[(_0xi + 1) % _semexSavedBins.length];
+    if (_0xnext) _semexApplyBin(_0xnext);
+  }
+  __name(_semexCycleItem, "semexCycleItem");
+  function _semexAddNewItem() {
+    const _0xin = document.getElementById("binAddInput");
+    if (!_0xin) return;
+    const _0xv = _0xin.value.trim();
+    if (!_0xv) return;
+    if (_semexListMode() === "ccList") {
+      if (_0xv.replace(/\D/g, "").length < 10) return;
+      _semexApplyCc(_0xv);
+    } else {
+      const _0xbin = _0xv.replace(/\D/g, "").slice(0, 8);
+      if (_0xbin.length < 6) return;
+      _semexApplyBin({ bin: _0xbin });
+    }
+    _0xin.value = "";
+  }
+  __name(_semexAddNewItem, "semexAddNewItem");
   function _semexUpdateBinLabel() {
     const _0xlbl = document.getElementById("binSwitchLabel");
     if (_0xlbl) {
-      const _0xbin = _semexActiveBin();
-      _0xlbl.textContent = _0xbin ? _0xbin : "Select BIN";
+      if (_semexListMode() === "ccList") {
+        const _0xlines = _semexCcLines();
+        _0xlbl.textContent = _0xlines.length ? _semexMaskCc(_0xlines[0]) : "Select CC";
+      } else {
+        const _0xbin = _semexActiveBin();
+        _0xlbl.textContent = _0xbin ? _0xbin : "Select BIN";
+      }
     }
     const _0xmenu = document.getElementById("binSwitchMenu");
     if (_0xmenu) {
@@ -110,12 +205,31 @@ var __name = (_0x211fb2, _0xfe5f16) => __defProp(_0x211fb2, "name", {
   function _semexRenderBinMenu() {
     const _0xmenu = document.getElementById("binSwitchMenu");
     if (!_0xmenu) return;
+    // v4.0: CC mode lists the local card library (masked), no server fetch.
+    if (_semexListMode() === "ccList") {
+      const _0xlines = _semexCcLines();
+      if (!_0xlines.length) {
+        _0xmenu.innerHTML = "<div class=\"binswitch-empty\">No saved cards yet.<br>Add one below.</div>";
+        return;
+      }
+      _0xmenu.innerHTML = _0xlines.map((_0xl, _0xi) => {
+        return "<button class=\"binswitch-item" + (_0xi === 0 ? " active" : "") + "\" data-cc=\"" + _0xi + "\"><span class=\"binswitch-item-ico\">\uD83D\uDCB3</span><span class=\"binswitch-item-main\"><span class=\"binswitch-item-code\">" + _semexMaskCc(_0xl) + "</span></span></button>";
+      }).join("");
+      _0xmenu.querySelectorAll(".binswitch-item").forEach(_0xel => {
+        _0xel.addEventListener("click", _0xe => {
+          _0xe.stopPropagation();
+          const _0xl2 = _0xlines[Number(_0xel.getAttribute("data-cc"))];
+          if (_0xl2) _semexApplyCc(_0xl2);
+        });
+      });
+      return;
+    }
     if (_semexBinsLoading) {
       _0xmenu.innerHTML = "<div class=\"binswitch-empty\">Loading your BINs\u2026</div>";
       return;
     }
     if (!_semexSavedBins.length) {
-      _0xmenu.innerHTML = "<div class=\"binswitch-empty\">No saved BINs yet.<br>Add them in the dashboard.</div>";
+      _0xmenu.innerHTML = "<div class=\"binswitch-empty\">No saved BINs yet.<br>Type one below to use it now.</div>";
       return;
     }
     const _0xact = _semexActiveBin();
@@ -204,7 +318,9 @@ var __name = (_0x211fb2, _0xfe5f16) => __defProp(_0x211fb2, "name", {
     const _0xctrls = _0xbody.querySelector(".full-controls");
     const _0xwrap = document.createElement("div");
     _0xwrap.className = "full-binswitch";
-    _0xwrap.innerHTML = "<button class=\"binswitch-btn\" id=\"binSwitchBtn\" title=\"Switch active BIN\"><span class=\"binswitch-ico\">\uD83D\uDCB3</span><span class=\"binswitch-label\" id=\"binSwitchLabel\">Select BIN</span><span class=\"binswitch-caret\">\u25BE</span></button><div class=\"binswitch-menu\" id=\"binSwitchMenu\"></div>";
+    // v4.0: segmented BIN/CC mode toggle + cycle button + inline add-new,
+    // all on the overlay — no dashboard trip (user-approved compact v2 spec).
+    _0xwrap.innerHTML = "<div class=\"binswitch-seg\"><button class=\"seg-btn\" id=\"segBinBtn\" title=\"BIN mode\">BIN</button><button class=\"seg-btn\" id=\"segCcBtn\" title=\"CC mode\">CC</button></div><div class=\"binswitch-row\"><button class=\"binswitch-btn\" id=\"binSwitchBtn\" title=\"Switch active BIN / CC\"><span class=\"binswitch-ico\">💳</span><span class=\"binswitch-label\" id=\"binSwitchLabel\">Select BIN</span><span class=\"binswitch-caret\">▾</span></button><button class=\"binswitch-cyc\" id=\"binCycleBtn\" title=\"Switch to next\">⇄</button></div><div class=\"binswitch-add\"><input id=\"binAddInput\" placeholder=\"add new BIN (e.g. 424242)\" maxlength=\"40\" autocomplete=\"off\"><button id=\"binAddBtn\" title=\"Add\">＋</button></div><div class=\"binswitch-menu\" id=\"binSwitchMenu\"></div>";
     if (_0xctrls) {
       _0xbody.insertBefore(_0xwrap, _0xctrls);
     } else {
@@ -217,6 +333,17 @@ var __name = (_0x211fb2, _0xfe5f16) => __defProp(_0x211fb2, "name", {
         _semexToggleBinMenu();
       });
     }
+    const _0xsegB = _0xwrap.querySelector("#segBinBtn");
+    if (_0xsegB) _0xsegB.addEventListener("click", _0xe => { _0xe.stopPropagation(); _semexSetListMode("bin"); });
+    const _0xsegC = _0xwrap.querySelector("#segCcBtn");
+    if (_0xsegC) _0xsegC.addEventListener("click", _0xe => { _0xe.stopPropagation(); _semexSetListMode("ccList"); });
+    const _0xcyc = _0xwrap.querySelector("#binCycleBtn");
+    if (_0xcyc) _0xcyc.addEventListener("click", _0xe => { _0xe.stopPropagation(); _semexCycleItem(); });
+    const _0xaddB = _0xwrap.querySelector("#binAddBtn");
+    if (_0xaddB) _0xaddB.addEventListener("click", _0xe => { _0xe.stopPropagation(); _semexAddNewItem(); });
+    const _0xaddI = _0xwrap.querySelector("#binAddInput");
+    if (_0xaddI) _0xaddI.addEventListener("keydown", _0xe => { if (_0xe.key === "Enter") { _0xe.stopPropagation(); _semexAddNewItem(); } });
+    _semexSyncSeg();
     if (!window.__semexBinClickAway) {
       window.__semexBinClickAway = true;
       document.addEventListener("click", _0xe => {
@@ -519,12 +646,14 @@ var __name = (_0x211fb2, _0xfe5f16) => __defProp(_0x211fb2, "name", {
   function _0x2a586a() {
     _0x5695ac.isBlurred = !_0x5695ac.isBlurred;
     const _0x2aad62 = document.getElementById("ctrlBlur");
-    const _0x54b7e5 = document.getElementById("detailCard");
-    if (_0x54b7e5) {
-      _0x54b7e5.style.filter = _0x5695ac.isBlurred ? "blur(4px)" : "none";
-    }
+    // v4.0: Hide masks the Card, BIN and IP detail values (user request).
+    ["detailCard", "detailBinInfo", "detailIp"].forEach(_0xid => {
+      const _0xnode = document.getElementById(_0xid);
+      if (_0xnode) _0xnode.style.filter = _0x5695ac.isBlurred ? "blur(4px)" : "none";
+    });
     if (_0x2aad62) {
       _0x2aad62.textContent = _0x5695ac.isBlurred ? "👁️" : "🔒";
+      _0x2aad62.title = _0x5695ac.isBlurred ? "Show hidden details" : "Hide card / BIN / IP";
     }
     _0x27ae9(_0x5695ac.isBlurred);
   }
