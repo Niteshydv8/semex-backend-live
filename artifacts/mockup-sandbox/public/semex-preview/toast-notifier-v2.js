@@ -20,16 +20,18 @@
   const _dedup = new Set();
   const DEDUP_WINDOW = 1000;
 
+  // v2.9.11: colors per the Liquid Glass Notification System guide —
+  // Success = gold, Live = blue, Decline = red, Bypass = amber.
   const TYPE_MAP = {
-    charged:      { icon: "✓",  color: "#10b981", glow: "rgba(16,185,129,0.32)",  label: "Payment Successful" },
-    success:      { icon: "✓",  color: "#10b981", glow: "rgba(16,185,129,0.32)",  label: "Success"            },
-    live:         { icon: "●",  color: "#f59e0b", glow: "rgba(245,158,11,0.30)",   label: "Card Live"          },
-    ccn_live:     { icon: "●",  color: "#f59e0b", glow: "rgba(245,158,11,0.30)",   label: "Card Live"          },
-    "3d_live":    { icon: "●",  color: "#f59e0b", glow: "rgba(245,158,11,0.30)",   label: "Card Live (3DS)"    },
+    charged:      { icon: "✓",  color: "#facc15", glow: "rgba(250,204,21,0.38)",  label: "Payment Successful" },
+    success:      { icon: "✓",  color: "#facc15", glow: "rgba(250,204,21,0.38)",  label: "Success"            },
+    live:         { icon: "●",  color: "#3b82f6", glow: "rgba(59,130,246,0.32)",  label: "Card Live"          },
+    ccn_live:     { icon: "●",  color: "#3b82f6", glow: "rgba(59,130,246,0.32)",  label: "Card Live"          },
+    "3d_live":    { icon: "●",  color: "#3b82f6", glow: "rgba(59,130,246,0.32)",  label: "Card Live (3DS)"    },
     "3ds":        { icon: "🛡", color: "#8b5cf6", glow: "rgba(139,92,246,0.32)",  label: "3DS Challenge"      },
-    dead:         { icon: "✕",  color: "#ef4444", glow: "rgba(239,68,68,0.28)",   label: "Card Declined"      },
+    dead:         { icon: "✕",  color: "#ef4444", glow: "rgba(239,68,104,0.28)",  label: "Card Declined"      },
     expired:      { icon: "○",  color: "#6b7280", glow: "rgba(107,114,128,0.22)", label: "Session Expired"    },
-    bypass:       { icon: "⚡", color: "#3b82f6", glow: "rgba(59,130,246,0.32)",  label: "Bypass Activated"   },
+    bypass:       { icon: "⚡", color: "#f59e0b", glow: "rgba(245,158,11,0.30)",  label: "Bypass Activated"   },
     security:     { icon: "🔐", color: "#8b5cf6", glow: "rgba(139,92,246,0.32)",  label: "Security Check"     },
     info:         { icon: "ℹ",  color: "#3b82f6", glow: "rgba(59,130,246,0.24)",  label: "Information"        },
     warning:      { icon: "⚠",  color: "#f59e0b", glow: "rgba(245,158,11,0.24)",  label: "Warning"            },
@@ -43,7 +45,7 @@
     if (document.getElementById("semex-toast-fx")) return;
     const s = document.createElement("style");
     s.id = "semex-toast-fx";
-    s.textContent = "#semex-confetti-layer{position:fixed;inset:0;pointer-events:none;z-index:2147483646;overflow:hidden}.semex-confetti-piece{position:absolute;top:-14px;border-radius:2px;opacity:0;will-change:transform,opacity;animation:semex-confetti-fall cubic-bezier(.15,.5,.4,1) forwards}@keyframes semex-confetti-fall{0%{opacity:0;transform:translateY(-14px) rotate(0)}12%{opacity:1}100%{opacity:0;transform:translateY(106vh) rotate(720deg)}}";
+    s.textContent = "#semex-confetti-layer{position:fixed;inset:0;pointer-events:none;z-index:2147483646;overflow:hidden}.semex-confetti-piece{position:absolute;top:-14px;border-radius:2px;opacity:0;will-change:transform,opacity;animation:semex-confetti-fall cubic-bezier(.15,.5,.4,1) forwards}@keyframes semex-confetti-fall{0%{opacity:0;transform:translateY(-14px) rotate(0)}12%{opacity:1}100%{opacity:0;transform:translateY(106vh) rotate(720deg)}}.semex-sprinkler-piece{position:absolute;border-radius:2px;opacity:0;will-change:transform,opacity;animation:semex-sprinkler-burst cubic-bezier(.15,.6,.4,1) forwards}@keyframes semex-sprinkler-burst{0%{transform:scale(0) translate(0,0);opacity:0}18%{opacity:1}100%{transform:scale(1.5) translate(var(--sx-dx,0px),110px) rotate(var(--sx-rot,360deg));opacity:0}}";
     (document.head || document.documentElement).appendChild(s);
   }
   function _semexConfetti() {
@@ -54,7 +56,8 @@
       _semexInjectFx();
       let layer = document.getElementById("semex-confetti-layer");
       if (!layer) { layer = document.createElement("div"); layer.id = "semex-confetti-layer"; document.body.appendChild(layer); }
-      const colors = ["#8B5CF6", "#EC4899", "#10B981", "#a78bfa", "#f0abfc", "#34d399"];
+      // v2.9.11: gold palette per the liquid-glass guide's "Gold Confetti Sprinkler".
+      const colors = ["#facc15", "#fde047", "#f59e0b", "#eab308", "#fff7cc", "#ffffff"];
       const N = 60;
       for (let i = 0; i < N; i++) {
         const p = document.createElement("div");
@@ -66,6 +69,27 @@
         p.style.width = size + "px";
         p.style.height = (size * 1.5) + "px";
         p.style.background = colors[i % colors.length];
+        p.style.animationDuration = dur + "s";
+        p.style.animationDelay = delay + "s";
+        if (Math.random() > 0.5) p.style.borderRadius = "50%";
+        layer.appendChild(p);
+        setTimeout(() => { try { p.remove(); } catch (e) {} }, (dur + delay) * 1000 + 250);
+      }
+      // Sprinkler burst from the toast stack (guide's success explosion):
+      // pieces erupt from the top-right corner and fall with spread + spin.
+      for (let i = 0; i < 18; i++) {
+        const p = document.createElement("div");
+        p.className = "semex-sprinkler-piece";
+        const size = 5 + Math.random() * 7;
+        const dur = 1.0 + Math.random() * 0.7;
+        const delay = Math.random() * 0.15;
+        p.style.right = (30 + Math.random() * 260) + "px";
+        p.style.top = (26 + Math.random() * 30) + "px";
+        p.style.width = size + "px";
+        p.style.height = (size * 1.4) + "px";
+        p.style.background = colors[i % colors.length];
+        p.style.setProperty("--sx-dx", (Math.random() * 160 - 80) + "px");
+        p.style.setProperty("--sx-rot", (180 + Math.random() * 540) + "deg");
         p.style.animationDuration = dur + "s";
         p.style.animationDelay = delay + "s";
         if (Math.random() > 0.5) p.style.borderRadius = "50%";

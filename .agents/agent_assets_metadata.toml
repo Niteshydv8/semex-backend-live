@@ -364,3 +364,10 @@ uri = "file://screenshots/dashboard-v2910.jpg"
 type = "image"
 title = "SEMEX Dashboard — v2.9.10"
 description = "The real extension dashboard running standalone with demo data (Chrome APIs stubbed)."
+
+[[outputs]]
+id = "dw23B1Y8h2WoEsyL6beSV"
+uri = "file://screenshots/toaster-v2911-guide.jpg"
+type = "image"
+title = "SEMEX Toaster — guide colors applied"
+description = "v2.9.11 toasts with the Liquid Glass Notification System palette: amber Bypass, gold Success, blue Live, red Decline."
