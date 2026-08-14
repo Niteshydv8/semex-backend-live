@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
 
 from dotenv import load_dotenv
 
@@ -41,6 +42,12 @@ class Settings:
 
     # Base URL of the deployed API (used in Telegram messages / upgrade links)
     BASE_URL: str = _env("BASE_URL", "")
+
+    # Filesystem root containing the repo checkout (holds semex/ extension
+    # source, build outputs, release zips). Railway used /app; Render checks
+    # out elsewhere — compute from this file's location so both work.
+    # Override with APP_BASE_DIR if a host needs something different.
+    APP_BASE_DIR: str = _env("APP_BASE_DIR", str(Path(__file__).resolve().parent.parent))
 
     # ─── Premium billing (Bot /buy command) ─────────────────────────────────
     # Prices are display-only — owner confirms crypto payment manually and

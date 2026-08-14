@@ -560,7 +560,7 @@ from pathlib import Path
 from fastapi import File, Form, UploadFile
 from fastapi.responses import FileResponse
 
-RELEASES_DIR = Path("/app/extension_releases")
+RELEASES_DIR = Path(settings.APP_BASE_DIR) / "extension_releases"
 RELEASES_DIR.mkdir(parents=True, exist_ok=True)
 MAX_ZIP_BYTES = 25 * 1024 * 1024  # 25 MB safety cap
 _ZIP_MAGIC = b"PK\x03\x04"
@@ -934,7 +934,7 @@ async def rebuild_and_publish(body: RebuildBody, owner: User = Depends(require_o
     if not api_url.startswith("http"):
         api_url = "https://" + api_url
 
-    build_script = "/app/semex/build.sh"
+    build_script = str(Path(settings.APP_BASE_DIR) / "semex" / "build.sh")
     if not Path(build_script).exists():
         raise HTTPException(500, "build.sh missing on server — cannot rebuild.")
 
@@ -947,7 +947,7 @@ async def rebuild_and_publish(body: RebuildBody, owner: User = Depends(require_o
             *args,
             stdout=_asyncio.subprocess.PIPE,
             stderr=_asyncio.subprocess.STDOUT,
-            cwd="/app/semex",
+            cwd=str(Path(settings.APP_BASE_DIR) / "semex"),
         )
         try:
             out, _ = await _asyncio.wait_for(proc.communicate(), timeout=180)
@@ -962,14 +962,14 @@ async def rebuild_and_publish(body: RebuildBody, owner: User = Depends(require_o
         raise HTTPException(500, f"Build failed (exit {proc.returncode}):\n{tail}")
 
     # Find the resulting zip
-    zip_path = Path("/app/semex-v2.2.0.zip")
+    zip_path = Path(settings.APP_BASE_DIR) / "semex-v2.2.0.zip"
     if not zip_path.exists():
         # Search for any semex*.zip newer than the build_script mtime
-        candidates = sorted(Path("/app").glob("semex*.zip"), key=lambda p: p.stat().st_mtime, reverse=True)
+        candidates = sorted(Path(settings.APP_BASE_DIR).glob("semex*.zip"), key=lambda p: p.stat().st_mtime, reverse=True)
         if candidates:
             zip_path = candidates[0]
         else:
-            raise HTTPException(500, "Build succeeded but no output zip found in /app")
+            raise HTTPException(500, f"Build succeeded but no output zip found in {settings.APP_BASE_DIR}")
 
     data = zip_path.read_bytes()
     obfuscated = _detect_obfuscated(data)
