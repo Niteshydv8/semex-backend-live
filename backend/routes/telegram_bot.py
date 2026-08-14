@@ -33,9 +33,10 @@ if not (getattr(settings, "TELEGRAM_WEBHOOK_SECRET", "") or "").strip():
     )
 
 
+_EXTENSION_BASE = Path(settings.APP_BASE_DIR)
 EXTENSION_ZIP_CANDIDATES = [
-    "/app/semex-v2.2.0.zip",
-    "/app/semex.zip",
+    str(_EXTENSION_BASE / "semex-v2.2.0.zip"),
+    str(_EXTENSION_BASE / "semex.zip"),
 ]
 
 
@@ -72,7 +73,7 @@ def _find_extension_zip() -> Path | None:
         p = Path(path)
         if p.exists() and p.stat().st_size > 0:
             return p
-    for p in Path("/app").glob("semex*.zip"):
+    for p in Path(settings.APP_BASE_DIR).glob("semex*.zip"):
         if p.stat().st_size > 0:
             return p
     return None
