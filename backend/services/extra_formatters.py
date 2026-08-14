@@ -21,12 +21,9 @@ def format_public_showcase(hit: dict, user: dict) -> str:
     Shows: gateway header, user, status, amount, response, merchant. NO card/email/BIN.
     """
     import html
-    from config import settings as _cfg
 
     def e(v):
         return html.escape(str(v))
-
-    bot_handle = getattr(_cfg, "TELEGRAM_BOT_USERNAME", None) or "SemexBot"
 
     username = user.get("telegram_username")
     first = user.get("telegram_first_name") or ""
@@ -82,8 +79,8 @@ def format_public_showcase(hit: dict, user: dict) -> str:
         f"Amount ❝ {e(amount_line)}\n"
         f"Response ❝ {e(response)}\n"
         f"\n"
-        f"⚡️ 𝗕𝗼𝘁 𝗯𝘆 <b>SEMEX</b> ⚡️\n"
-        f"「 @{e(bot_handle)} 」"
+        f"⚡️ 𝗕𝗼𝘁 𝗯𝘆 𝗡𝗲𝗽𝗮𝗹𝗶 𝗕𝗵𝗮𝗶 ⚡️\n"
+        f"「 @SEMEXHITSBOT 」"
     )
 
 
