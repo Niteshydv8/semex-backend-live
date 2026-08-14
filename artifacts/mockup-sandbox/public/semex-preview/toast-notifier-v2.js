@@ -1,4 +1,3 @@
-})();
 (function () {
   "use strict";
   /* SEMEX Toast Notifier v4 (v2.9.7 liquid-glass redesign)

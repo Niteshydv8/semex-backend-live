@@ -385,3 +385,10 @@ uri = "file://screenshots/toaster-pure.jpg"
 type = "image"
 title = "SEMEX Toaster — pure render"
 description = "Just the toasts: amber Bypass (Hitting…), blue Live, gold Charged with chart rows — layered stack, no page UI."
+
+[[outputs]]
+id = "H652g0j5wflVZYPOAxBj3"
+uri = "file://screenshots/toaster-fixed.jpg"
+type = "image"
+title = "SEMEX Toaster v2.9.12 — now rendering"
+description = "Amber Bypass (Hitting…), blue Live (ping ring), gold Charged (chart rows + confetti). The frame was blank before due to a broken JS copy — now fixed."
