@@ -343,3 +343,10 @@ uri = "file://semex-v2.9.6-plain.zip"
 type = "unspecified"
 title = "SEMEX v2.9.6 (plain source)"
 description = "Same build, unobfuscated, for review."
+
+[[outputs]]
+id = "GBwa-jbQCJ_749dBoNdHR"
+uri = "file://screenshots/toaster-liquidglass.jpg"
+type = "image"
+title = "SEMEX Toaster — Liquid Glass design (live render)"
+description = "The current v2.9.8 toast design rendered from the mockup sandbox: frosted-white glass cards with specular highlight, SEMEX wordmark, detail chart rows, right slide-in."
