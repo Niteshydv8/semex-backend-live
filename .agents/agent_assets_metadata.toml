@@ -406,3 +406,10 @@ uri = "file://artifacts/mockup-sandbox/public/semex-preview/toasts.html"
 type = "text"
 title = "Toaster demo page — toasts.html"
 description = "Standalone demo page that loads the toaster and fires example toasts. Useful for previewing a redesign without the extension. Note: it references a copy of the JS with the anti-debug header stripped."
+
+[[outputs]]
+id = "dcJA-Khrnuznxe_m_kQ1o"
+uri = "file://semex-v2.9.12-plain.zip"
+type = "unspecified"
+title = "SEMEX Extension v2.9.12 (latest build)"
+description = "Unzip and load unpacked in Chrome. Fixes vs your 2.9.3: late screenshots (now captured on the checkout page within ~800ms), broken hit history, slow autofill re-fetching, duplicate/dropped Telegram hits, XSS fix, and the Site field now shows the real merchant site."

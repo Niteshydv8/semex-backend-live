@@ -16,7 +16,8 @@ Pushing `main` to origin (github.com/Niteshydv8/semexbackend) auto-redeploys the
 - Commit message must be byte-exact from `git cat-file commit` (keep the trailing newline — a `.trim()` changed every SHA and forced a ref reset).
 - Blob content must be read **at the commit** (`git cat-file blob <sha>`), never from the working tree — same-path files change across a multi-commit replay and silently corrupt later commits.
 - `git diff-tree` shows mode `000000` for ADDED files (that's the old-mode slot) — map to the new mode (`100644`) or GitHub 422s with "Must supply a valid tree.mode". Delete-entries need mode `100644` with `sha: null`.
-- `conn.proxyFetch(path, opts)` takes an API path starting with `/` (e.g. `/repos/owner/repo/git/blobs`), NOT a full https URL; `listConnections("github")` only works inside a `"use impure"` function, and outer-scope constants must be passed in as parameters.
+- `conn.proxyFetch(path, opts)` takes an API path starting with `/` (e.g. `/repos/owner/repo/git/blobs`), NOT a full https URL; `listConnections("github")` REQUIRES the `"github"` name argument and only works inside a `"use impure"` function; outer-scope constants must be passed in as parameters.
+- `proxyFetch` returns a fetch **Response** — you MUST `await res.json()` (the raw object stringifies as `{}` and `res.object.sha` is undefined; this cost 2 failed attempts).
 - If remote main is BEHIND local (unpushed platform commits), replay the whole chain oldest-first (force-PATCH ref back to remote base first) — overlaying one commit's files on an old base tree drops the intermediate commits' other files.
 - Advance the ref only after each commit verifies; if a replay half-completes, force-PATCH the ref back to base and redo with corrected payloads.
 - `proxyFetch` rate limit is ~10 RPS per repl — batch blob uploads at 3 concurrent max with a ~350–400ms sleep between batches, or they 429 mid-push ("Rate limit exceeded: 12/10 RPS").
