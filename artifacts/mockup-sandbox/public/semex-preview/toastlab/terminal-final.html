@@ -22,7 +22,7 @@
     transform-origin: right center; }
 
   /* ENTRANCE: motion-blur slide right→left + aura pulse on land */
-  .t.in { animation: slideIn .42s cubic-bezier(.2,.9,.3,1.05) both, aura .9s ease-out .30s; }
+  .t.in { animation: slideIn .55s cubic-bezier(.16,.84,.28,1) both, aura 1.15s ease-out .40s; }
   @keyframes slideIn {
     0%   { transform: translateX(70px) skewX(-6deg); opacity: 0; filter: blur(11px); }
     55%  { opacity: 1; filter: blur(3px); }
@@ -98,17 +98,17 @@
   function tick() {
     var t = build(SEQ[i % SEQ.length]);
     stack.appendChild(t);
-    // auto-dismiss each toast after a few seconds with exit animation
+    // auto-dismiss after ~5s — the real extension toast lifetime
     setTimeout(function () {
       t.classList.remove("in"); t.classList.add("out");
-      setTimeout(function () { if (t.parentNode) t.remove(); }, 360);
-    }, 4200);
+      setTimeout(function () { if (t.parentNode) t.remove(); }, 380);
+    }, 5000);
     i++;
-    // clear + restart the cycle after the full set so the loop is watchable
+    // calm pacing between toasts; longer breath after a full cycle
     if (i % SEQ.length === 0) {
-      setTimeout(tick, 2200);
+      setTimeout(tick, 3000);
     } else {
-      setTimeout(tick, 850);
+      setTimeout(tick, 1500);
     }
   }
   tick();
