@@ -418,5 +418,5 @@ description = "Unzip and load unpacked in Chrome. Fixes vs your 2.9.3: late scre
 id = "CwHrwgO_a42rw8sDuBIab"
 uri = "file://semex-v4.0.0-plain.zip"
 type = "unspecified"
-title = "SEMEX Extension v4.0.0 — launch build"
-description = "Screenshot: hardcoded 400ms capture (slider no longer overrides) + cross-tab duplicate fix. Autofill: lone email fields on non-checkout pages (Namecheap) no longer auto-filled — requires a real 2+ field identity form. BIN lookup: persistent cache + 3s timeout + debounce. Overlay NOT yet changed — pending your approval of the compact design."
+title = "SEMEX Extension v4.0.0 — updated build"
+description = "Random-name autofill now draws from ~47M unique identities (middle initial + hyphenated surname combinatorics) in both fill paths; generation is synchronous so filling always has a complete identity before touching any field. All prior v4.0 fixes included: 400ms hardcoded screenshot delay, last4+site screenshot dedup, lone-field autofill gate, BIN lookup cache/timeout/debounce."
