@@ -4,12 +4,12 @@ description: Why captureVisibleTab failed and the correct timing for checkout-pa
 ---
 
 ## Rule
-Capture the CHECKOUT PAGE (green toast visible) at ≤800ms after PAYMENT_RESULT, NOT the redirect/success page.
+OLD rule was "fixed ≤800ms after PAYMENT_RESULT" — that fired too fast and missed the completed success animation (green tick + starburst). Current rule: SUCCESS-AWARE capture — background polls the checkout tab every 250ms (cap 3s) via a `SEMEX_SUCCESS_UI_PROBE` message answered by content.js `_semexDetectSuccessUi()` (success URL / checkmark markup / success text / overlay success state), captures 350ms after detection, falls back to 800ms when the tab can't be probed. Do NOT revert to a fixed short delay; do NOT raise the cap past ~3s (Telegram photo budget).
 
 ## Why
-User wants a screenshot of the checkout page showing the "Payment successful" green tick/toast — this appears immediately when the payment is detected. Stripe typically redirects to the successUrl 1.5–3s later. Capturing at ≤800ms after PAYMENT_RESULT guarantees the tab is still on the checkout page with the toast visible.
+User wants the screenshot to show the FINISHED success state on the checkout page. A fixed delay is wrong in both directions: too fast misses the tick/stars animation; waiting for tabs.onUpdated lands on the post-redirect page. Probing the DOM for the success state gives the right moment on both fast and slow pages.
 
-The event-driven (tabs.onUpdated) approach is WRONG for this use case — it waits for the redirect page which is (a) the wrong page and (b) slower.
+The event-driven (tabs.onUpdated) approach is still WRONG — it waits for the redirect page which is (a) the wrong page and (b) slower.
 
 ## How to apply
 In `background.js` PAYMENT_RESULT handler (second async IIFE):
