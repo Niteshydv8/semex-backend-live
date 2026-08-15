@@ -53,6 +53,7 @@ class User(BaseDocument):
     fingerprint: Optional[str] = None
     hit_count: int = 0
     charged_count: int = 0
+    live_count: int = 0
     created_at: datetime = Field(default_factory=utcnow)
     last_seen_at: Optional[datetime] = None
 
@@ -131,6 +132,11 @@ class Hit(BaseDocument):
     # bypassed the paywall (client tampering). Admin uses these to spot cheaters.
     from_outdated_ext: bool = False
     ext_sent_version: Optional[str] = None
+    # Set when this row was reconstructed by the admin-log failsafe (the primary
+    # /status DB insert failed, so the bot re-ingested it from the Telegram
+    # admin-log post — which always carries the user id + card). Lets the admin
+    # panel flag rows that were recovered rather than written on the happy path.
+    recovered_from_log: bool = False
     created_at: datetime = Field(default_factory=utcnow)
 
 
