@@ -14,5 +14,9 @@ timeoutMs = 180000
 runButton = "Project"
 
 [[ports]]
+localPort = 8901
+externalPort = 3001
+
+[[ports]]
 localPort = 23636
 externalPort = 80
