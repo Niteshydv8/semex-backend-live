@@ -81,48 +81,62 @@ def _find_extension_zip() -> Path | None:
 
 
 async def _cmd_buy(chat_id: int, username: str | None) -> None:
-    """Show plan details + USDT payment addresses on BEP20 / TRC20 / TON.
-    Owner confirms manually via /paid proof-of-payment flow (see _cmd_paid)."""
+    """Show premium plans + private-group offer + USDT wallets (BEP20/TRC20/TON).
+    Manual flow: user pays → /paid proof → owner verifies → owner activates the
+    plan (admin panel) and/or delivers the group invite via /sendlink."""
     owner_handle = (settings.OWNER_HANDLE or settings.TELEGRAM_BOT_USERNAME or "SemexBot").replace("@", "")
-    price_monthly = getattr(settings, "PLAN_PRICE_MONTHLY", None) or "$15"
-    price_yearly = getattr(settings, "PLAN_PRICE_YEARLY", None) or "$120"
-    price_lifetime = getattr(settings, "PLAN_PRICE_LIFETIME", None) or "$250"
-    # USDT payment addresses (all USDT, three networks — pick lowest fee)
-    usdt_bep20 = getattr(settings, "PAYMENT_USDT_BEP20", "") or "0xb1ab479abe81d6be059d5bb9d55a6e8d99b64bfd"
-    usdt_trc20 = getattr(settings, "PAYMENT_USDT_TRC20", "") or "TCn8eNownsyUzMeHNMeUpzXJFDruCWYr5w"
-    usdt_ton = getattr(settings, "PAYMENT_USDT_TON", "") or "UQAmwQDBLUHsSZI3SiKTDwSnvte-Y8MkwoDvzHzOGa-3xk68"
+    price_monthly = getattr(settings, "PLAN_PRICE_MONTHLY", None) or "$180"
+    price_yearly = (getattr(settings, "PLAN_PRICE_YEARLY", "") or "").strip()
+    price_lifetime = getattr(settings, "PLAN_PRICE_LIFETIME", None) or "$900"
+    group_weekly = getattr(settings, "GROUP_PRICE_WEEKLY", None) or "$29"
+    group_monthly = getattr(settings, "GROUP_PRICE_MONTHLY", None) or "$59"
+    # USDT payment addresses (three networks — pick lowest fee)
+    usdt_bep20 = getattr(settings, "PAYMENT_USDT_BEP20", "")
+    usdt_trc20 = getattr(settings, "PAYMENT_USDT_TRC20", "")
+    usdt_ton = getattr(settings, "PAYMENT_USDT_TON", "")
 
     name_line = f" @{username}" if username else ""
     lines = [
-        f"<b>💎 SEMEX Premium Plans</b>{name_line}",
+        f"<b>💎 SEMEX Premium</b>{name_line}",
+        "─ ─ ─ ─ ─ ─ ─ ─ ─ ─",
         "",
-        "<b>📦 Plans:</b>",
-        f"• <b>MONTHLY</b> — {price_monthly} / 30 days",
-        f"• <b>YEARLY</b>  — {price_yearly} / 365 days",
+        "<b>📦 BOT ACCESS (Premium):</b>",
+        f"• <b>MONTHLY</b> — {price_monthly}",
+    ]
+    if price_yearly:
+        lines.append(f"• <b>YEARLY</b>  — {price_yearly}")
+    lines += [
         f"• <b>LIFETIME</b> — {price_lifetime} one-time",
         "",
-        "<b>🔓 Premium unlocks:</b>",
-        "• 3DS Bypass (Stripe)",
-        "• Full-quality screenshots on every CHARGED",
-        "• Extended history retention",
-        "• Priority support",
+        "Includes: 3DS Bypass (Stripe) · full-quality screenshots · "
+        "extended history · priority support",
         "",
-        "<b>💵 Payment — USDT (all networks):</b>",
+        "<b>🔥 PRIVATE GROUP — CC Drop + Methods:</b>",
+        f"• <b>WEEKLY</b> — {group_weekly}",
+        f"• <b>MONTHLY</b> — {group_monthly}",
+        "",
+        "You get: fresh CCs · mix lines · unchecked lines · on-request CCs "
+        "(weekly, 1 person) · hitting tips · charged BINs + sites · "
+        "non-VBV BINs · non-VBV CCs & more on request.",
+        "<i>Refund available for any issues.</i>",
+        "",
+        "<b>💵 Payment — USDT:</b>",
         "",
         "✅ <b>BEP20</b> (BNB Smart Chain)",
         f"<code>{usdt_bep20}</code>",
         "",
-        "🪙 <b>TRC20</b> (Tron)",
+        "💰 <b>TRC20</b> (Tron)",
         f"<code>{usdt_trc20}</code>",
         "",
         "🪙 <b>TON</b> (The Open Network)",
         f"<code>{usdt_ton}</code>",
         "",
-        f"<b>➡️ How to buy:</b>",
-        f"1. Send USDT to any address above (BEP20 recommended — lowest fee)",
-        f"2. Screenshot the transaction (must show <b>amount + tx hash</b>)",
-        f"3. Run <code>/paid</code> in this chat, then reply with your screenshot",
-        f"4. Owner @{owner_handle} verifies + activates your plan (usually within a few hours)",
+        "<b>➡️ How to buy:</b>",
+        "1. Send USDT to any address above (BEP20 recommended — lowest fee)",
+        "2. Screenshot the transaction (must show <b>amount + tx hash</b>)",
+        "3. Run <code>/paid</code> in this chat, then send the screenshot",
+        f"4. Owner @{owner_handle} verifies → activates your plan and/or sends "
+        "your private-group invite right here in the bot",
         "",
         "<i>All tap-to-copy addresses — hold on mobile to copy.</i>",
     ]
@@ -169,6 +183,61 @@ async def _cmd_cancel(chat_id: int) -> None:
     await send_message(chat_id, "❎ Cancelled. No proof submitted.")
 
 
+async def _cmd_sendlink(chat_id: int, from_user_id: int | None, args: list[str]) -> None:
+    """Owner-only: deliver the private-group invite to a verified buyer.
+
+    Usage: /sendlink <telegram_id> [custom_invite_link]
+    Sends PREMIUM_GROUP_LINK (or the custom link) to the user's DM from the bot,
+    then confirms back to the owner. Keeps the invite off any public surface."""
+    if from_user_id != settings.ADMIN_TELEGRAM_ID:
+        # Silent ignore — never reveal this command exists.
+        return
+    link = (getattr(settings, "PREMIUM_GROUP_LINK", "") or "").strip()
+    target_id: int | None = None
+    if args:
+        try:
+            target_id = int(args[0])
+        except ValueError:
+            target_id = None
+    if len(args) > 1 and args[1].strip():
+        link = args[1].strip()
+    if target_id is None:
+        await send_message(
+            chat_id,
+            "Usage: <code>/sendlink &lt;telegram_id&gt; [invite_link]</code>\n"
+            "Sends the premium-group invite to that user's DM.",
+        )
+        return
+    if not link:
+        await send_message(
+            chat_id,
+            "⚠️ PREMIUM_GROUP_LINK is not set on the server and no link was given.\n"
+            "Set the env var or pass a link: <code>/sendlink &lt;id&gt; &lt;link&gt;</code>",
+        )
+        return
+    try:
+        await send_message(
+            target_id,
+            (
+                "🎉 <b>Payment confirmed — welcome to the SEMEX Private Group!</b>\n\n"
+                f"👉 <b>Your invite:</b> {link}\n\n"
+                "⚠️ <i>This invite is personal — do not share it. "
+                "If it stops working, message the owner.</i>"
+            ),
+        )
+        await send_message(
+            chat_id,
+            f"✅ Invite sent to <code>{target_id}</code>.",
+        )
+    except Exception as e:
+        log.exception("sendlink failed for %s: %s", target_id, e)
+        await send_message(
+            chat_id,
+            f"⚠️ Couldn't DM <code>{target_id}</code> — the user must have started "
+            "the bot at least once (blocked bots / no prior /start will fail).",
+        )
+
+
 async def _forward_proof_to_owner(
     chat_id: int,
     user_message_id: int,
@@ -193,8 +262,9 @@ async def _forward_proof_to_owner(
         + "\n"
         "<b>Next steps:</b>\n"
         f"• Verify the tx on-chain (BEP20 / TRC20 / TON)\n"
-        f"• Open the admin panel → find user <code>{tid}</code> → click <b>Extend</b>\n"
-        f"• DM the user @{handle} to confirm activation"
+        f"• Plan purchase → admin panel → find user <code>{tid}</code> → <b>Extend</b>\n"
+        f"• Group purchase → reply <code>/sendlink {tid}</code> to DM them the invite\n"
+        f"• DM the user @{handle} to confirm"
     )
     try:
         await copy_message(
@@ -231,12 +301,10 @@ def _main_menu_kb() -> dict:
     # Row 1 — download the extension (always a callback → sends the .zip document)
     row1 = [{"text": "🧩 Get Extension", "callback_data": "menu:get"}]
 
-    # Row 2 — premium group + support
-    grp = (getattr(settings, "PREMIUM_GROUP_LINK", "") or "").strip()
-    if grp:
-        premium_btn = {"text": "💎 Premium Group", "url": grp}
-    else:
-        premium_btn = {"text": "💎 Premium Group", "callback_data": "menu:premium"}
+    # Row 2 — premium group + support. The group link is NEVER exposed here:
+    # the button always opens the offer/payment flow; the owner delivers the
+    # invite manually via /sendlink after verifying payment.
+    premium_btn = {"text": "💎 Premium Group", "callback_data": "menu:premium"}
     support_url = _owner_support_url()
     if support_url:
         support_btn = {"text": "🛟 Contact Support", "url": support_url}
@@ -331,7 +399,7 @@ async def _cmd_help(chat_id: int) -> None:
         "/menu – re-open the button menu\n"
         "/settings – account + saved BINs\n"
         "/get – download the extension .zip\n"
-        "/buy – premium plans + USDT payment addresses\n"
+        "/buy – premium plans + private group offer + USDT addresses\n"
         "/paid – submit proof-of-payment screenshot\n"
         "/cancel – cancel a pending /paid submission\n"
         "/help – this message\n\n"
@@ -801,6 +869,8 @@ async def telegram_webhook(request: Request):
             await _cmd_paid(chat_id, username, from_user_id)
         elif command == "/cancel":
             await _cmd_cancel(chat_id)
+        elif command in ("/sendlink", "/givelink", "/invitelink"):
+            await _cmd_sendlink(chat_id, from_user_id, text.split()[1:])
         elif command in ("/status", "/stats", "/me", "/plan"):
             await _cmd_status(chat_id, from_user_id)
         elif command == "/history":
