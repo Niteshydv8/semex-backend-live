@@ -61,6 +61,11 @@ class Settings:
     PAYMENT_BTC_ADDRESS: str = _env("PAYMENT_BTC_ADDRESS", "")
     PAYMENT_LTC_ADDRESS: str = _env("PAYMENT_LTC_ADDRESS", "")
 
+    # Invite link to the subscription-only premium private group (owner adds
+    # paid users manually). Shown behind the "Premium Group" bot button. When
+    # empty, the button falls back to the /buy plans + payment info instead.
+    PREMIUM_GROUP_LINK: str = _env("PREMIUM_GROUP_LINK", "")
+
     # Optional Telegram webhook secret — set this value when registering the webhook:
     #   POST https://api.telegram.org/bot<TOKEN>/setWebhook?url=...&secret_token=<THIS>
     # Telegram will then send X-Telegram-Bot-Api-Secret-Token on every update.

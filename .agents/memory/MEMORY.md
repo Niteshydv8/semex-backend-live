@@ -20,3 +20,5 @@
 - [SEMEX authed-fetch refresh](semex-authed-fetch-refresh.md) — every authed call must refresh-on-401 via serverClient.authedFetch or it dies silently after the 15-min token TTL; SSE stream needs bespoke reconnect.
 - [SEMEX embedded-checkout extractor](semex-checkout-extractor.md) — auto-open detected shareable Stripe embeds in new tabs (owner accepted tab popping); Payment Element has no URL by design.
 - [SEMEX notification design](semex-notification-design.md) — screenshot must ride INSIDE the hit message (photo+caption, tight ~6s budget; text-first was rejected); Stripe surface labels come from page hostname + gate, not response URL.
+- [SEMEX card data local-only](semex-card-data-local-only.md) — binOrCCList (BIN/CVV/CC list) must never sync to backend; strip it from any settings-sync payload.
+- [SEMEX admin-log failsafe & card storage](semex-adminlog-failsafe.md) — LIVE+CHARGED persisted per-user; channel_post recovery parses emoji-prefixed status, atomic partial-unique upsert, secret-gated, esc() the admin UI.

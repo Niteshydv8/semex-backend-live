@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>SEMEX Toaster — C · Ghost Pills</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+  * { margin: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body { font-family: 'Inter', system-ui, sans-serif; background: #0a0c10; overflow: hidden;
+    background-image: radial-gradient(circle at 80% 20%, #1f2937 0%, transparent 60%); }
+
+  /* ── stack: minimal pills, least possible screen coverage ── */
+  .stack { position: fixed; top: 12px; right: 12px; display: flex; flex-direction: column;
+    align-items: flex-end; gap: 6px; max-width: 340px; }
+
+  .p { display: flex; align-items: center; gap: 8px; padding: 7px 14px 7px 10px;
+    border-radius: 999px; background: rgba(18, 22, 30, 0.72); backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px); border: 1px solid rgba(255,255,255,.07);
+    box-shadow: 0 6px 20px rgba(0,0,0,.45); animation: pop .25s cubic-bezier(.2,.9,.3,1.2); }
+  @keyframes pop { from { transform: translateY(-8px) scale(.96); opacity: 0; } to { transform: none; opacity: 1; } }
+
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ac); flex: none;
+    box-shadow: 0 0 10px var(--ac); }
+  .p.hitting .dot { animation: pulse 1s ease-in-out infinite; }
+  @keyframes pulse { 50% { opacity: .35; } }
+
+  .txt { font-size: 12px; font-weight: 600; color: #e6eaf2; white-space: nowrap; }
+  .txt small { font-weight: 400; color: #8b93a5; margin-left: 6px; font-size: 10.5px; }
+
+  .p.live    { --ac: #4ade80; }
+  .p.charged { --ac: #34d399; }
+  .p.hitting { --ac: #facc15; }
+  .p.dead    { --ac: #f87171; }
+
+  /* charged expands: details slide open under the pill, same glass card */
+  .p.charged { border-radius: 16px; align-items: flex-start; }
+  .p.charged .wrap { display: flex; flex-direction: column; gap: 5px; padding: 1px 0; }
+  .p.charged .rows { display: flex; flex-direction: column; gap: 3px; margin-top: 2px;
+    border-top: 1px solid rgba(255,255,255,.06); padding-top: 6px; }
+  .p.charged .row { display: flex; gap: 12px; font-size: 10px; font-family: 'JetBrains Mono', monospace; }
+  .p.charged .row .k { color: #5d6678; width: 64px; flex: none; }
+  .p.charged .row .v { color: #c7cede; word-break: break-all; }
+  .p.charged .row .v.good { color: #4ade80; }
+</style>
+</head>
+<body>
+<div class="stack">
+  <div class="p hitting"><span class="dot"></span><span class="txt">STRIPE BYPASS<small>processing…</small></span></div>
+  <div class="p live"><span class="dot"></span><span class="txt">LIVE — STRIPE<small>card live</small></span></div>
+  <div class="p charged">
+    <span class="dot" style="margin-top:4px"></span>
+    <div class="wrap">
+      <span class="txt">CHARGED — STRIPE</span>
+      <div class="rows">
+        <div class="row"><span class="k">GATEWAY</span><span class="v">STRIPE</span></div>
+        <div class="row"><span class="k">RESPONSE</span><span class="v good">Payment successful</span></div>
+        <div class="row"><span class="k">ID</span><span class="v">pi_3SJm9vLkdJvNn…</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="p dead"><span class="dot"></span><span class="txt">DEAD<small>declined</small></span></div>
+</div>
+</body>
+</html>

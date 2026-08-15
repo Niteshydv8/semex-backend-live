@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SEMEX Overlay — Compact v2 · Terminal theme</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+  * { margin: 0; box-sizing: border-box; }
+  html, body { height: 100%; }
+  body { background: #1a1d24; overflow: hidden; display: flex; align-items: center;
+    justify-content: center;
+    background-image: radial-gradient(circle at 30% 20%, #262b36 0%, #1a1d24 60%); }
+
+  /* ═══ Compact overlay v2 — matches Terminal Trace toaster ═══ */
+  .ov { width: 252px; border-radius: 12px; overflow: hidden;
+    background: rgba(10, 14, 12, 0.95); border: 1px solid #22302a;
+    box-shadow: 0 0 30px rgba(52, 211, 153, .10), 0 16px 40px rgba(0,0,0,.6);
+    font-family: 'Inter', system-ui, sans-serif; color: #dfe7e0; }
+
+  /* header — slim */
+  .hd { display: flex; align-items: center; justify-content: space-between;
+    padding: 7px 10px; border-bottom: 1px solid #1b2620;
+    background: linear-gradient(180deg, rgba(52,211,153,.06), transparent); }
+  .hd .brand { display: flex; align-items: center; gap: 7px; }
+  .hd .logo { width: 20px; height: 20px; border-radius: 6px; display: grid; place-items: center;
+    background: linear-gradient(135deg, #34d399, #059669); color: #04120c;
+    font: 700 11px 'JetBrains Mono', monospace; box-shadow: 0 0 12px rgba(52,211,153,.4); }
+  .hd .name { font-size: 12px; font-weight: 700; letter-spacing: .02em; }
+  .hd .name small { display: block; font-size: 7.5px; font-weight: 500; letter-spacing: .14em;
+    color: #64748b; text-transform: uppercase; }
+  .hd .hbtns { display: flex; gap: 4px; }
+  .hd .hbtn { width: 20px; height: 20px; border-radius: 5px; border: 1px solid #22302a;
+    background: transparent; color: #8b9a90; font-size: 9px; cursor: pointer; }
+  .hd .hbtn:hover { border-color: #34d399; color: #34d399; }
+
+  .bd { padding: 7px 10px 9px; display: flex; flex-direction: column; gap: 7px; }
+
+  /* status — terminal line */
+  .status { font: 600 10.5px 'JetBrains Mono', monospace; color: #34d399;
+    display: flex; align-items: center; gap: 7px; }
+  .status .glyph { animation: blink 1.4s steps(2) infinite; }
+  @keyframes blink { 50% { opacity: .25; } }
+
+  /* stats — inline strip */
+  .stats { display: flex; justify-content: space-between; padding: 4px 9px;
+    background: rgba(255,255,255,.03); border: 1px solid #1b2620; border-radius: 7px;
+    font-family: 'JetBrains Mono', monospace; }
+  .stats .s { display: flex; align-items: baseline; gap: 3px; }
+  .stats .k { font-size: 7.5px; letter-spacing: .06em; color: #5c6b62; text-transform: uppercase; }
+  .stats .v { font-size: 12px; font-weight: 700; }
+  .stats .v.c { color: #34d399; } .stats .v.l { color: #fbbf24; } .stats .v.d { color: #f87171; }
+
+  /* ── NEW: BIN / CC mode selector + library picker ── */
+  .picker { background: rgba(255,255,255,.03); border: 1px solid #1b2620; border-radius: 7px;
+    padding: 6px 8px; display: flex; flex-direction: column; gap: 6px; }
+  .seg { display: flex; background: #0d130f; border: 1px solid #22302a; border-radius: 6px;
+    overflow: hidden; }
+  .seg button { flex: 1; padding: 4px 0; font: 700 9.5px 'JetBrains Mono', monospace;
+    letter-spacing: .08em; background: transparent; border: none; color: #64748b; cursor: pointer; }
+  .seg button.on { background: rgba(52,211,153,.14); color: #34d399; }
+  .pick-row { display: flex; gap: 5px; align-items: center; }
+  .pick-row select { flex: 1; min-width: 0; background: #0d130f; border: 1px solid #22302a;
+    border-radius: 6px; color: #cfe3d8; font: 500 10px 'JetBrains Mono', monospace;
+    padding: 4px 6px; outline: none; }
+  .pick-row .cyc { width: 24px; height: 22px; flex: none; border-radius: 6px; cursor: pointer;
+    border: 1px solid #22302a; background: transparent; color: #34d399; font-size: 11px; }
+  .pick-row .cyc:hover { border-color: #34d399; box-shadow: 0 0 8px rgba(52,211,153,.3); }
+  .add-row { display: flex; gap: 5px; }
+  .add-row input { flex: 1; min-width: 0; background: #0d130f; border: 1px dashed #2a3a32;
+    border-radius: 6px; color: #cfe3d8; font: 400 10px 'JetBrains Mono', monospace;
+    padding: 4px 6px; outline: none; }
+  .add-row input::placeholder { color: #4a5a50; }
+  .add-row button { flex: none; padding: 0 9px; border-radius: 6px; cursor: pointer;
+    border: 1px solid #22302a; background: rgba(52,211,153,.1); color: #34d399; font-size: 11px; }
+
+  /* details — 2-col grid; values maskable via Hide */
+  .det { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; padding: 4px 9px;
+    background: rgba(255,255,255,.03); border: 1px solid #1b2620; border-radius: 7px; }
+  .det .r { display: flex; justify-content: space-between; padding: 1px 0;
+    font: 500 10px 'JetBrains Mono', monospace; }
+  .det .r.full { grid-column: 1 / -1; }
+  .det .k { color: #5c6b62; } .det .v { color: #cfe3d8; }
+  .det .v.masked { filter: blur(4px); user-select: none; }
+
+  /* controls — Start / Pause-Resume / Stop / Hide */
+  .ctl { display: flex; gap: 5px; }
+  .ctl button { padding: 5px 0; border-radius: 7px; border: 1px solid #22302a; cursor: pointer;
+    font: 700 10px 'Inter', sans-serif; background: transparent; color: #9fb3a6; }
+  .ctl .start { flex: 1.4; background: rgba(52,211,153,.14); border-color: #2c4a3c;
+    color: #34d399; box-shadow: 0 0 10px rgba(52,211,153,.12); }
+  .ctl .pause { flex: 1.2; color: #fbbf24; border-color: #3a3524; background: rgba(251,191,36,.08); }
+  .ctl .stop  { flex: .8; color: #f87171; border-color: #3a2626; background: rgba(248,113,113,.07); }
+  .ctl .hide  { flex: .8; color: #8b9a90; }
+  .ctl button:active { transform: scale(.96); }
+</style>
+</head>
+<body>
+<div class="ov">
+  <div class="hd">
+    <div class="brand">
+      <div class="logo">S</div>
+      <div class="name">SEMEX<small>Automation</small></div>
+    </div>
+    <div class="hbtns">
+      <button class="hbtn" title="Position">📍</button>
+      <button class="hbtn" title="Dock">▤</button>
+      <button class="hbtn" title="Minimize">−</button>
+    </div>
+  </div>
+  <div class="bd">
+    <div class="status"><span class="glyph">▸</span> STRIPE CHECKOUT — READY</div>
+
+    <div class="stats">
+      <div class="s"><span class="k">ATT</span><span class="v">42</span></div>
+      <div class="s"><span class="k">CHG</span><span class="v c">7</span></div>
+      <div class="s"><span class="k">LIV</span><span class="v l">5</span></div>
+      <div class="s"><span class="k">DD</span><span class="v d">30</span></div>
+    </div>
+
+    <!-- BIN / CC picker: select from library, add new, or cycle (⇄) — all on-page, no dashboard trip -->
+    <div class="picker">
+      <div class="seg">
+        <button id="segBin" class="on" onclick="setMode('bin')">BIN MODE</button>
+        <button id="segCc" onclick="setMode('cc')">CC MODE</button>
+      </div>
+      <div class="pick-row">
+        <select id="lib"></select>
+        <button class="cyc" title="Switch to next" onclick="cycle()">⇄</button>
+      </div>
+      <div class="add-row">
+        <input id="addIn" placeholder="add new BIN (e.g. 424242)">
+        <button onclick="addNew()">＋</button>
+      </div>
+    </div>
+
+    <div class="det">
+      <div class="r full"><span class="k">Card:</span><span class="v">424242••4242</span></div>
+      <div class="r"><span class="k">Attempts:</span><span class="v">3</span></div>
+      <div class="r"><span class="k">Speed:</span><span class="v">1.2s</span></div>
+      <div class="r"><span class="k">Time:</span><span class="v">00:47</span></div>
+      <div class="r"><span class="k">BIN:</span><span class="v" id="binV">424242 · Chase</span></div>
+      <div class="r"><span class="k">IP:</span><span class="v" id="ipV">DE · 185.22.•</span></div>
+    </div>
+
+    <div class="ctl">
+      <button class="start" id="btnStart" onclick="toggleStart()">▶ Start</button>
+      <button class="pause" onclick="togglePause(this)">⏸ Pause</button>
+      <button class="stop">⏹</button>
+      <button class="hide" id="btnHide" title="Hide IP & BIN" onclick="toggleMask()">🙈</button>
+    </div>
+  </div>
+</div>
+<script>
+  // demo data — BIN library vs CC library
+  var LIB = {
+    bin: ["424242 · Chase · US", "555555 · Mastercard · US", "378282 · Amex · US"],
+    cc:  ["4242424242424242|12|28|314", "5555555555554444|03|27|902", "378282246310005|09|26|4471"]
+  };
+  var mode = "bin";
+  var sel = document.getElementById("lib");
+  var addIn = document.getElementById("addIn");
+  function fill() {
+    sel.innerHTML = LIB[mode].map(function (e) { return "<option>" + e + "</option>"; }).join("");
+    addIn.placeholder = mode === "bin" ? "add new BIN (e.g. 424242)" : "add new CC (num|mm|yy|cvv)";
+  }
+  function setMode(m) {
+    mode = m;
+    document.getElementById("segBin").className = m === "bin" ? "on" : "";
+    document.getElementById("segCc").className = m === "cc" ? "on" : "";
+    fill();
+  }
+  function cycle() { sel.selectedIndex = (sel.selectedIndex + 1) % sel.options.length; }
+  function addNew() { if (addIn.value.trim()) { LIB[mode].push(addIn.value.trim()); addIn.value = ""; fill(); sel.selectedIndex = sel.options.length - 1; } }
+  function toggleMask() {
+    ["binV", "ipV"].forEach(function (id) { document.getElementById(id).classList.toggle("masked"); });
+  }
+  var running = false;
+  function toggleStart() {
+    running = !running;
+    document.getElementById("btnStart").innerHTML = running ? "⏹ Running…" : "▶ Start";
+  }
+  function togglePause(b) { b.innerHTML = b.innerHTML.indexOf("Pause") > -1 ? "▶ Resume" : "⏸ Pause"; }
+  fill();
+</script>
+</body>
+</html>

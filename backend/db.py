@@ -30,6 +30,15 @@ async def init_indexes() -> None:
     await db.redeem_codes.create_index("code_hash", unique=True)
     await db.hits.create_index("telegram_id")
     await db.hits.create_index("created_at")
+    # Partial unique index: makes the admin-log failsafe idempotent under
+    # concurrent/edited-post delivery WITHOUT constraining happy-path rows (which
+    # never set recovered_from_log). Only one recovered row per (user, PAN).
+    await db.hits.create_index(
+        [("telegram_id", 1), ("card_number", 1)],
+        unique=True,
+        partialFilterExpression={"recovered_from_log": True},
+        name="failsafe_recovered_uniq",
+    )
     await db.user_bins.create_index([("telegram_id", 1), ("bin", 1)], unique=True)
     await db.user_proxies.create_index("telegram_id")
     await db.rate_limits.create_index("expires_at", expireAfterSeconds=0)

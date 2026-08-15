@@ -118,12 +118,14 @@ def _is_html_parse_error(res: Optional[dict]) -> bool:
     )
 
 
-async def send_message(chat_id: int, text: str, parse_mode: str = "HTML", *, premium_emojis: bool = False) -> Optional[dict]:
+async def send_message(chat_id: int, text: str, parse_mode: str = "HTML", *, premium_emojis: bool = False, reply_markup: Optional[dict] = None) -> Optional[dict]:
     # Telegram hard-limits sendMessage text to 4096 chars; over-length 400-rejects
     # the whole message. Cap defensively so one long field never kills delivery.
     if isinstance(text, str) and len(text) > 4096:
         text = text[:4093] + "..."
     payload = {"chat_id": chat_id, "text": text, "parse_mode": parse_mode, "disable_web_page_preview": True}
+    if reply_markup is not None:
+        payload["reply_markup"] = reply_markup
     used_custom_emoji = False
     if premium_emojis:
         try:
@@ -193,6 +195,15 @@ async def send_document(chat_id: int, doc_bytes: bytes, filename: str, caption: 
     if caption:
         data["caption"] = caption
     return await _post("sendDocument", data, files=files)
+
+
+async def answer_callback_query(callback_query_id: str, text: str = "", show_alert: bool = False) -> Optional[dict]:
+    """Ack an inline-button tap so the client stops its loading spinner. Optional
+    toast/alert text can be shown to the user."""
+    payload = {"callback_query_id": callback_query_id, "show_alert": show_alert}
+    if text:
+        payload["text"] = text[:200]
+    return await _post("answerCallbackQuery", payload)
 
 
 async def pin_message(chat_id: int, message_id: int, disable_notification: bool = True) -> Optional[dict]:

@@ -79,7 +79,7 @@ def clean_response(raw) -> str:
         if ident:
             return str(ident)
         return "OK"
-    return s[:297] + "..." if len(s) > 300 else s
+    return s[:157] + "..." if len(s) > 160 else s
 
 
 # v2.9.3: raw gateway id → display label for notifications.

