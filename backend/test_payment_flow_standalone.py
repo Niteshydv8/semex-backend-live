@@ -46,11 +46,42 @@ for k, v in _FAKE_ENV.items():
 BACKEND_DIR = Path(__file__).parent
 sys.path.insert(0, str(BACKEND_DIR))
 
-# Stub out the DB layer entirely so no real Mongo connection is attempted
+# Stub out the DB layer entirely so no real Mongo connection is attempted.
+# The /paid proof state now lives in the `tg_proof_state` Mongo collection,
+# so the stub provides an in-memory collection with the small async API the
+# bot uses: find_one / update_one(upsert) / delete_one.
 import types
+
+
+class _FakeProofCollection:
+    def __init__(self):
+        self.docs: dict[int, dict] = {}
+
+    async def find_one(self, query):
+        return self.docs.get(query.get("chat_id"))
+
+    async def update_one(self, query, update, upsert=False):
+        cid = query.get("chat_id")
+        if cid in self.docs or upsert:
+            self.docs[cid] = dict(update.get("$set", {}))
+
+    async def delete_one(self, query):
+        self.docs.pop(query.get("chat_id"), None)
+
+
+class _FakeDB:
+    def __init__(self):
+        self.tg_proof_state = _FakeProofCollection()
+
+
+_FAKE_DB = _FakeDB()
 _fake_db_module = types.ModuleType("db")
-async def _fake_get_db():
-    raise RuntimeError("DB must not be called in payment-flow unit tests")
+
+
+def _fake_get_db():
+    return _FAKE_DB
+
+
 _fake_db_module.get_db = _fake_get_db
 sys.modules["db"] = _fake_db_module
 
@@ -129,7 +160,7 @@ check("LIFETIME line still present", "LIFETIME" in body)
 
 print("\n── Scenario 3: /paid → photo → proof forwarded to owner ──")
 
-bot._PROOF_STATE.clear()
+_FAKE_DB.tg_proof_state.docs.clear()
 
 # 3a: /paid puts user into proof mode
 captured_paid: list[str] = []
@@ -140,8 +171,9 @@ async def fake_send_paid(chat_id, text, **kw):
 with patch.object(bot, "send_message", fake_send_paid):
     run(bot._cmd_paid(chat_id=22222, username="buyer99", telegram_id=22222))
 
-check("/paid sets proof state", 22222 in bot._PROOF_STATE)
-check("/paid stores username", bot._PROOF_STATE.get(22222, {}).get("username") == "buyer99")
+check("/paid sets proof state", 22222 in _FAKE_DB.tg_proof_state.docs)
+check("/paid stores username",
+      _FAKE_DB.tg_proof_state.docs.get(22222, {}).get("username") == "buyer99")
 check("/paid ack mentions 30 minutes",
       any("30 minutes" in t for t in captured_paid))
 
@@ -183,7 +215,8 @@ if copy_calls:
     check("photo copied from user's chat",
           copy_calls[0]["from"] == 22222)
 check("user received confirmation DM", any("Proof received" in t for t in send_calls))
-check("proof state cleared after forwarding (single-use)", 22222 not in bot._PROOF_STATE)
+check("proof state cleared after forwarding (single-use)",
+      22222 not in _FAKE_DB.tg_proof_state.docs)
 
 
 # ─── Scenario 4a: /sendlink — owner sends invite to buyer ───────────────────
@@ -296,19 +329,26 @@ check("missing group link → warning sent to owner",
 
 # ─── Scenario 5: proof-mode expires after 30 min ────────────────────────────
 
-print("\n── Scenario 5: expired proof state is silently ignored ──")
+print("\n── Scenario 5: expired proof state → user is notified, nothing forwarded ──")
 
-bot._PROOF_STATE.clear()
-# Inject an already-expired entry (timestamp 31 minutes ago)
-bot._PROOF_STATE[44444] = {"ts": time.time() - 31 * 60, "username": "late", "telegram_id": 44444}
+from datetime import datetime, timedelta, timezone  # noqa: E402
+
+_FAKE_DB.tg_proof_state.docs.clear()
+# Inject an already-expired entry (expires_at 1 minute in the past)
+_FAKE_DB.tg_proof_state.docs[44444] = {
+    "chat_id": 44444,
+    "username": "late",
+    "telegram_id": 44444,
+    "expires_at": datetime.now(timezone.utc) - timedelta(minutes=1),
+}
 
 expired_copy_calls: list = []
 expired_send_calls: list = []
 
 async def _fake_copy_expired(*a, **kw):
     expired_copy_calls.append(1)
-async def _fake_send_expired(*a, **kw):
-    expired_send_calls.append(1)
+async def _fake_send_expired(chat_id, text, **kw):
+    expired_send_calls.append(text)
 
 with patch.object(bot, "copy_message", _fake_copy_expired), \
      patch.object(bot, "send_message", _fake_send_expired):
@@ -318,10 +358,18 @@ with patch.object(bot, "copy_message", _fake_copy_expired), \
         photo_caption="late proof",
     ))
 
-check("expired proof: copy_message NOT called", len(expired_copy_calls) == 0)
-check("expired proof: send_message NOT called", len(expired_send_calls) == 0)
+check("expired proof: copy_message NOT called (nothing reaches owner)",
+      len(expired_copy_calls) == 0)
+check("expired proof: user IS notified (no more silent drop)",
+      len(expired_send_calls) == 1)
+check("expired notice explains window expired",
+      any("expired" in t.lower() for t in expired_send_calls))
+check("expired notice tells user to run /paid again",
+      any("/paid" in t for t in expired_send_calls))
+check("expired entry removed from state",
+      44444 not in _FAKE_DB.tg_proof_state.docs)
 
-bot._PROOF_STATE.clear()
+_FAKE_DB.tg_proof_state.docs.clear()
 
 
 # ─── Summary ─────────────────────────────────────────────────────────────────
