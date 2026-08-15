@@ -47,3 +47,7 @@ async def init_indexes() -> None:
     # (status, next_attempt_at) index drives the worker's "next due" query.
     await db.telegram_outbox.create_index("dedup_key", unique=True)
     await db.telegram_outbox.create_index([("status", 1), ("next_attempt_at", 1)])
+    # Proof-of-payment state: keyed by chat_id, TTL enforced by MongoDB (30 min).
+    # Replaces the in-memory _PROOF_STATE dict so state survives server restarts.
+    await db.tg_proof_state.create_index("chat_id", unique=True)
+    await db.tg_proof_state.create_index("expires_at", expireAfterSeconds=0)

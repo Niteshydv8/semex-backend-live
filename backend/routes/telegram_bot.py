@@ -337,25 +337,54 @@ async def _fulfill_stars_payment(message: dict) -> None:
 # ─── /paid proof-of-payment flow ───────────────────────────────────────────
 # Users who paid via /buy run /paid to enter proof-submit mode. Their NEXT
 # photo message is copied to the owner (ADMIN_TELEGRAM_ID) with a rich caption
-# so the owner can verify and activate. Simple in-memory state — expires
-# after PROOF_WAIT_SECONDS.
-_PROOF_STATE: dict[int, dict] = {}
+# so the owner can verify and activate.
+#
+# State is persisted in the `tg_proof_state` MongoDB collection so it survives
+# server restarts. TTL (30 min) is enforced by a MongoDB TTL index on the
+# `expires_at` field — NOT by an in-process timestamp check.
 _PROOF_WAIT_SECONDS = 30 * 60  # 30 minutes to send the screenshot
 
 
-def _proof_expired(entry: dict, now: float) -> bool:
-    return (now - entry.get("ts", 0)) > _PROOF_WAIT_SECONDS
+async def _get_proof_entry(chat_id: int) -> dict | None:
+    """Return the active proof-state document for this chat, or None if absent/expired."""
+    try:
+        from db import get_db
+        return await get_db().tg_proof_state.find_one({"chat_id": chat_id})
+    except Exception as e:
+        log.warning("proof_state lookup failed: %s", e)
+        return None
+
+
+async def _set_proof_entry(chat_id: int, username: str | None, telegram_id: int) -> None:
+    """Upsert a proof-state entry. MongoDB TTL index expires it after 30 min."""
+    from datetime import datetime, timedelta, timezone
+    from db import get_db
+    expires_at = datetime.now(timezone.utc) + timedelta(seconds=_PROOF_WAIT_SECONDS)
+    await get_db().tg_proof_state.update_one(
+        {"chat_id": chat_id},
+        {"$set": {
+            "chat_id": chat_id,
+            "username": username,
+            "telegram_id": telegram_id,
+            "expires_at": expires_at,
+        }},
+        upsert=True,
+    )
+
+
+async def _clear_proof_entry(chat_id: int) -> None:
+    """Remove the proof-state entry for this chat (single-use consumption or cancel)."""
+    try:
+        from db import get_db
+        await get_db().tg_proof_state.delete_one({"chat_id": chat_id})
+    except Exception as e:
+        log.warning("proof_state delete failed: %s", e)
 
 
 async def _cmd_paid(chat_id: int, username: str | None, telegram_id: int | None) -> None:
     """Enter proof-submission mode. The user's next photo is forwarded to
-    the owner. State expires after 30 minutes."""
-    import time
-    _PROOF_STATE[chat_id] = {
-        "ts": time.time(),
-        "username": username,
-        "telegram_id": telegram_id or chat_id,
-    }
+    the owner. State is stored in MongoDB and expires after 30 minutes."""
+    await _set_proof_entry(chat_id, username, telegram_id or chat_id)
     await send_message(
         chat_id,
         (
@@ -370,7 +399,7 @@ async def _cmd_paid(chat_id: int, username: str | None, telegram_id: int | None)
 
 
 async def _cmd_cancel(chat_id: int) -> None:
-    _PROOF_STATE.pop(chat_id, None)
+    await _clear_proof_entry(chat_id)
     await send_message(chat_id, "❎ Cancelled. No proof submitted.")
 
 
@@ -435,12 +464,33 @@ async def _forward_proof_to_owner(
     photo_caption: str | None,
 ) -> None:
     """Copy the user's photo message to the owner with a rich admin caption."""
-    import time
-    entry = _PROOF_STATE.get(chat_id)
-    if not entry or _proof_expired(entry, time.time()):
-        # Not in proof-submit mode → ignore silently.
+    from datetime import datetime, timezone
+    entry = await _get_proof_entry(chat_id)
+    if not entry:
+        # Not in proof-submit mode (or TTL already expired) → ignore silently.
         return
-    _PROOF_STATE.pop(chat_id, None)  # single-use
+
+    # In-process expiry guard — the MongoDB TTL index cleans up documents
+    # asynchronously (up to ~60 s after expires_at). Catch the gap here so the
+    # user always gets feedback instead of a silent drop.
+    expires_at = entry.get("expires_at")
+    if expires_at:
+        now = datetime.now(timezone.utc)
+        if expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
+        if now > expires_at:
+            await _clear_proof_entry(chat_id)
+            await send_message(
+                chat_id,
+                "⏰ <b>Proof window expired</b>\n\n"
+                "Your 30-minute submission window has closed and the screenshot "
+                "was not sent to the owner.\n\n"
+                "Please run /paid again to open a new window, then send your "
+                "screenshot straight away.",
+            )
+            return
+
+    await _clear_proof_entry(chat_id)  # single-use
     handle = entry.get("username") or "-"
     tid = entry.get("telegram_id") or chat_id
     user_caption = (photo_caption or "").strip()
@@ -1043,16 +1093,18 @@ async def telegram_webhook(request: Request):
     # forward it to the owner. Runs BEFORE the text-command dispatch so a
     # missing caption doesn't fall through as "unknown command".
     photo = message.get("photo")
-    if photo and chat_id in _PROOF_STATE:
-        try:
-            await _forward_proof_to_owner(
-                chat_id=chat_id,
-                user_message_id=message.get("message_id"),
-                photo_caption=message.get("caption"),
-            )
-        except Exception as e:
-            log.exception("proof intake failed: %s", e)
-        return {"ok": True}
+    if photo:
+        proof_entry = await _get_proof_entry(chat_id)
+        if proof_entry:
+            try:
+                await _forward_proof_to_owner(
+                    chat_id=chat_id,
+                    user_message_id=message.get("message_id"),
+                    photo_caption=message.get("caption"),
+                )
+            except Exception as e:
+                log.exception("proof intake failed: %s", e)
+            return {"ok": True}
 
     if not text:
         return {"ok": True}
