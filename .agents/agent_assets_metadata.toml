@@ -418,8 +418,8 @@ description = "Unzip and load unpacked in Chrome. Fixes vs your 2.9.3: late scre
 id = "CwHrwgO_a42rw8sDuBIab"
 uri = "file://semex-v4.0.0-plain.zip"
 type = "unspecified"
-title = "SEMEX v4.0.0 — owner test build"
-description = "Full rebuild with every merged fix: overlay picker, blur persist/restore, CC cycle guards, toaster resilience, duplicate-card removal. Load unpacked in Chrome to test."
+title = "SEMEX v4.0.5 — BIN library sync (final)"
+description = "BINs now sync to your account: add one in the overlay and it saves to the database; sign in on another device and your BINs load from the DB, then cache locally for instant/offline loading. Reviewed and hardened: CC-list data never syncs, saves only trigger from real user clicks on the genuine overlay on checkout pages."
 
 [[outputs]]
 id = "GwG_8Mn0usPy-KTaFxaLS"
