@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SEMEX Overlay — Short Viewport Scroll Verification</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    background: #06060a;
+    color: #e2e8f0;
+    font-family: ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+    min-height: 100vh;
+    padding: 24px;
+  }
+  h1 {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    margin-bottom: 4px;
+    background: linear-gradient(90deg, #a78bfa, #ec4899);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .sub { font-size: 11px; color: #64748b; margin-bottom: 24px; line-height: 1.5; }
+
+  .row {
+    display: flex;
+    gap: 24px;
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+  .card {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .card-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  /* Simulated short viewport box */
+  .viewport-box {
+    width: 420px;
+    border: 2px solid #2a2a40;
+    border-radius: 10px;
+    overflow: hidden;
+    position: relative;
+    background: #0d0d16;
+    box-shadow: 0 0 0 1px rgba(139,92,246,0.12);
+  }
+  .viewport-top-bar {
+    height: 24px;
+    background: #14141e;
+    border-bottom: 1px solid #1e1e30;
+    display: flex;
+    align-items: center;
+    padding: 0 10px;
+    gap: 5px;
+  }
+  .dot { width: 7px; height: 7px; border-radius: 50%; }
+  .dot-r { background: #ef4444; }
+  .dot-y { background: #fbbf24; }
+  .dot-g { background: #22c55e; }
+  .url-bar {
+    flex: 1;
+    height: 12px;
+    background: #1e1e2e;
+    border-radius: 3px;
+    margin-left: 8px;
+  }
+
+  /* The "screen" area — 300px tall, matching the iframe viewport */
+  .screen {
+    height: 300px;
+    overflow: hidden;
+    position: relative;
+  }
+  .screen iframe {
+    display: block;
+    width: 420px;
+    height: 300px;
+    border: none;
+  }
+
+  /* Height ruler on side */
+  .height-ruler {
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 28px;
+    background: rgba(139,92,246,0.06);
+    border-left: 1px dashed rgba(139,92,246,0.2);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: space-between;
+    padding: 4px 0;
+    font-size: 8px;
+    color: rgba(139,92,246,0.5);
+    font-family: ui-monospace, monospace;
+  }
+
+  .checks {
+    font-size: 10px;
+    color: #475569;
+    line-height: 1.6;
+    max-width: 420px;
+  }
+  .checks span { display: block; padding-left: 14px; position: relative; }
+  .checks span::before { content: "→"; position: absolute; left: 0; color: #334155; }
+  .check-ok { color: #22c55e !important; }
+  .check-ok::before { content: "✓" !important; color: #22c55e !important; }
+
+  .badge {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 999px;
+    letter-spacing: 0.08em;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+  .badge-warn { background: rgba(251,191,36,0.12); color: #fbbf24; border: 1px solid rgba(251,191,36,0.3); }
+  .badge-ok   { background: rgba(52,211,153,0.12); color: #34d399; border: 1px solid rgba(52,211,153,0.3); }
+</style>
+</head>
+<body>
+<h1>SEMEX OVERLAY — SHORT VIEWPORT SCROLL VERIFICATION <span class="badge badge-warn">max-height: calc(100vh − 32px)</span></h1>
+<p class="sub">
+  Each frame below is an iframe with <strong>height=300px</strong> — the iframe's viewport IS 300px tall.<br>
+  The production CSS fires: <code>max-height: calc(100vh − 32px) = 268px</code>.<br>
+  <strong>No override</strong> of max-height — the real CSS constraint is doing the work.<br>
+  Header is <code>flex: 0 0 auto</code> (pinned). <code>.full-body</code> is <code>overflow-y: auto; min-height: 0</code> (scrolls internally).
+</p>
+
+<div class="row">
+
+  <!-- Initial state: header + top content visible, body not yet scrolled -->
+  <div class="card">
+    <div class="card-label">① Initial state — header pinned, body at top <span class="badge badge-ok">SCROLL CAP</span></div>
+    <div class="viewport-box">
+      <div class="viewport-top-bar">
+        <div class="dot dot-r"></div>
+        <div class="dot dot-y"></div>
+        <div class="dot dot-g"></div>
+        <div class="url-bar"></div>
+      </div>
+      <div class="screen">
+        <!-- iframe height=300 → viewport 300px → max-height:calc(100vh-32px)=268px fires -->
+        <iframe
+          src="frame.html?state=full"
+          width="420"
+          height="300"
+          scrolling="no"
+          title="short viewport — initial"
+        ></iframe>
+        <div class="height-ruler">
+          <span>0px</span>
+          <span>268px</span>
+          <span>300px</span>
+        </div>
+      </div>
+    </div>
+    <div class="checks">
+      <span>Panel height capped at 268px (calc(300vh−32px)) — does not exceed viewport</span>
+      <span>SEMEX header + 3 buttons always visible at top (flex:0 0 auto)</span>
+      <span>Status + stats + top detail rows visible below header</span>
+      <span>Panel does not extend past the 300px viewport bottom</span>
+    </div>
+  </div>
+
+  <!-- Scrolled state: body scrolled to bottom — controls + BIN picker visible -->
+  <div class="card">
+    <div class="card-label">② Scrolled to bottom — controls reachable <span class="badge badge-ok">SCROLL CAP</span></div>
+    <div class="viewport-box">
+      <div class="viewport-top-bar">
+        <div class="dot dot-r"></div>
+        <div class="dot dot-y"></div>
+        <div class="dot dot-g"></div>
+        <div class="url-bar"></div>
+      </div>
+      <div class="screen">
+        <!-- scrolled=1 → JS scrolls .full-body to scrollHeight after load -->
+        <iframe
+          src="frame.html?state=full&scrolled=1"
+          width="420"
+          height="300"
+          scrolling="no"
+          title="short viewport — scrolled to bottom"
+        ></iframe>
+        <div class="height-ruler">
+          <span>0px</span>
+          <span>268px</span>
+          <span>300px</span>
+        </div>
+      </div>
+    </div>
+    <div class="checks">
+      <span>Header still pinned (visible at top even when scrolled)</span>
+      <span>BIN/CC picker rows visible after scroll</span>
+      <span>Start/Pause/Stop/Blur controls reachable at bottom</span>
+      <span>No content permanently clipped — everything accessible by scroll</span>
+    </div>
+  </div>
+
+</div>
+
+<p style="font-size:10px;color:#23233a;margin-top:28px;text-align:center;">
+  Short viewport verification · iframe height=300px · production max-height:calc(100vh-32px)=268px applies unmodified
+</p>
+</body>
+</html>

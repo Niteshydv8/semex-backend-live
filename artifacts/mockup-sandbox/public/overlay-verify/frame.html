@@ -1,0 +1,1939 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SEMEX Overlay Frame</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html, body {
+    width: 100%; height: 100%;
+    background: transparent;
+    overflow: hidden;
+}
+body { display: flex; align-items: flex-end; justify-content: flex-start; padding: 20px; }
+
+/* ---- REAL OVERLAY CSS ---- */
+/**
+ * SEMEX Overlay V2 Styles
+ * States: Pill (Minimized), Full (Maximized), Dock (Edge)
+ * Features: Position Switch, Mobile Responsive
+ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
+
+/* =========================================
+   CONTAINER
+   ========================================= */
+#semex-overlay {
+    position: fixed;
+    z-index: 999999;
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+    color: white;
+    transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+    pointer-events: none;
+}
+
+#semex-overlay * {
+    box-sizing: border-box;
+}
+
+/* Position Classes */
+#semex-overlay.pos-bl {
+    bottom: 20px;
+    left: 20px;
+}
+
+#semex-overlay.pos-br {
+    bottom: 20px;
+    right: 20px;
+}
+
+#semex-overlay.pos-tl {
+    top: 20px;
+    left: 20px;
+}
+
+#semex-overlay.pos-tr {
+    top: 20px;
+    right: 20px;
+}
+
+/* =========================================
+   STATE: PILL (Minimized)
+   ========================================= */
+#semex-overlay.state-pill .overlay-full {
+    display: none;
+}
+
+#semex-overlay.state-pill .overlay-dock {
+    display: none;
+}
+
+#semex-overlay.state-pill .overlay-pill {
+    display: flex;
+}
+
+.overlay-pill {
+    display: none;
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 40px;
+    padding: 6px 14px 6px 6px;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.4);
+    cursor: pointer;
+    pointer-events: auto;
+    animation: semex-slideIn 0.4s ease;
+}
+
+.pill-logo {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    overflow: hidden;
+    flex-shrink: 0;
+    background: linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.pill-logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* Logo Letter Fallback (CSP-safe) */
+.logo-letter {
+    font-weight: 800;
+    font-size: 12px;
+    color: white;
+    display: flex;
+    width: 100%;
+    height: 100%;
+    align-items: center;
+    justify-content: center;
+}
+
+.full-brand-logo .logo-letter {
+    font-size: 10px;
+}
+
+.pill-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.pill-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: #10b981;
+    animation: semex-pulse 1.5s infinite;
+    flex-shrink: 0;
+}
+
+.pill-dot.charged {
+    background: #10b981;
+}
+
+.pill-dot.live {
+    background: #fbbf24;
+}
+
+.pill-dot.dead {
+    background: #ef4444;
+    animation: none;
+}
+
+.pill-dot.processing {
+    background: #3b82f6;
+}
+
+.pill-text {
+    font-size: 12px;
+    font-weight: 600;
+    color: white;
+    max-width: 120px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.pill-btns {
+    display: flex;
+    gap: 4px;
+}
+
+.pill-btn {
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+    color: white;
+}
+
+.pill-btn:hover {
+    transform: scale(1.1);
+}
+
+.pill-btn.play {
+    background: #10b981;
+}
+
+.pill-btn.pause {
+    background: #f59e0b;
+    display: none;
+}
+
+.pill-btn.stop {
+    background: #ef4444;
+}
+
+.pill-btn.expand {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+/* =========================================
+   STATE: FULL (Maximized)
+   ========================================= */
+#semex-overlay.state-full .overlay-pill {
+    display: none;
+}
+
+#semex-overlay.state-full .overlay-dock {
+    display: none;
+}
+
+#semex-overlay.state-full .overlay-full {
+    display: block;
+}
+
+.overlay-full {
+    display: none;
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 14px;
+    width: 300px;
+    box-shadow: 0 16px 48px rgba(0, 0, 0, 0.5);
+    overflow: hidden;
+    pointer-events: auto;
+    animation: semex-slideIn 0.4s ease;
+}
+
+/* Mobile Responsive */
+@media (max-width: 480px) {
+    .overlay-full {
+        width: calc(100vw - 40px);
+        max-width: 340px;
+    }
+
+    .full-stats {
+        flex-wrap: wrap;
+        gap: 6px;
+    }
+
+    .stat-item {
+        flex: 1 1 40%;
+    }
+
+    .stat-div {
+        display: none;
+    }
+}
+
+.full-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.full-brand {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.full-brand-logo {
+    width: 24px;
+    height: 24px;
+    border-radius: 6px;
+    overflow: hidden;
+    background: linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.full-brand-logo img {
+    width: 100%;
+    height: 100%;
+}
+
+.full-brand-text {
+    display: flex;
+    align-items: baseline;
+    gap: 4px;
+}
+
+.full-brand-name {
+    font-weight: 800;
+    font-size: 14px;
+    background: linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+.full-brand-tag {
+    font-size: 9px;
+    color: #64748b;
+    text-transform: uppercase;
+}
+
+.header-btns {
+    display: flex;
+    gap: 4px;
+}
+
+.header-btn {
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    cursor: pointer;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.2s;
+}
+
+.header-btn:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: white;
+}
+
+.full-body {
+    padding: 9px;
+}
+
+/* Status Indicator */
+.full-status {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(0, 0, 0, 0.25);
+    padding: 6px 8px;
+    border-radius: 7px;
+    margin-bottom: 7px;
+}
+
+.full-status-icon {
+    font-size: 16px;
+}
+
+.full-status-text {
+    font-weight: 600;
+    font-size: 13px;
+    flex: 1;
+}
+
+/* Stats Dashboard */
+.full-stats {
+    display: flex;
+    justify-content: space-between;
+    background: rgba(30, 41, 59, 0.5);
+    border-radius: 7px;
+    padding: 6px 8px;
+    margin-bottom: 7px;
+    position: relative;
+}
+
+.stats-toggle {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 10px;
+    cursor: pointer;
+    padding: 2px 4px;
+    border-radius: 3px;
+}
+
+.stats-toggle:hover {
+    color: white;
+}
+
+.stat-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    flex: 1;
+}
+
+.stat-label {
+    font-size: 9px;
+    color: #64748b;
+    text-transform: uppercase;
+}
+
+.stat-value {
+    font-size: 14px;
+    font-weight: 700;
+}
+
+.stat-value.charged {
+    color: #10b981;
+}
+
+.stat-value.live {
+    color: #fbbf24;
+}
+
+.stat-value.dead {
+    color: #ef4444;
+}
+
+.stat-div {
+    width: 1px;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+/* Details */
+.full-details {
+    background: rgba(0, 0, 0, 0.2);
+    padding: 7px 8px;
+    border-radius: 6px;
+    font-size: 10px;
+    color: #94a3b8;
+    margin-bottom: 7px;
+}
+
+.detail-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 2px;
+    line-height: 1.35;
+}
+
+.detail-row:last-child {
+    margin-bottom: 0;
+}
+
+.detail-val {
+    color: #e2e8f0;
+    font-family: 'Courier New', monospace;
+    font-size: 11px;
+}
+
+/* Controls */
+.full-controls {
+    display: flex;
+    gap: 6px;
+}
+
+.ctrl-btn {
+    padding: 8px 6px;
+    border: none;
+    border-radius: 7px;
+    font-weight: 600;
+    font-size: 11px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 5px;
+    color: white;
+    transition: all 0.15s;
+}
+
+.ctrl-btn:hover {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+}
+
+.ctrl-btn:active {
+    transform: translateY(0);
+}
+
+.ctrl-btn.start {
+    flex: 1;
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+}
+
+.ctrl-btn.pause {
+    flex: 1;
+    background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+    box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+    display: none;
+}
+
+.ctrl-btn.stop {
+    width: 40px;
+    background: #ef4444;
+}
+
+.ctrl-btn.blur {
+    width: 40px;
+    background: #334155;
+}
+
+/* Blur Mode */
+.overlay-full.blur-active .detail-val {
+    filter: blur(4px);
+}
+
+/* =========================================
+   STATE: DOCK (Edge Strip)
+   ========================================= */
+#semex-overlay.state-dock .overlay-pill {
+    display: none;
+}
+
+#semex-overlay.state-dock .overlay-full {
+    display: none;
+}
+
+#semex-overlay.state-dock .overlay-dock {
+    display: flex;
+}
+
+.overlay-dock {
+    display: none;
+    position: fixed;
+    right: 0;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(15, 23, 42, 0.95);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-right: none;
+    border-radius: 10px 0 0 10px;
+    padding: 12px 8px;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    box-shadow: -4px 0 16px rgba(0, 0, 0, 0.3);
+    pointer-events: auto;
+    animation: semex-slideInRight 0.3s ease;
+}
+
+.dock-logo {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: linear-gradient(135deg, #8B5CF6 0%, #EC4899 100%);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.dock-logo img {
+    width: 100%;
+    height: 100%;
+}
+
+.dock-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: #10b981;
+    animation: semex-pulse 1.5s infinite;
+}
+
+.dock-text {
+    writing-mode: vertical-rl;
+    font-size: 10px;
+    font-weight: 600;
+    color: #64748b;
+}
+
+/* =========================================
+   ANIMATIONS
+   ========================================= */
+@keyframes semex-slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(20px) scale(0.95);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+@keyframes semex-slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(20px) translateY(-50%);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateX(0) translateY(-50%);
+    }
+}
+
+@keyframes semex-pulse {
+    0% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.6);
+    }
+
+    70% {
+        box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+    }
+
+    100% {
+        box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+    }
+}
+
+/* Hidden State */
+.overlay-hidden {
+    opacity: 0;
+    pointer-events: none;
+    transform: translateY(20px) scale(0.9);
+}
+/* ============================================================
+   SEMEX overlay redesign — premium dark glass theme (override).
+   Appended last so it wins. Scoped to #semex-overlay.
+   ============================================================ */
+#semex-overlay {
+    --sx-bg: #0b0b0f;
+    --sx-surface: #16161c;
+    --sx-line: #26262e;
+    --sx-txt: #f5f5f7;
+    --sx-mut: #9a9aa6;
+    --sx-accent: #8B5CF6;
+    --sx-accent2: #EC4899;
+    --sx-green: #34d399;
+    --sx-purple: #a78bfa;
+    --sx-red: #f87171;
+    font-family: ui-sans-serif, system-ui, "Segoe UI", Roboto, sans-serif !important;
+}
+#semex-overlay .overlay-full {
+    background: linear-gradient(160deg, #14141b, #0c0c11) !important;
+    border: 1px solid var(--sx-line) !important;
+    border-radius: 16px !important;
+    box-shadow: 0 20px 60px rgba(0,0,0,.6), 0 0 0 1px rgba(124,92,255,.08) !important;
+    backdrop-filter: blur(14px) !important;
+    overflow: hidden !important;
+    width: min(330px, calc(100vw - 32px)) !important;
+}
+#semex-overlay .full-header {
+    background: rgba(124,92,255,.07) !important;
+    border-bottom: 1px solid var(--sx-line) !important;
+    padding: 12px 14px !important;
+}
+#semex-overlay .full-brand-logo,
+#semex-overlay .pill-logo,
+#semex-overlay .dock-logo {
+    background: linear-gradient(135deg, var(--sx-accent), var(--sx-accent2)) !important;
+    border-radius: 9px !important;
+    box-shadow: 0 4px 14px rgba(124,92,255,.4) !important;
+}
+#semex-overlay .full-brand-name {
+    font-weight: 800 !important; letter-spacing: .16em !important;
+    background: linear-gradient(135deg, #fff, var(--sx-accent2)) !important;
+    -webkit-background-clip: text !important; background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+}
+#semex-overlay .full-brand-tag { color: var(--sx-mut) !important; letter-spacing: .05em !important; }
+#semex-overlay .header-btn {
+    background: transparent !important; border: 1px solid var(--sx-line) !important;
+    color: var(--sx-mut) !important; border-radius: 7px !important;
+    transition: background-color .15s ease, color .15s ease, border-color .15s ease !important;
+}
+#semex-overlay .header-btn:hover { color: #fff !important; background: rgba(255,255,255,.06) !important; border-color: var(--sx-accent) !important; }
+#semex-overlay .full-body { padding: 12px 14px 14px !important; }
+#semex-overlay .full-status {
+    background: var(--sx-surface) !important; border: 1px solid var(--sx-line) !important;
+    border-radius: 10px !important; padding: 8px 12px !important; color: var(--sx-txt) !important; font-weight: 600 !important;
+}
+#semex-overlay .full-stats {
+    background: var(--sx-surface) !important; border: 1px solid var(--sx-line) !important;
+    border-radius: 12px !important; padding: 10px 6px !important; margin: 10px 0 !important;
+}
+#semex-overlay .stat-label { color: var(--sx-mut) !important; font-size: 10px !important; text-transform: uppercase !important; letter-spacing: .06em !important; }
+#semex-overlay .stat-value { font-family: ui-monospace, "SF Mono", Menlo, monospace !important; font-weight: 700 !important; font-size: 18px !important; color: #fff !important; }
+#semex-overlay .stat-value.charged { color: var(--sx-green) !important; }
+#semex-overlay .stat-value.live { color: var(--sx-purple) !important; }
+#semex-overlay .stat-value.dead { color: var(--sx-red) !important; }
+#semex-overlay .stat-div { background: var(--sx-line) !important; }
+#semex-overlay .full-details { color: var(--sx-mut) !important; font-size: 12px !important; }
+#semex-overlay .detail-val { color: var(--sx-txt) !important; font-family: ui-monospace, Menlo, monospace !important; }
+#semex-overlay .full-controls { gap: 8px !important; margin-top: 10px !important; }
+#semex-overlay .ctrl-btn {
+    border-radius: 10px !important; font-weight: 700 !important; border: 1px solid var(--sx-line) !important;
+    color: var(--sx-txt) !important; background: var(--sx-surface) !important;
+    transition: transform .1s cubic-bezier(.4,0,.2,1), filter .15s ease, background-color .15s ease !important;
+}
+#semex-overlay .ctrl-btn:active { transform: scale(.96) !important; }
+#semex-overlay .ctrl-btn.start {
+    background: linear-gradient(135deg, var(--sx-green), #10b981) !important;
+    color: #05130d !important; border: none !important; box-shadow: 0 6px 18px rgba(52,211,153,.35) !important;
+}
+#semex-overlay .ctrl-btn.start:hover { filter: brightness(1.08) !important; }
+#semex-overlay .ctrl-btn.pause { background: rgba(251,191,36,.14) !important; color: #fbbf24 !important; border-color: rgba(251,191,36,.3) !important; }
+#semex-overlay .ctrl-btn.stop { background: rgba(248,113,113,.14) !important; color: var(--sx-red) !important; border-color: rgba(248,113,113,.3) !important; }
+#semex-overlay .ctrl-btn.blur { background: var(--sx-surface) !important; }
+/* Pill (minimized) */
+#semex-overlay .overlay-pill {
+    background: linear-gradient(135deg, #16161c, #0c0c11) !important;
+    border: 1px solid var(--sx-line) !important; border-radius: 999px !important;
+    box-shadow: 0 12px 34px rgba(0,0,0,.55) !important;
+}
+#semex-overlay .pill-btn {
+    border-radius: 999px !important; border: none !important;
+    transition: transform .1s ease, filter .15s ease !important;
+}
+#semex-overlay .pill-btn:active { transform: scale(.92) !important; }
+#semex-overlay .pill-btn.play { background: linear-gradient(135deg, var(--sx-green), #10b981) !important; color: #05130d !important; }
+#semex-overlay .pill-btn.stop { background: rgba(248,113,113,.18) !important; color: var(--sx-red) !important; }
+#semex-overlay .pill-text { color: var(--sx-txt) !important; font-weight: 600 !important; }
+/* Status dots pulse */
+#semex-overlay .pill-dot, #semex-overlay .dock-dot { box-shadow: 0 0 0 0 currentColor !important; }
+
+/* Charged celebration confetti (matches dashboard black/purple/pink theme) */
+#semex-confetti-layer {
+    position: fixed; inset: 0; pointer-events: none; z-index: 2147483646; overflow: hidden;
+}
+.semex-confetti-piece {
+    position: absolute; top: -14px; border-radius: 2px; opacity: 0;
+    will-change: transform, opacity;
+    animation: semex-confetti-fall cubic-bezier(.15,.5,.4,1) forwards;
+}
+@keyframes semex-confetti-fall {
+    0% { opacity: 0; transform: translateY(-14px) rotate(0); }
+    12% { opacity: 1; }
+    100% { opacity: 0; transform: translateY(106vh) rotate(720deg); }
+}
+
+/* Drag support */
+#semex-overlay.is-dragging { transition: none !important; user-select: none; }
+#semex-overlay .full-header { cursor: move; user-select: none; }
+#semex-overlay .full-header .header-btn { cursor: pointer; }
+
+/* =========================================
+   V3 REFINED LIQUID-GLASS THEME
+   Matches the dashboard's --accent-purple / --accent-pink token system.
+   All rules are !important because we're overriding the earlier V2 defaults.
+   ========================================= */
+#semex-overlay {
+    --sx-glass:      rgba(20, 18, 32, 0.72);
+    --sx-glass-hi:   rgba(30, 26, 46, 0.85);
+    --sx-border:     rgba(200, 120, 255, 0.18);
+    --sx-border-hi:  rgba(200, 120, 255, 0.42);
+    --sx-purple:     #a855f7;
+    --sx-pink:       #ec4899;
+    --sx-glow-p:     0 0 24px rgba(168, 85, 247, 0.35);
+    --sx-glow-pk:    0 0 24px rgba(236, 72, 153, 0.35);
+    --sx-shadow:     0 20px 60px -20px rgba(0,0,0,0.65), 0 0 0 1px rgba(255,255,255,0.02) inset;
+}
+
+/* --- FULL panel --- */
+#semex-overlay .overlay-full {
+    background: var(--sx-glass) !important;
+    -webkit-backdrop-filter: blur(14px) saturate(140%) !important;
+    backdrop-filter: blur(14px) saturate(140%) !important;
+    border: 1px solid var(--sx-border) !important;
+    border-radius: 18px !important;
+    box-shadow: var(--sx-shadow) !important;
+    overflow: hidden !important;
+}
+#semex-overlay .overlay-full::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    background:
+        radial-gradient(1200px 300px at -10% -10%, rgba(168,85,247,0.16), transparent 60%),
+        radial-gradient(1200px 300px at 110% 110%, rgba(236,72,153,0.14), transparent 60%);
+    z-index: 0;
+}
+#semex-overlay .overlay-full > * { position: relative; z-index: 1; }
+
+/* --- Header (drag handle) --- */
+#semex-overlay .full-header {
+    background: linear-gradient(180deg, rgba(255,255,255,0.05), rgba(255,255,255,0)) !important;
+    border-bottom: 1px solid var(--sx-border) !important;
+    padding: 12px 16px !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: space-between !important;
+    gap: 12px !important;
+}
+#semex-overlay .full-header::before {
+    content: "";
+    display: inline-block;
+    width: 32px;
+    height: 3px;
+    border-radius: 999px;
+    background: linear-gradient(90deg, var(--sx-purple), var(--sx-pink));
+    margin-right: 10px;
+    opacity: 0.7;
+    box-shadow: var(--sx-glow-p);
+}
+#semex-overlay .header-title,
+#semex-overlay .full-header .title {
+    font-family: -apple-system, "Inter", "Segoe UI", sans-serif !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.6px !important;
+    color: #fff !important;
+    text-transform: uppercase !important;
+    font-size: 12px !important;
+    background: linear-gradient(90deg, #fff, #e9d5ff 60%, #fbcfe8) !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+}
+#semex-overlay .header-btn {
+    width: 28px !important; height: 28px !important;
+    border-radius: 8px !important;
+    background: rgba(255,255,255,0.06) !important;
+    border: 1px solid var(--sx-border) !important;
+    color: rgba(255,255,255,0.85) !important;
+    display: inline-flex !important; align-items: center !important; justify-content: center !important;
+    transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease !important;
+}
+#semex-overlay .header-btn:hover {
+    transform: translateY(-1px) !important;
+    background: rgba(200,120,255,0.15) !important;
+    border-color: var(--sx-border-hi) !important;
+}
+
+/* --- Body --- */
+#semex-overlay .full-body {
+    padding: 16px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 14px !important;
+}
+
+/* --- Stats blocks --- */
+#semex-overlay .stat-block,
+#semex-overlay .stats-grid > div {
+    background: var(--sx-glass-hi) !important;
+    border: 1px solid var(--sx-border) !important;
+    border-radius: 12px !important;
+    padding: 10px 12px !important;
+    transition: border-color 0.15s ease, transform 0.15s ease !important;
+}
+#semex-overlay .stat-block:hover {
+    border-color: var(--sx-border-hi) !important;
+    transform: translateY(-1px) !important;
+}
+#semex-overlay .stat-value {
+    font-family: "SF Mono", ui-monospace, monospace !important;
+    font-weight: 800 !important;
+    font-size: 22px !important;
+    background: linear-gradient(135deg, var(--sx-purple), var(--sx-pink)) !important;
+    -webkit-background-clip: text !important;
+    background-clip: text !important;
+    -webkit-text-fill-color: transparent !important;
+}
+#semex-overlay .stat-label {
+    color: rgba(255,255,255,0.55) !important;
+    font-size: 10px !important;
+    letter-spacing: 1px !important;
+    text-transform: uppercase !important;
+}
+
+/* --- Buttons (primary/secondary) --- */
+#semex-overlay .btn-primary,
+#semex-overlay .full-btn.primary {
+    background: linear-gradient(135deg, var(--sx-purple), var(--sx-pink)) !important;
+    color: #fff !important;
+    border: none !important;
+    box-shadow: 0 6px 18px -6px rgba(168,85,247,0.6) !important;
+    font-weight: 700 !important;
+    letter-spacing: 0.6px !important;
+    text-transform: uppercase !important;
+    transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease !important;
+}
+#semex-overlay .btn-primary:hover,
+#semex-overlay .full-btn.primary:hover {
+    transform: translateY(-1px) !important;
+    filter: brightness(1.08) !important;
+    box-shadow: 0 10px 26px -8px rgba(236,72,153,0.6) !important;
+}
+#semex-overlay .btn-secondary,
+#semex-overlay .full-btn.secondary {
+    background: rgba(255,255,255,0.06) !important;
+    color: rgba(255,255,255,0.9) !important;
+    border: 1px solid var(--sx-border) !important;
+    transition: background 0.15s ease, border-color 0.15s ease !important;
+}
+#semex-overlay .btn-secondary:hover,
+#semex-overlay .full-btn.secondary:hover {
+    background: rgba(200,120,255,0.15) !important;
+    border-color: var(--sx-border-hi) !important;
+}
+
+/* --- Status text row --- */
+#semex-overlay .status-row,
+#semex-overlay .full-status {
+    display: flex !important;
+    align-items: center !important;
+    gap: 10px !important;
+    padding: 10px 12px !important;
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid var(--sx-border) !important;
+    border-radius: 12px !important;
+    font-size: 12px !important;
+    color: rgba(255,255,255,0.85) !important;
+}
+
+/* --- Detail rows (card, site, code, msg) --- */
+#semex-overlay .detail-row,
+#semex-overlay .card-detail-row {
+    display: flex !important;
+    justify-content: space-between !important;
+    padding: 8px 0 !important;
+    border-bottom: 1px dashed rgba(200,120,255,0.10) !important;
+    font-size: 12px !important;
+}
+#semex-overlay .detail-row:last-child { border-bottom: none !important; }
+#semex-overlay .detail-label { color: rgba(255,255,255,0.55) !important; text-transform: uppercase !important; letter-spacing: 0.5px !important; font-size: 10px !important; }
+#semex-overlay .detail-val { color: #fff !important; font-family: "SF Mono", ui-monospace, monospace !important; }
+
+/* --- Pill (minimized) --- */
+#semex-overlay .overlay-pill {
+    background: var(--sx-glass) !important;
+    border: 1px solid var(--sx-border) !important;
+    border-radius: 999px !important;
+    box-shadow: var(--sx-shadow) !important;
+    -webkit-backdrop-filter: blur(24px) !important;
+    backdrop-filter: blur(24px) !important;
+    padding: 8px 12px !important;
+    gap: 10px !important;
+}
+#semex-overlay .pill-dot.charged { background: linear-gradient(135deg, #34d399, #6bffb8) !important; box-shadow: 0 0 12px rgba(52,211,153,0.6) !important; }
+#semex-overlay .pill-dot.live    { background: linear-gradient(135deg, #60a5fa, #3b82f6) !important; box-shadow: 0 0 12px rgba(96,165,250,0.55) !important; }
+#semex-overlay .pill-dot.dead    { background: linear-gradient(135deg, #f87171, #ef4444) !important; box-shadow: 0 0 12px rgba(248,113,113,0.5) !important; }
+#semex-overlay .pill-dot.processing { background: conic-gradient(from 0deg, var(--sx-purple), var(--sx-pink), var(--sx-purple)) !important; animation: sxSpin 1.2s linear infinite !important; }
+@keyframes sxSpin { to { transform: rotate(360deg); } }
+
+/* --- Charged flash animation --- */
+#semex-overlay.state-full .overlay-full.flash-charged {
+    animation: sxCharged 1.2s ease-out !important;
+}
+@keyframes sxCharged {
+    0%   { box-shadow: var(--sx-shadow), 0 0 0 0 rgba(52,211,153,0.5); }
+    50%  { box-shadow: var(--sx-shadow), 0 0 0 8px rgba(52,211,153,0.35); }
+    100% { box-shadow: var(--sx-shadow), 0 0 0 0 rgba(52,211,153,0); }
+}
+
+/* --- Drag polish --- */
+#semex-overlay.is-dragging .overlay-full,
+#semex-overlay.is-dragging .overlay-pill {
+    transition: none !important;
+    box-shadow: 0 30px 80px -20px rgba(0,0,0,0.7), 0 0 0 1px var(--sx-border-hi) inset !important;
+    filter: brightness(1.05);
+}
+
+/* Mobile responsive width for full state */
+@media (max-width: 640px) {
+    #semex-overlay .overlay-full { width: 92vw !important; max-width: 92vw !important; }
+}
+
+/* ============================================================
+   FINAL OVERLAY LAYOUT PASS — fits header buttons without crop.
+   Widen panel, tighten header, shrink brand-tag, kill drag pip.
+   ============================================================ */
+#semex-overlay .overlay-full { width: 320px !important; }
+#semex-overlay .full-header {
+    padding: 10px 12px !important;
+    gap: 8px !important;
+}
+#semex-overlay .full-header::before {
+    display: none !important;
+}
+#semex-overlay .full-brand { min-width: 0 !important; flex: 1 1 auto !important; overflow: hidden !important; }
+#semex-overlay .full-brand-name {
+    font-size: 12px !important;
+    letter-spacing: 0.12em !important;
+    white-space: nowrap !important;
+}
+#semex-overlay .full-brand-tag {
+    font-size: 8px !important;
+    letter-spacing: 0.08em !important;
+    white-space: nowrap !important;
+    text-transform: uppercase !important;
+}
+#semex-overlay .header-btns { flex: 0 0 auto !important; gap: 4px !important; }
+#semex-overlay .header-btn {
+    width: 24px !important;
+    height: 24px !important;
+    padding: 0 !important;
+    font-size: 11px !important;
+    line-height: 1 !important;
+}
+#semex-overlay .full-body { padding: 12px !important; gap: 10px !important; }
+#semex-overlay .full-stats {
+    display: grid !important;
+    grid-template-columns: repeat(4, 1fr) !important;
+    gap: 6px !important;
+    padding: 8px !important;
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid var(--sx-border) !important;
+    border-radius: 10px !important;
+    margin: 0 !important;
+}
+#semex-overlay .full-stats .stat-item {
+    background: rgba(0,0,0,0.28) !important;
+    border-radius: 8px !important;
+    padding: 6px 4px !important;
+    gap: 2px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: center !important;
+    min-width: 0 !important;
+}
+#semex-overlay .full-stats .stat-div { display: none !important; }
+#semex-overlay .full-stats .stat-label {
+    font-size: 8.5px !important;
+    letter-spacing: 0.06em !important;
+    color: rgba(255,255,255,0.5) !important;
+    white-space: nowrap !important;
+}
+#semex-overlay .full-stats .stat-value {
+    font-size: 15px !important;
+    background: none !important;
+    -webkit-background-clip: initial !important;
+    background-clip: initial !important;
+    -webkit-text-fill-color: initial !important;
+    color: #fff !important;
+    line-height: 1.1 !important;
+}
+#semex-overlay .full-stats .stat-value.charged { color: var(--sx-green, #34d399) !important; }
+#semex-overlay .full-stats .stat-value.live    { color: #fbbf24 !important; }
+#semex-overlay .full-stats .stat-value.dead    { color: #f87171 !important; }
+#semex-overlay .stats-toggle {
+    display: none !important;
+}
+#semex-overlay .full-details {
+    background: rgba(0,0,0,0.25) !important;
+    border: 1px solid var(--sx-border) !important;
+    border-radius: 10px !important;
+    padding: 10px 12px !important;
+    margin: 0 !important;
+    font-size: 11.5px !important;
+}
+#semex-overlay .full-details .detail-row {
+    border-bottom: 1px dashed rgba(200,120,255,0.10) !important;
+    padding: 5px 0 !important;
+}
+#semex-overlay .full-details .detail-row:last-child { border-bottom: none !important; padding-bottom: 0 !important; }
+#semex-overlay .full-details .detail-row:first-child { padding-top: 0 !important; }
+#semex-overlay .full-controls { gap: 6px !important; margin: 0 !important; }
+#semex-overlay .ctrl-btn { padding: 9px !important; font-size: 12px !important; }
+
+/* =========================================
+   BIN QUICK-SWITCHER (checkout overlay)
+   ========================================= */
+#semex-overlay .full-binswitch {
+    position: relative;
+    margin: 10px 0 0;
+}
+#semex-overlay .binswitch-btn {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 9px 11px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 10px;
+    color: #e5e7eb;
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+#semex-overlay .binswitch-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    border-color: rgba(59, 130, 246, 0.5);
+}
+#semex-overlay .binswitch-btn.open {
+    border-color: rgba(59, 130, 246, 0.7);
+}
+#semex-overlay .binswitch-btn.flash {
+    border-color: #10b981;
+    background: rgba(16, 185, 129, 0.16);
+}
+#semex-overlay .binswitch-ico {
+    font-size: 13px;
+    line-height: 1;
+}
+#semex-overlay .binswitch-label {
+    flex: 1;
+    text-align: left;
+    letter-spacing: 0.3px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+#semex-overlay .binswitch-caret {
+    font-size: 10px;
+    opacity: 0.6;
+    transition: transform 0.15s ease;
+}
+#semex-overlay .binswitch-btn.open .binswitch-caret {
+    transform: rotate(180deg);
+}
+#semex-overlay .binswitch-menu {
+    display: none;
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: calc(100% + 6px);
+    max-height: 208px;
+    overflow-y: auto;
+    background: rgba(17, 19, 26, 0.98);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    border-radius: 10px;
+    box-shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+    padding: 5px;
+    z-index: 30;
+}
+#semex-overlay .binswitch-menu.open {
+    display: block;
+}
+#semex-overlay .binswitch-empty {
+    padding: 14px 10px;
+    text-align: center;
+    color: #9ca3af;
+    font-size: 11px;
+    line-height: 1.5;
+}
+#semex-overlay .binswitch-item {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px;
+    background: transparent;
+    border: none;
+    border-radius: 8px;
+    color: #e5e7eb;
+    font-family: inherit;
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.12s ease;
+}
+#semex-overlay .binswitch-item:hover {
+    background: rgba(59, 130, 246, 0.16);
+}
+#semex-overlay .binswitch-item.active {
+    background: rgba(16, 185, 129, 0.18);
+}
+#semex-overlay .binswitch-item-ico {
+    font-size: 14px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+#semex-overlay .binswitch-item-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+#semex-overlay .binswitch-item-code {
+    font-size: 12px;
+    font-weight: 700;
+    font-family: 'SFMono-Regular', Consolas, monospace;
+    letter-spacing: 0.5px;
+}
+#semex-overlay .binswitch-item-name {
+    font-size: 10px;
+    color: #9ca3af;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+#semex-overlay .binswitch-item-tags {
+    font-size: 9px;
+    color: #6b7280;
+    flex-shrink: 0;
+    text-align: right;
+    line-height: 1.3;
+}
+
+/* =========================================
+   PERF: smooth dragging
+   Dropping backdrop-filter while the overlay is being dragged avoids re-blurring
+   the merchant page behind it on every frame (the main drag-lag source).
+   ========================================= */
+#semex-overlay.is-dragging .overlay-pill,
+#semex-overlay.is-dragging .overlay-full,
+#semex-overlay.is-dragging .overlay-dock {
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+}
+
+/* ---- Live BIN detail row ---- */
+#semex-overlay #detailBinInfo {
+    font-size: 10px !important;
+    color: rgba(255,255,255,0.75) !important;
+    letter-spacing: 0.2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 160px;
+}
+
+/* ---- Proxy IP row ---- */
+#semex-overlay #detailIp {
+    font-size: 10.5px !important;
+    font-family: 'SFMono-Regular', Consolas, monospace;
+    color: rgba(255,255,255,0.8) !important;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    max-width: 160px;
+}
+
+/* ---- Checkout type badge ---- */
+#semex-overlay .semex-type-badge {
+    display: inline-block;
+    font-size: 9px !important;
+    font-weight: 700;
+    letter-spacing: 0.8px;
+    padding: 1px 7px;
+    border-radius: 999px;
+    background: rgba(168, 85, 247, 0.18);
+    color: #c084fc !important;
+    border: 1px solid rgba(168, 85, 247, 0.35);
+}
+
+/* ============================================================
+   v4.0 TERMINAL COMPACT PASS — user-approved compact v2 layout
+   matching Toaster B (Terminal Trace). Appended LAST so these
+   rules win over every earlier layout pass (incl. the 320px
+   FINAL pass above). Pill/dock states are untouched — every
+   rule here is scoped to .full-* / .binswitch-* only.
+   ============================================================ */
+#semex-overlay .overlay-full {
+    width: 252px !important;
+    border-radius: 12px !important;
+    background: rgba(10, 14, 12, 0.95) !important;
+    border: 1px solid #22302a !important;
+    box-shadow: 0 0 30px rgba(52, 211, 153, 0.10), 0 16px 40px rgba(0, 0, 0, 0.6) !important;
+}
+@media (max-width: 640px) {
+    #semex-overlay .overlay-full { width: min(300px, 92vw) !important; max-width: 92vw !important; }
+}
+
+/* header — slim, terminal green accent */
+#semex-overlay .full-header {
+    padding: 7px 10px !important;
+    border-bottom: 1px solid #1b2620 !important;
+    background: linear-gradient(180deg, rgba(52, 211, 153, 0.06), transparent) !important;
+}
+#semex-overlay .full-brand-logo {
+    width: 20px !important;
+    height: 20px !important;
+    border-radius: 6px !important;
+    font-size: 11px !important;
+    background: linear-gradient(135deg, #34d399, #059669) !important;
+    color: #04120c !important;
+    box-shadow: 0 0 12px rgba(52, 211, 153, 0.4) !important;
+}
+#semex-overlay .full-brand-name { font-size: 12px !important; letter-spacing: 0.02em !important; }
+#semex-overlay .full-brand-tag { font-size: 7.5px !important; letter-spacing: 0.14em !important; color: #64748b !important; }
+#semex-overlay .header-btn {
+    width: 20px !important;
+    height: 20px !important;
+    font-size: 9px !important;
+    border-radius: 5px !important;
+    border: 1px solid #22302a !important;
+    background: transparent !important;
+    color: #8b9a90 !important;
+}
+#semex-overlay .header-btn:hover { border-color: #34d399 !important; color: #34d399 !important; }
+
+/* body rhythm */
+#semex-overlay .full-body { padding: 7px 10px 9px !important; gap: 7px !important; }
+
+/* status — mono terminal line */
+#semex-overlay .full-status {
+    padding: 0 2px !important;
+    margin: 0 !important;
+    background: transparent !important;
+    border: none !important;
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace !important;
+    font-size: 10.5px !important;
+    font-weight: 600 !important;
+    color: #34d399 !important;
+    gap: 7px !important;
+}
+
+/* stats — single inline strip */
+#semex-overlay .full-stats {
+    display: flex !important;
+    align-items: baseline !important;
+    justify-content: space-between !important;
+    gap: 4px !important;
+    padding: 4px 9px !important;
+    margin: 0 !important;
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid #1b2620 !important;
+    border-radius: 7px !important;
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace !important;
+}
+#semex-overlay .stats-toggle { display: none !important; }
+#semex-overlay .stat-div { display: none !important; }
+#semex-overlay .stat-item {
+    display: flex !important;
+    flex-direction: row !important;
+    align-items: baseline !important;
+    gap: 3px !important;
+    padding: 0 !important;
+    background: transparent !important;
+    border: none !important;
+}
+#semex-overlay .stat-label {
+    font-size: 7.5px !important;
+    text-transform: uppercase !important;
+    letter-spacing: 0.06em !important;
+    color: #5c6b62 !important;
+}
+#semex-overlay .stat-value { font-size: 12px !important; font-weight: 700 !important; }
+
+/* details — 2-column grid, card row spans full width */
+#semex-overlay .full-details {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 0 10px !important;
+    padding: 4px 9px !important;
+    margin: 0 !important;
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid #1b2620 !important;
+    border-radius: 7px !important;
+}
+#semex-overlay .detail-row {
+    display: flex !important;
+    justify-content: space-between !important;
+    gap: 6px !important;
+    padding: 1px 0 !important;
+    font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace !important;
+    font-size: 10px !important;
+    border: none !important;
+    color: #5c6b62 !important;
+}
+#semex-overlay .detail-row:has(#detailCard) { grid-column: 1 / -1 !important; }
+#semex-overlay .detail-val { color: #cfe3d8 !important; font-weight: 500 !important; }
+
+/* ── BIN / CC picker (v4.0 controls) ── */
+#semex-overlay .full-binswitch {
+    margin: 0 !important;
+    background: rgba(255, 255, 255, 0.03) !important;
+    border: 1px solid #1b2620 !important;
+    border-radius: 7px !important;
+    padding: 6px 8px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 6px !important;
+}
+#semex-overlay .binswitch-seg {
+    display: flex !important;
+    background: #0d130f !important;
+    border: 1px solid #22302a !important;
+    border-radius: 6px !important;
+    overflow: hidden !important;
+}
+#semex-overlay .seg-btn {
+    flex: 1 !important;
+    padding: 4px 0 !important;
+    font: 700 9.5px 'JetBrains Mono', ui-monospace, monospace !important;
+    letter-spacing: 0.08em !important;
+    background: transparent !important;
+    border: none !important;
+    color: #64748b !important;
+    cursor: pointer !important;
+}
+#semex-overlay .seg-btn.on { background: rgba(52, 211, 153, 0.14) !important; color: #34d399 !important; }
+#semex-overlay .binswitch-row { display: flex !important; gap: 5px !important; align-items: center !important; }
+#semex-overlay .binswitch-btn {
+    flex: 1 !important;
+    min-width: 0 !important;
+    background: #0d130f !important;
+    border: 1px solid #22302a !important;
+    border-radius: 6px !important;
+    color: #cfe3d8 !important;
+    font: 500 10px 'JetBrains Mono', ui-monospace, monospace !important;
+    padding: 4px 6px !important;
+}
+#semex-overlay .binswitch-btn.flash { border-color: #34d399 !important; box-shadow: 0 0 10px rgba(52, 211, 153, 0.35) !important; }
+#semex-overlay .binswitch-cyc {
+    width: 24px !important;
+    height: 22px !important;
+    flex: none !important;
+    border-radius: 6px !important;
+    cursor: pointer !important;
+    border: 1px solid #22302a !important;
+    background: transparent !important;
+    color: #34d399 !important;
+    font-size: 11px !important;
+    line-height: 1 !important;
+}
+#semex-overlay .binswitch-cyc:hover { border-color: #34d399 !important; box-shadow: 0 0 8px rgba(52, 211, 153, 0.3) !important; }
+#semex-overlay .binswitch-add { display: flex !important; gap: 5px !important; }
+#semex-overlay .binswitch-add input {
+    flex: 1 !important;
+    min-width: 0 !important;
+    background: #0d130f !important;
+    border: 1px dashed #2a3a32 !important;
+    border-radius: 6px !important;
+    color: #cfe3d8 !important;
+    font: 400 10px 'JetBrains Mono', ui-monospace, monospace !important;
+    padding: 4px 6px !important;
+    outline: none !important;
+}
+#semex-overlay .binswitch-add input::placeholder { color: #4a5a50 !important; }
+#semex-overlay .binswitch-add button {
+    flex: none !important;
+    padding: 0 9px !important;
+    border-radius: 6px !important;
+    cursor: pointer !important;
+    border: 1px solid #22302a !important;
+    background: rgba(52, 211, 153, 0.1) !important;
+    color: #34d399 !important;
+    font-size: 11px !important;
+}
+#semex-overlay .binswitch-menu {
+    font-family: 'JetBrains Mono', ui-monospace, monospace !important;
+    border: 1px solid #22302a !important;
+    background: rgba(10, 14, 12, 0.98) !important;
+    border-radius: 7px !important;
+}
+#semex-overlay .binswitch-item { font-size: 10px !important; color: #cfe3d8 !important; }
+#semex-overlay .binswitch-item.active { border-color: #34d399 !important; }
+#semex-overlay .binswitch-empty { font-size: 10px !important; color: #5c6b62 !important; }
+
+/* controls — terminal palette: start green, pause gold, stop red, hide gray */
+#semex-overlay .full-controls { gap: 5px !important; margin: 0 !important; }
+#semex-overlay .ctrl-btn {
+    padding: 5px 0 !important;
+    font-size: 10px !important;
+    font-weight: 700 !important;
+    border-radius: 7px !important;
+    border: 1px solid #22302a !important;
+    background: transparent !important;
+    color: #9fb3a6 !important;
+}
+#semex-overlay .ctrl-btn.start {
+    background: rgba(52, 211, 153, 0.14) !important;
+    border-color: #2c4a3c !important;
+    color: #34d399 !important;
+    box-shadow: 0 0 10px rgba(52, 211, 153, 0.12) !important;
+}
+#semex-overlay .ctrl-btn.pause {
+    color: #fbbf24 !important;
+    border-color: #3a3524 !important;
+    background: rgba(251, 191, 36, 0.08) !important;
+}
+#semex-overlay .ctrl-btn.stop {
+    color: #f87171 !important;
+    border-color: #3a2626 !important;
+    background: rgba(248, 113, 113, 0.07) !important;
+}
+#semex-overlay .ctrl-btn.blur { color: #8b9a90 !important; }
+
+/* ============================================================
+   v4.0.1 BALANCE PASS — terminal look, humane proportions.
+   The v4.0 compact pass went too far (252px panel, 20px
+   buttons, 7.5px labels). This pass keeps the terminal
+   aesthetic but restores readable sizes and 34px+ touch
+   targets so every control is tappable on mobile.
+   Appended LAST so it wins over the compact pass.
+   ============================================================ */
+
+/* Panel: balanced width — room to breathe, not sprawling */
+#semex-overlay .overlay-full {
+    width: 300px !important;
+    border-radius: 14px !important;
+}
+@media (max-width: 640px) {
+    #semex-overlay .overlay-full { width: min(320px, 94vw) !important; max-width: 94vw !important; }
+}
+
+/* Header: comfortable padding, tappable buttons (was 20px) */
+#semex-overlay .full-header { padding: 10px 12px !important; }
+#semex-overlay .full-brand-logo { width: 26px !important; height: 26px !important; font-size: 13px !important; }
+#semex-overlay .full-brand-name { font-size: 13px !important; }
+#semex-overlay .full-brand-tag { font-size: 8.5px !important; }
+#semex-overlay .header-btns { gap: 6px !important; }
+#semex-overlay .header-btn {
+    width: 30px !important;
+    height: 30px !important;
+    font-size: 12px !important;
+    border-radius: 7px !important;
+}
+
+/* Body rhythm: even breathing room */
+#semex-overlay .full-body { padding: 12px !important; gap: 10px !important; }
+
+/* Status line: readable */
+#semex-overlay .full-status { font-size: 12px !important; padding: 2px 2px !important; }
+
+/* Stats strip: legible labels/values */
+#semex-overlay .full-stats { padding: 8px 10px !important; gap: 6px !important; }
+#semex-overlay .full-stats .stat-label { font-size: 9px !important; }
+#semex-overlay .full-stats .stat-value { font-size: 14px !important; }
+#semex-overlay .stat-item { gap: 4px !important; }
+
+/* Details grid: readable rows */
+#semex-overlay .full-details { padding: 8px 10px !important; }
+#semex-overlay .full-details .detail-row { font-size: 11px !important; padding: 3px 0 !important; }
+
+/* Controls: real touch targets (was 5px padding / 10px font) */
+#semex-overlay .full-controls { gap: 7px !important; }
+#semex-overlay .ctrl-btn {
+    padding: 9px 4px !important;
+    min-height: 36px !important;
+    font-size: 12px !important;
+    border-radius: 8px !important;
+}
+#semex-overlay .ctrl-btn.stop,
+#semex-overlay .ctrl-btn.blur { min-width: 44px !important; width: auto !important; }
+
+/* BIN/CC picker: tappable segments and rows */
+#semex-overlay .full-binswitch { padding: 8px 9px !important; gap: 7px !important; }
+#semex-overlay .seg-btn { padding: 7px 0 !important; font-size: 10.5px !important; }
+#semex-overlay .binswitch-btn { padding: 7px 8px !important; font-size: 11px !important; }
+#semex-overlay .binswitch-cyc { width: 32px !important; height: 30px !important; font-size: 13px !important; }
+#semex-overlay .binswitch-add input { padding: 7px 8px !important; font-size: 11px !important; }
+#semex-overlay .binswitch-add button { padding: 0 12px !important; min-height: 30px !important; }
+#semex-overlay .binswitch-menu .binswitch-item { padding: 8px 10px !important; font-size: 11px !important; }
+
+/* ============================================================
+   v4.0.2 DASHBOARD SYNC PASS — recolors the terminal-green
+   accents to the user dashboard's purple/pink identity and
+   bumps readability another notch. Loaded last: wins ties.
+   ============================================================ */
+
+/* Brand logo tile: real logo image fills the tile */
+#semex-overlay .full-brand-logo,
+#semex-overlay .pill-logo,
+#semex-overlay .dock-logo {
+    background: linear-gradient(135deg, #8B5CF6, #EC4899) !important;
+    overflow: hidden !important;
+}
+#semex-overlay .full-brand-logo img,
+#semex-overlay .pill-logo img,
+#semex-overlay .dock-logo img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+    display: block !important;
+}
+
+/* Accent recolor: terminal green → dashboard purple/pink */
+#semex-overlay .overlay-full {
+    border-color: rgba(139, 92, 246, 0.30) !important;
+    box-shadow: 0 0 28px rgba(139, 92, 246, 0.22), 0 18px 48px rgba(0, 0, 0, 0.6) !important;
+}
+#semex-overlay .full-header {
+    background: linear-gradient(180deg, rgba(139, 92, 246, 0.12), transparent) !important;
+    border-bottom-color: rgba(139, 92, 246, 0.22) !important;
+}
+#semex-overlay .full-status { color: #c4b5fd !important; }
+#semex-overlay .header-btn { border-color: rgba(139, 92, 246, 0.28) !important; }
+#semex-overlay .header-btn:hover { border-color: #8B5CF6 !important; color: #c4b5fd !important; }
+
+/* Start button: dashboard gradient */
+#semex-overlay .ctrl-btn.start {
+    background: linear-gradient(135deg, #8B5CF6, #EC4899) !important;
+    border-color: transparent !important;
+    color: #fff !important;
+    box-shadow: 0 4px 16px rgba(139, 92, 246, 0.45) !important;
+}
+#semex-overlay .ctrl-btn.start:hover {
+    box-shadow: 0 6px 22px rgba(236, 72, 153, 0.5) !important;
+}
+
+/* BIN/CC picker accents */
+#semex-overlay .seg-btn.on {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.35), rgba(236, 72, 153, 0.25)) !important;
+    color: #e9d5ff !important;
+    border-color: rgba(139, 92, 246, 0.5) !important;
+}
+#semex-overlay .binswitch-cyc { color: #a78bfa !important; border-color: rgba(139, 92, 246, 0.3) !important; }
+#semex-overlay .binswitch-cyc:hover { border-color: #8B5CF6 !important; }
+#semex-overlay .binswitch-add button {
+    background: linear-gradient(135deg, #8B5CF6, #EC4899) !important;
+    border-color: transparent !important;
+    color: #fff !important;
+}
+#semex-overlay .binswitch-item.active { border-left-color: #a78bfa !important; }
+#semex-overlay .binswitch-btn.flash { border-color: #8B5CF6 !important; box-shadow: 0 0 10px rgba(139, 92, 246, 0.5) !important; }
+
+/* Pill + dock recolor to match */
+#semex-overlay .overlay-pill {
+    border-color: rgba(139, 92, 246, 0.30) !important;
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.20), 0 10px 28px rgba(0, 0, 0, 0.55) !important;
+}
+#semex-overlay .pill-text { color: #c4b5fd !important; }
+#semex-overlay .overlay-dock {
+    border-color: rgba(139, 92, 246, 0.30) !important;
+}
+#semex-overlay .dock-text { color: #c4b5fd !important; }
+
+/* ---- Readability bump (user: text still too small) ---- */
+#semex-overlay .full-brand-name { font-size: 13px !important; letter-spacing: 0.06em !important; }
+#semex-overlay .full-brand-tag { font-size: 9.5px !important; }
+#semex-overlay .full-status { font-size: 13px !important; }
+#semex-overlay .full-stats .stat-label { font-size: 10px !important; }
+#semex-overlay .full-stats .stat-value { font-size: 16px !important; }
+#semex-overlay .full-details .detail-row { font-size: 12px !important; padding: 4px 0 !important; }
+#semex-overlay .full-details .detail-val { font-size: 12px !important; }
+#semex-overlay .ctrl-btn { font-size: 13px !important; min-height: 40px !important; }
+#semex-overlay .ctrl-btn.stop,
+#semex-overlay .ctrl-btn.blur { min-width: 48px !important; }
+#semex-overlay .seg-btn { font-size: 11.5px !important; padding: 8px 0 !important; }
+#semex-overlay .binswitch-btn { font-size: 12px !important; }
+#semex-overlay .binswitch-add input { font-size: 12px !important; }
+#semex-overlay .binswitch-menu .binswitch-item { font-size: 12px !important; }
+#semex-overlay .pill-text { font-size: 11.5px !important; }
+#semex-overlay .dock-text { font-size: 11.5px !important; }
+
+/* ============================================================
+   v4.0.11 PC PROPORTION PASS — user report: panel too tall and
+   narrow on desktop, buttons/text too small, rows spilling out.
+   Wider panel (better width:height ratio), larger controls and
+   text, and a hard height cap with internal scroll so content
+   can NEVER be clipped by overflow:hidden again. Appended LAST:
+   wins over every earlier pass. Pill/dock untouched.
+   ============================================================ */
+#semex-overlay .overlay-full {
+    width: 380px !important;
+    max-width: calc(100vw - 32px) !important;
+    max-height: calc(100vh - 32px) !important;
+    flex-direction: column !important;
+}
+/* Flex MUST be scoped to the full state - a global display:flex !important
+   would override the display:none that hides the panel in pill/dock modes. */
+#semex-overlay.state-full .overlay-full {
+    display: flex !important;
+    flex-direction: column !important;
+}
+#semex-overlay .full-header { flex: 0 0 auto !important; }
+#semex-overlay .full-body {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    scrollbar-width: thin !important;
+}
+@media (max-width: 640px) {
+    /* Keep a 20px margin on BOTH sides even at 320px — 94vw plus the preset
+       20px side offset overflowed narrow screens. */
+    #semex-overlay .overlay-full { width: min(360px, calc(100vw - 40px)) !important; max-width: calc(100vw - 40px) !important; }
+}
+
+/* Wider panel gives the 2-col details grid room — no more spill */
+#semex-overlay .full-details { gap: 0 14px !important; }
+#semex-overlay #detailBinInfo,
+#semex-overlay #detailIp { max-width: 210px !important; }
+#semex-overlay .full-details .detail-row,
+#semex-overlay .full-details .detail-val { font-size: 13px !important; }
+#semex-overlay .semex-type-badge { font-size: 10px !important; }
+
+/* Bigger, finger-friendly controls (desktop readability too) */
+#semex-overlay .full-status { font-size: 14px !important; }
+#semex-overlay .full-stats .stat-label { font-size: 10.5px !important; }
+#semex-overlay .full-stats .stat-value { font-size: 17px !important; }
+#semex-overlay .full-brand-name { font-size: 14px !important; }
+#semex-overlay .full-brand-tag { font-size: 10px !important; }
+#semex-overlay .header-btn { width: 32px !important; height: 32px !important; font-size: 13px !important; }
+#semex-overlay .ctrl-btn { min-height: 44px !important; font-size: 14px !important; }
+#semex-overlay .ctrl-btn.stop,
+#semex-overlay .ctrl-btn.blur { min-width: 52px !important; }
+#semex-overlay .seg-btn { font-size: 12px !important; padding: 9px 0 !important; }
+#semex-overlay .binswitch-btn { font-size: 12.5px !important; padding: 8px 9px !important; }
+#semex-overlay .binswitch-cyc { width: 36px !important; height: 32px !important; font-size: 14px !important; }
+#semex-overlay .binswitch-add input { font-size: 12.5px !important; padding: 8px 9px !important; }
+#semex-overlay .binswitch-add button { min-height: 32px !important; padding: 0 14px !important; font-size: 13px !important; }
+
+
+/* ---- FRAME OVERRIDES: convert fixed positioning for mockup display ---- */
+#semex-overlay {
+    position: static !important;
+    display: inline-block;
+    transition: none !important;
+}
+.overlay-dock {
+    position: static !important;
+    transform: none !important;
+    border-right: 1px solid rgba(200,120,255,0.18) !important;
+    border-radius: 10px !important;
+    animation: none !important;
+}
+.overlay-pill, .overlay-full, .overlay-dock {
+    animation: none !important;
+}
+/* Short-window: constrain the iframe viewport by height only, let
+   the production max-height:calc(100vh-32px) fire naturally.
+   No override of max-height on .overlay-full — the real CSS handles it. */
+body.short-win {
+    /* body fills 100% of the iframe's 300px viewport height */
+    height: 100vh;
+    overflow: hidden;
+}
+/* Binswitch menu force-open */
+body.menu-open .binswitch-menu {
+    display: block !important;
+}
+body.menu-open .binswitch-btn {
+    border-color: rgba(59,130,246,0.7) !important;
+}
+</style>
+</head>
+<body>
+<div id="semex-overlay" class="state-full pos-bl">
+
+        <!-- PILL (Minimized) -->
+        <div class="overlay-pill">
+            <div class="pill-logo">
+                <span class="logo-letter">S</span>
+            </div>
+            <div class="pill-status">
+                <div class="pill-dot charged" id="pillDot"></div>
+                <span class="pill-text" id="pillText">Processing #12</span>
+            </div>
+            <div class="pill-btns">
+                <button class="pill-btn play" id="pillPlay" title="Start">▶</button>
+                <button class="pill-btn stop" id="pillStop" title="Stop">⏹</button>
+                <button class="pill-btn expand" id="pillExpand" title="Expand">⤢</button>
+            </div>
+        </div>
+
+        <!-- FULL (Maximized) -->
+        <div class="overlay-full" id="overlayFull">
+            <div class="full-header">
+                <div class="full-brand">
+                    <div class="full-brand-logo">
+                        <span class="logo-letter">S</span>
+                    </div>
+                    <div class="full-brand-text">
+                        <span class="full-brand-name">SEMEX</span>
+                        <span class="full-brand-tag">Automation</span>
+                    </div>
+                </div>
+                <div class="header-btns">
+                    <button class="header-btn" id="btnPosition" title="Change Position">📍</button>
+                    <button class="header-btn" id="btnDock" title="Dock to Edge">▤</button>
+                    <button class="header-btn" id="btnMinimize" title="Minimize">−</button>
+                </div>
+            </div>
+            <div class="full-body">
+                <div class="full-status">
+                    <span class="full-status-icon" id="statusIcon">⚡</span>
+                    <span class="full-status-text" id="statusText">Processing #12 / 50</span>
+                </div>
+
+                <div class="full-stats">
+                    <button class="stats-toggle" id="statsToggle" title="Toggle Stats Mode">🔄</button>
+                    <div class="stat-item">
+                        <span class="stat-label">Attempts</span>
+                        <span class="stat-value" id="statTotal">12</span>
+                    </div>
+                    <div class="stat-div"></div>
+                    <div class="stat-item">
+                        <span class="stat-label">Charged</span>
+                        <span class="stat-value charged" id="statCharged">3</span>
+                    </div>
+                    <div class="stat-div"></div>
+                    <div class="stat-item">
+                        <span class="stat-label">Live</span>
+                        <span class="stat-value live" id="statLive">5</span>
+                    </div>
+                    <div class="stat-div"></div>
+                    <div class="stat-item">
+                        <span class="stat-label">Dead</span>
+                        <span class="stat-value dead" id="statDead">4</span>
+                    </div>
+                </div>
+
+                <div class="full-details">
+                    <div class="detail-row" id="detailTypeRow">
+                        <span>Type:</span>
+                        <span class="detail-val semex-type-badge" id="detailType">CHECKOUT</span>
+                    </div>
+                    <div class="detail-row">
+                        <span>Card:</span>
+                        <span class="detail-val" id="detailCard">4242••••1234</span>
+                    </div>
+                    <div class="detail-row" id="detailBinRow">
+                        <span>BIN:</span>
+                        <span class="detail-val" id="detailBinInfo">VISA · CREDIT · US · CHASE</span>
+                    </div>
+                    <div class="detail-row">
+                        <span>Attempts:</span>
+                        <span class="detail-val" id="detailProcessed">12</span>
+                    </div>
+                    <div class="detail-row">
+                        <span>Speed:</span>
+                        <span class="detail-val" id="detailSpeed">4.2/min</span>
+                    </div>
+                    <div class="detail-row">
+                        <span>Time:</span>
+                        <span class="detail-val" id="detailTime">02:51</span>
+                    </div>
+                    <div class="detail-row" id="detailIpRow">
+                        <span>IP:</span>
+                        <span class="detail-val" id="detailIp">104.28.55.12 · US (82ms)</span>
+                    </div>
+                </div>
+
+                <div class="full-binswitch">
+                    <div class="binswitch-seg">
+                        <button class="seg-btn on" id="segBinBtn">BIN</button>
+                        <button class="seg-btn" id="segCcBtn">CC</button>
+                    </div>
+                    <div class="binswitch-row">
+                        <button class="binswitch-btn" id="binSwitchBtn">
+                            <span class="binswitch-ico">💳</span>
+                            <span class="binswitch-label" id="binSwitchLabel">424242</span>
+                            <span class="binswitch-caret">▾</span>
+                        </button>
+                        <button class="binswitch-cyc" id="binCycleBtn">⇄</button>
+                    </div>
+                    <div class="binswitch-add">
+                        <input id="binAddInput" placeholder="add new BIN (e.g. 424242)" maxlength="40" autocomplete="off">
+                        <button id="binAddBtn">＋</button>
+                    </div>
+                    <div class="binswitch-menu" id="binSwitchMenu">
+                        <button class="binswitch-item active" data-bin="424242">
+                            <span class="binswitch-item-ico">💎</span>
+                            <span class="binswitch-item-main">
+                                <span class="binswitch-item-code">424242</span>
+                                <span class="binswitch-item-name">VISA Classic US</span>
+                            </span>
+                            <span class="binswitch-item-tags">VISA · CREDIT · US</span>
+                        </button>
+                        <button class="binswitch-item" data-bin="531571">
+                            <span class="binswitch-item-ico">🔴</span>
+                            <span class="binswitch-item-main">
+                                <span class="binswitch-item-code">531571</span>
+                                <span class="binswitch-item-name">MC World Elite</span>
+                            </span>
+                            <span class="binswitch-item-tags">MASTERCARD · CREDIT · CA</span>
+                        </button>
+                        <button class="binswitch-item" data-bin="378282">
+                            <span class="binswitch-item-ico">🟦</span>
+                            <span class="binswitch-item-main">
+                                <span class="binswitch-item-code">378282</span>
+                                <span class="binswitch-item-name">AMEX Platinum</span>
+                            </span>
+                            <span class="binswitch-item-tags">AMEX · CHARGE · US</span>
+                        </button>
+                    </div>
+                </div>
+
+                <div class="full-controls">
+                    <button class="ctrl-btn start" style="display:none" id="ctrlStart">▶ Start</button>
+                    <button class="ctrl-btn pause" id="ctrlPause" style="display:flex">⏸ Pause</button>
+                    <button class="ctrl-btn stop" id="ctrlStop">⏹</button>
+                    <button class="ctrl-btn blur" id="ctrlBlur">🔒</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- DOCK (Edge Strip) -->
+        <div class="overlay-dock" id="overlayDock">
+            <div class="dock-logo">
+                <span class="logo-letter">S</span>
+            </div>
+            <div class="dock-dot charged" id="dockDot"></div>
+            <div class="dock-text" id="dockText">Active</div>
+        </div>
+
+</div>
+<script>
+(function() {
+    const p = new URLSearchParams(location.search);
+    const state = p.get('state') || 'full';
+    const shortWin = p.get('shortwin') === '1';
+    const menuOpen = p.get('binmenu') === '1';
+    const idle = p.get('idle') === '1';
+    const ov = document.getElementById('semex-overlay');
+    ov.className = 'state-' + state + ' pos-bl';
+    if (shortWin) document.body.classList.add('short-win');
+    if (menuOpen) document.body.classList.add('menu-open');
+    if (idle) {
+        // Show Start, hide Pause
+        const s = document.getElementById('ctrlStart');
+        const pp = document.getElementById('ctrlPause');
+        if (s) s.style.display = 'flex';
+        if (pp) pp.style.display = 'none';
+        const statusText = document.getElementById('statusText');
+        if (statusText) statusText.textContent = 'Ready';
+        const statusIcon = document.getElementById('statusIcon');
+        if (statusIcon) statusIcon.textContent = '🔄';
+        // Clear stats
+        ['statTotal','statCharged','statLive','statDead'].forEach(id => {
+            const el = document.getElementById(id);
+            if (el) el.textContent = '0';
+        });
+        const card = document.getElementById('detailCard');
+        if (card) card.textContent = '—';
+        const proc = document.getElementById('detailProcessed');
+        if (proc) proc.textContent = '0';
+        const spd = document.getElementById('detailSpeed');
+        if (spd) spd.textContent = '—';
+        const tm = document.getElementById('detailTime');
+        if (tm) tm.textContent = '00:00';
+        const binRow = document.getElementById('detailBinRow');
+        if (binRow) binRow.style.display = 'none';
+        const ipRow = document.getElementById('detailIpRow');
+        if (ipRow) ipRow.style.display = 'none';
+        const pillText = document.getElementById('pillText');
+        if (pillText) pillText.textContent = 'Ready';
+    }
+    // For dock state: right-align body
+    if (state === 'dock') {
+        document.body.style.alignItems = 'center';
+        document.body.style.justifyContent = 'flex-end';
+        document.body.style.padding = '0';
+    }
+    // Scrolled: scroll .full-body to bottom so controls are visible
+    const scrolled = p.get('scrolled') === '1';
+    if (scrolled) {
+        window.addEventListener('load', function() {
+            const fb = document.querySelector('.full-body');
+            if (fb) fb.scrollTop = fb.scrollHeight;
+        });
+    }
+})();
+</script>
+</body>
+</html>

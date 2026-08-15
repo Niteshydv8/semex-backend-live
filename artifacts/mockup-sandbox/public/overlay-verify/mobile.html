@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SEMEX Overlay — Mobile 320px Verification</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body {
+    background: #06060a;
+    color: #e2e8f0;
+    font-family: ui-sans-serif, system-ui, "Segoe UI", sans-serif;
+    min-height: 100vh;
+    padding: 24px;
+  }
+  h1 {
+    font-size: 15px;
+    font-weight: 700;
+    letter-spacing: 0.06em;
+    margin-bottom: 4px;
+    background: linear-gradient(90deg, #a78bfa, #ec4899);
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+  .sub { font-size: 11px; color: #64748b; margin-bottom: 24px; }
+
+  .phones {
+    display: flex;
+    gap: 28px;
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+
+  .phone-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+  }
+  .phone-label {
+    font-size: 11px;
+    font-weight: 700;
+    color: #64748b;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+  .checks {
+    font-size: 10px;
+    color: #475569;
+    line-height: 1.6;
+    max-width: 340px;
+  }
+  .checks span { display: block; padding-left: 14px; position: relative; }
+  .checks span::before { content: "→"; position: absolute; left: 0; color: #334155; }
+
+  /* Phone frame — simulates a narrow device screen */
+  .phone-frame {
+    width: 320px;
+    background: #111118;
+    border: 2px solid #23233a;
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 0 0 6px #09090f, 0 20px 40px rgba(0,0,0,0.7);
+    position: relative;
+  }
+  .notch {
+    width: 60px;
+    height: 6px;
+    background: #1e1e30;
+    border-radius: 3px;
+    margin: 8px auto 0;
+  }
+  .screen {
+    /* 320px wide screen — iframe viewport will be 320px → mobile CSS fires */
+    width: 320px;
+    overflow: hidden;
+    background: #0d0d16;
+    /* checkout page bg */
+    background-image: radial-gradient(ellipse at 30% 20%, rgba(139,92,246,0.04) 0%, transparent 60%);
+  }
+  .screen iframe {
+    display: block;
+    width: 320px;
+    border: none;
+  }
+  .home-bar {
+    width: 40px;
+    height: 4px;
+    background: #23233a;
+    border-radius: 2px;
+    margin: 6px auto 8px;
+  }
+
+  /* Width ruler */
+  .ruler {
+    width: 320px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 9px;
+    color: #334155;
+    font-family: ui-monospace, monospace;
+    margin-top: 6px;
+  }
+  .ruler-line { flex: 1; height: 1px; background: #1e1e30; }
+
+  .badge {
+    display: inline-block;
+    font-size: 9px;
+    font-weight: 700;
+    padding: 2px 8px;
+    border-radius: 999px;
+    letter-spacing: 0.08em;
+    margin-left: 6px;
+    vertical-align: middle;
+  }
+  .badge-ok  { background: rgba(52,211,153,0.12); color: #34d399; border: 1px solid rgba(52,211,153,0.3); }
+  .badge-mob { background: rgba(139,92,246,0.12); color: #a78bfa; border: 1px solid rgba(139,92,246,0.3); }
+</style>
+</head>
+<body>
+<h1>SEMEX OVERLAY — MOBILE 320px VERIFICATION <span class="badge badge-mob">@media ≤640px</span></h1>
+<p class="sub">Each phone frame is exactly 320px wide — the iframe viewport is 320px, so <code>@media (max-width:640px)</code> fires.<br>
+Expected panel width: min(360px, calc(320px − 40px)) = <strong>280px</strong>.</p>
+
+<div class="phones">
+
+  <!-- FULL panel — mobile, idle -->
+  <div class="phone-wrap">
+    <div class="phone-label">FULL — idle (Start visible) <span class="badge badge-mob">MOBILE</span></div>
+    <div class="phone-frame">
+      <div class="notch"></div>
+      <div class="screen" style="height:580px;">
+        <iframe src="frame.html?state=full&idle=1" width="320" height="580" scrolling="no"></iframe>
+      </div>
+      <div class="home-bar"></div>
+    </div>
+    <div class="ruler"><div class="ruler-line"></div>320px viewport<div class="ruler-line"></div></div>
+    <div class="checks">
+      <span>Panel ≤ 280px wide (320 − 40px margins)</span>
+      <span>No horizontal overflow or clipping</span>
+      <span>Start button ≥ 44px tall, readable text</span>
+      <span>BIN input + + button not truncated</span>
+      <span>SEMEX brand name fits header row</span>
+    </div>
+  </div>
+
+  <!-- FULL panel — mobile, running -->
+  <div class="phone-wrap">
+    <div class="phone-label">FULL — running (all detail rows) <span class="badge badge-mob">MOBILE</span></div>
+    <div class="phone-frame">
+      <div class="notch"></div>
+      <div class="screen" style="height:640px;">
+        <iframe src="frame.html?state=full" width="320" height="640" scrolling="no"></iframe>
+      </div>
+      <div class="home-bar"></div>
+    </div>
+    <div class="ruler"><div class="ruler-line"></div>320px viewport<div class="ruler-line"></div></div>
+    <div class="checks">
+      <span>2-col detail grid fits at ≈280px (no spill)</span>
+      <span>BIN row: VISA · CREDIT · US · CHASE truncates cleanly</span>
+      <span>IP row fits without overflowing right edge</span>
+      <span>Pause/Stop/Blur buttons all tappable (≥44px tall)</span>
+    </div>
+  </div>
+
+  <!-- PILL — mobile -->
+  <div class="phone-wrap">
+    <div class="phone-label">PILL — minimized <span class="badge badge-mob">MOBILE</span></div>
+    <div class="phone-frame">
+      <div class="notch"></div>
+      <div class="screen" style="height:80px;">
+        <iframe src="frame.html?state=pill" width="320" height="80" scrolling="no"></iframe>
+      </div>
+      <div class="home-bar"></div>
+    </div>
+    <div class="ruler"><div class="ruler-line"></div>320px viewport<div class="ruler-line"></div></div>
+    <div class="checks">
+      <span>Pill fits within 320px — no clipping</span>
+      <span>Text "Processing #12" truncates with ellipsis</span>
+      <span>Buttons remain circular and tappable</span>
+    </div>
+  </div>
+
+</div>
+
+<p style="font-size:10px;color:#23233a;margin-top:28px;text-align:center;">
+  v4.0.11 mobile verification · @media max-width:640px active · panel width = min(360px, calc(100vw − 40px))
+</p>
+</body>
+</html>
