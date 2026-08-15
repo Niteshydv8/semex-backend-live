@@ -68,6 +68,12 @@ class Settings:
     GROUP_PRICE_WEEKLY: str = _env("GROUP_PRICE_WEEKLY", "$25")
     GROUP_PRICE_MONTHLY: str = _env("GROUP_PRICE_MONTHLY", "$50")
 
+    # ─── Telegram Stars pricing (whole Stars, ~50 ⭐ per $1) ────────────────
+    # Users pay in-app with Stars; fulfillment is automatic on successful_payment.
+    PLAN_STARS_MONTHLY: int = int(_env("PLAN_STARS_MONTHLY", "5000"))
+    GROUP_STARS_WEEKLY: int = int(_env("GROUP_STARS_WEEKLY", "1250"))
+    GROUP_STARS_MONTHLY: int = int(_env("GROUP_STARS_MONTHLY", "2500"))
+
     # Invite link to the subscription-only premium private group. NEVER shown
     # publicly — the owner sends it to a verified buyer via /sendlink after
     # payment. The "Premium Group" bot button always shows the offer + wallets.
