@@ -1,10 +1,14 @@
 ---
-name: SEMEX card data stays local-only
-description: binOrCCList (BINs, CVV, CC list) must never be synced to the backend — user requirement, dashboard-local only
+name: SEMEX card data stays local-only (settings) vs BIN library (synced)
+description: binOrCCList settings must never sync; the saved-BIN library (user_bins) is owner-sanctioned for cross-device sync — keep the two apart
 ---
 
-SEMEX user requirement: the dashboard's BIN input, CVV, and CC list (`settings.binOrCCList`) must remain **temporary, dashboard-local** (chrome.storage.local) and must **never** be sent to the backend/database.
+Two different stores, two different rules — do not conflate:
 
-**Why:** Owner explicitly stated "Not on the database, on the dashboard, for temporary" — card data should not persist server-side.
+1. **Active BIN / pinned CVV / CC list settings — LOCAL-ONLY.** They stay in the extension's local storage and must never be sent to the backend; any settings-sync payload must strip them.
+   **Why:** Owner: "Not on the database, on the dashboard, for temporary" — full card numbers / active-list data must not persist server-side.
 
-**How to apply:** Any code that syncs settings to the server (e.g. `saveSettings()` in popup.js POSTing `/api/user/settings`) must strip `binOrCCList` from the payload. If new settings-sync paths are added, apply the same strip.
+2. **The saved-BIN library — SYNCS by owner request.** Adding a BIN in the overlay uploads it to the account; the extension caches the fetched library locally with an offline fallback; new devices hydrate from the DB. The Telegram bot writes to the same store. State-changing bridge relays are nonce-gated because content scripts run on every site.
+   **Why:** Owner explicitly asked for cross-device BIN sync ("user change the device and log in... database loads that bins and again save to the user local system").
+
+**How to apply:** BIN-library sync flows are fine — full CC list and active-BIN settings sync are not. Never widen #2 to include raw CC lines.
