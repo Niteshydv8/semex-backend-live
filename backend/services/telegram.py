@@ -206,6 +206,27 @@ async def answer_callback_query(callback_query_id: str, text: str = "", show_ale
     return await _post("answerCallbackQuery", payload)
 
 
+async def send_invoice(chat_id: int, title: str, description: str, payload: str, stars: int) -> Optional[dict]:
+    """Telegram Stars invoice (digital goods — currency XTR, no provider_token)."""
+    data = {
+        "chat_id": chat_id,
+        "title": title[:32],
+        "description": description[:255],
+        "payload": payload,
+        "currency": "XTR",
+        "prices": [{"label": title[:32], "amount": int(stars)}],
+    }
+    return await _post("sendInvoice", data)
+
+
+async def answer_pre_checkout_query(query_id: str, ok: bool = True, error_message: str = "") -> Optional[dict]:
+    """Must be called within 10s of receiving a pre_checkout_query."""
+    data: dict = {"pre_checkout_query_id": query_id, "ok": ok}
+    if not ok and error_message:
+        data["error_message"] = error_message[:200]
+    return await _post("answerPreCheckoutQuery", data)
+
+
 async def pin_message(chat_id: int, message_id: int, disable_notification: bool = True) -> Optional[dict]:
     return await _post(
         "pinChatMessage",

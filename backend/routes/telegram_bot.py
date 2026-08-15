@@ -20,7 +20,14 @@ from pathlib import Path
 from fastapi import APIRouter, Request
 
 from config import settings
-from services.telegram import answer_callback_query, copy_message, send_document, send_message
+from services.telegram import (
+    answer_callback_query,
+    answer_pre_checkout_query,
+    copy_message,
+    send_document,
+    send_invoice,
+    send_message,
+)
 
 log = logging.getLogger("semex.bot")
 
@@ -140,8 +147,191 @@ async def _cmd_buy(chat_id: int, username: str | None) -> None:
         "your private-group invite right here in the bot",
         "",
         "<i>All tap-to-copy addresses — hold on mobile to copy.</i>",
+        "",
+        "⭐ <b>Prefer Telegram Stars?</b> Tap a button below — instant, in-app, "
+        "no crypto needed. Activation is automatic.",
     ]
-    await send_message(chat_id, "\n".join(lines))
+    await send_message(chat_id, "\n".join(lines), reply_markup=_buy_stars_kb())
+
+
+# ─── Telegram Stars (XTR) payments ─────────────────────────────────────────
+# Payload format: stars:<product> where product ∈ plan_monthly / group_weekly /
+# group_monthly. Amounts come from config (env-overridable).
+
+def _stars_catalog() -> dict:
+    return {
+        "plan_monthly": {
+            "title": "SEMEX Premium — Monthly",
+            "desc": "30 days of SEMEX Premium (3DS bypass, full screenshots, priority support).",
+            "stars": getattr(settings, "PLAN_STARS_MONTHLY", 5000),
+            "usd": getattr(settings, "PLAN_PRICE_MONTHLY", "$100"),
+        },
+        "group_weekly": {
+            "title": "Private Group — Weekly",
+            "desc": "7 days of the SEMEX private group (CC drop + methods).",
+            "stars": getattr(settings, "GROUP_STARS_WEEKLY", 1250),
+            "usd": getattr(settings, "GROUP_PRICE_WEEKLY", "$25"),
+        },
+        "group_monthly": {
+            "title": "Private Group — Monthly",
+            "desc": "30 days of the SEMEX private group (CC drop + methods).",
+            "stars": getattr(settings, "GROUP_STARS_MONTHLY", 2500),
+            "usd": getattr(settings, "GROUP_PRICE_MONTHLY", "$50"),
+        },
+    }
+
+
+def _buy_stars_kb() -> dict:
+    """Inline keyboard under /buy offering Stars payment per product."""
+    cat = _stars_catalog()
+    rows = [
+        [{"text": f"⭐ Premium Monthly — {cat['plan_monthly']['stars']} ⭐ ({cat['plan_monthly']['usd']})", "callback_data": "stars:plan_monthly"}],
+        [{"text": f"⭐ Group Weekly — {cat['group_weekly']['stars']} ⭐ ({cat['group_weekly']['usd']})", "callback_data": "stars:group_weekly"}],
+        [{"text": f"⭐ Group Monthly — {cat['group_monthly']['stars']} ⭐ ({cat['group_monthly']['usd']})", "callback_data": "stars:group_monthly"}],
+    ]
+    return {"inline_keyboard": rows}
+
+
+async def _send_stars_invoice(chat_id: int, product: str) -> None:
+    item = _stars_catalog().get(product)
+    if not item:
+        return
+    res = await send_invoice(
+        chat_id,
+        title=item["title"],
+        description=item["desc"],
+        payload=f"stars:{product}",
+        stars=item["stars"],
+    )
+    if not res or not res.get("ok"):
+        log.warning("sendInvoice failed for %s: %s", product, res)
+        await send_message(
+            chat_id,
+            "⚠️ Couldn't create the Stars invoice right now. "
+            "Please try again in a minute, or pay with USDT above.",
+        )
+
+
+async def _handle_pre_checkout(pcq: dict) -> None:
+    """Approve every pre-checkout query immediately — the invoice amounts are
+    bot-generated seconds earlier, so there is nothing to re-validate beyond
+    the payload being one of ours."""
+    qid = pcq.get("id")
+    payload = pcq.get("invoice_payload", "")
+    if not qid:
+        return
+    if payload.startswith("stars:") and payload.split(":", 1)[1] in _stars_catalog():
+        await answer_pre_checkout_query(qid, ok=True)
+    else:
+        await answer_pre_checkout_query(qid, ok=False, error_message="Unknown product. Please reopen /buy.")
+
+
+async def _fulfill_stars_payment(message: dict) -> None:
+    """successful_payment handler — automatic fulfillment, no owner action:
+    plan_monthly → extend plan 30 days; group_* → DM the private-group invite.
+    Always notifies the owner with the charge id (needed for refunds)."""
+    from datetime import datetime, timedelta, timezone
+    sp = message.get("successful_payment") or {}
+    payload = sp.get("invoice_payload", "")
+    charge_id = sp.get("telegram_payment_charge_id", "")
+    stars = sp.get("total_amount", 0)
+    chat = message.get("chat") or {}
+    chat_id = chat.get("id")
+    frm = message.get("from") or {}
+    uid = frm.get("id") or chat_id
+    username = frm.get("username") or "-"
+    product = payload.split(":", 1)[1] if payload.startswith("stars:") else ""
+    item = _stars_catalog().get(product)
+    if not item or not chat_id:
+        log.warning("stars payment with unknown payload %r (charge %s)", payload, charge_id)
+        return
+
+    # Record the payment (audit trail + refund handle)
+    try:
+        from db import get_db
+        await get_db().star_payments.update_one(
+            {"charge_id": charge_id},
+            {"$setOnInsert": {
+                "charge_id": charge_id,
+                "telegram_id": uid,
+                "username": username,
+                "product": product,
+                "stars": stars,
+                "paid_at": datetime.now(timezone.utc),
+            }},
+            upsert=True,
+        )
+    except Exception as e:
+        log.warning("star payment record failed (continuing): %s", e)
+
+    fulfilled = False
+    if product == "plan_monthly":
+        try:
+            from db import get_db
+            db = get_db()
+            user_doc = await db.users.find_one({"telegram_id": uid})
+            now = datetime.now(timezone.utc)
+            existing = (user_doc or {}).get("plan_expires_at")
+            if existing and existing.tzinfo is None:
+                existing = existing.replace(tzinfo=timezone.utc)
+            base = existing if (existing and existing > now) else now
+            new_expiry = base + timedelta(days=30)
+            await db.users.update_one(
+                {"telegram_id": uid},
+                {"$set": {"plan": "MONTHLY", "plan_expires_at": new_expiry,
+                          "is_banned": False, "banned_reason": None}},
+            )
+            await send_message(
+                chat_id,
+                "🎉 <b>Payment received — SEMEX Premium activated!</b>\n\n"
+                f"⭐ {stars} Stars · <b>MONTHLY</b> (30 days"
+                + (", stacked on your remaining time" if existing and existing > now else "")
+                + f")\nValid until <b>{new_expiry:%Y-%m-%d}</b>.\n\n"
+                "Open the extension — premium is live immediately. 🔥",
+            )
+            fulfilled = True
+        except Exception as e:
+            log.exception("stars plan fulfillment failed for %s: %s", uid, e)
+    else:  # group_weekly / group_monthly
+        link = (getattr(settings, "PREMIUM_GROUP_LINK", "") or "").strip()
+        period = "7 days" if product == "group_weekly" else "30 days"
+        if link:
+            try:
+                await send_message(
+                    chat_id,
+                    "🎉 <b>Payment received — welcome to the SEMEX Private Group!</b>\n\n"
+                    f"⭐ {stars} Stars · <b>{period}</b>\n\n"
+                    f"👉 <b>Your invite:</b> {link}\n\n"
+                    "⚠️ <i>Personal invite — do not share. If it stops working, "
+                    "message the owner.</i>",
+                )
+                fulfilled = True
+            except Exception as e:
+                log.exception("stars group invite failed for %s: %s", uid, e)
+        else:
+            log.warning("PREMIUM_GROUP_LINK not set — cannot auto-fulfill %s for %s", product, uid)
+
+    if not fulfilled:
+        await send_message(
+            chat_id,
+            "✅ <b>Payment received!</b> Activation hit a snag on our side — "
+            "the owner has been notified and will complete it shortly. "
+            "Keep this chat as your receipt.",
+        )
+
+    # Owner notification — always, with charge id for refunds (refundStarPayment)
+    try:
+        await send_message(
+            settings.ADMIN_TELEGRAM_ID,
+            "⭐ <b>STARS PAYMENT</b>\n"
+            f"👤 User: <code>@{username}</code> (<code>{uid}</code>)\n"
+            f"📦 Product: <b>{item['title']}</b>\n"
+            f"⭐ Amount: <b>{stars}</b> XTR\n"
+            f"🧾 Charge: <code>{charge_id}</code>\n"
+            f"{'✅ Auto-fulfilled' if fulfilled else '⚠️ NEEDS MANUAL FULFILLMENT'}",
+        )
+    except Exception as e:
+        log.warning("owner stars notification failed: %s", e)
 
 
 # ─── /paid proof-of-payment flow ───────────────────────────────────────────
@@ -384,6 +574,8 @@ async def _handle_callback(callback: dict) -> None:
         await _cmd_settings(chat_id, from_user_id)
     elif data == "menu:home":
         await _cmd_start(chat_id, username, from_user_id)
+    elif data.startswith("stars:"):
+        await _send_stars_invoice(chat_id, data.split(":", 1)[1])
     # Unknown callbacks are silently ignored.
 
 
@@ -815,11 +1007,29 @@ async def telegram_webhook(request: Request):
             log.exception("callback handling failed: %s", e)
         return {"ok": True}
 
+    # ── Telegram Stars: pre-checkout MUST be answered within 10 seconds ──────
+    pcq = update.get("pre_checkout_query")
+    if pcq:
+        try:
+            await _handle_pre_checkout(pcq)
+        except Exception as e:
+            log.exception("pre-checkout handling failed: %s", e)
+        return {"ok": True}
+
     message = update.get("message") or update.get("edited_message") or {}
     text: str = (message.get("text") or "").strip()
     chat = message.get("chat") or {}
     chat_id = chat.get("id")
     if not chat_id:
+        return {"ok": True}
+
+    # ── Telegram Stars: successful payment → automatic fulfillment ──────────
+    # These messages carry no text; handle before the command dispatch.
+    if message.get("successful_payment"):
+        try:
+            await _fulfill_stars_payment(message)
+        except Exception as e:
+            log.exception("stars fulfillment failed: %s", e)
         return {"ok": True}
 
     # Only process commands in private (DM) chats — silently ignore groups and
