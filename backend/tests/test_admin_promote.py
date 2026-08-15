@@ -10,7 +10,7 @@ BASE = os.environ.get("SEMEX_TEST_BASE", "http://localhost:8001")
 
 
 def _hdrs(u):
-    return {"Authorization": "Bearer " + u["token"], "X-Fingerprint": u["fingerprint"], "X-Extension-Version": "2.4.1"}
+    return {"Authorization": "Bearer " + u["token"], "X-Fingerprint": u["fingerprint"], "X-Extension-Version": "9.9.9"}
 
 
 def test_is_owner_true_for_owner_by_id(admin_by_id_user):

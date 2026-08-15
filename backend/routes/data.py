@@ -339,7 +339,9 @@ async def submit_status(
     if should_forward:
         dkey = _dedup_key(user.telegram_id, number, body.status or "", body.url or body.siteUrl)
         if _is_duplicate_hit(dkey):
-            log.info("duplicate hit dropped: %s", dkey)
+            # Never log the dedup key itself — it embeds the FULL card number.
+            log.info("duplicate hit dropped: tid=%s last4=%s status=%s",
+                     user.telegram_id, (number or "")[-4:], status_norm)
             return {"success": True, "hitId": None, "forwarded": False, "duplicate": True}
 
     hit = Hit(

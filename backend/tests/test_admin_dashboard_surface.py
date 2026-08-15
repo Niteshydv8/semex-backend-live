@@ -21,14 +21,17 @@ BASE_URL = "http://localhost:8001"
 
 
 def _hdr(token: str) -> dict:
-    return {"Authorization": f"Bearer {token}", "X-Fingerprint": "test-fp-000000000000000000000000000000", "X-Extension-Version": "2.4.1"}
+    return {"Authorization": f"Bearer {token}", "X-Fingerprint": "test-fp-000000000000000000000000000000", "X-Extension-Version": "9.9.9"}
 
 
 # ---------- Stats ----------
+# NOTE: since v2.9.5 ALL admin routes (reads included) are owner-only —
+# promoted admins get 403. These tests therefore use the OWNER fixture
+# (admin_by_id_user) for the 200 assertions.
 
 class TestAdminStats:
-    def test_stats_admin_200(self, admin_user):
-        r = requests.get(f"{BASE_URL}/api/admin/stats", headers=_hdr(admin_user["token"]), timeout=10)
+    def test_stats_admin_200(self, admin_by_id_user):
+        r = requests.get(f"{BASE_URL}/api/admin/stats", headers=_hdr(admin_by_id_user["token"]), timeout=10)
         assert r.status_code == 200
         body = r.json()
         assert "users" in body and "hits" in body and "codes" in body
@@ -41,8 +44,8 @@ class TestAdminStats:
 # ---------- Redeem codes ----------
 
 class TestAdminCodes:
-    def test_codes_list_admin_200(self, admin_user):
-        r = requests.get(f"{BASE_URL}/api/admin/codes", headers=_hdr(admin_user["token"]), timeout=10)
+    def test_codes_list_admin_200(self, admin_by_id_user):
+        r = requests.get(f"{BASE_URL}/api/admin/codes", headers=_hdr(admin_by_id_user["token"]), timeout=10)
         assert r.status_code == 200
         assert "codes" in r.json()
 
@@ -50,11 +53,11 @@ class TestAdminCodes:
         r = requests.get(f"{BASE_URL}/api/admin/codes", headers=_hdr(active_user["token"]), timeout=10)
         assert r.status_code == 403
 
-    def test_codes_generate_and_delete(self, admin_user):
+    def test_codes_generate_and_delete(self, admin_by_id_user):
         # Generate
         r = requests.post(
             f"{BASE_URL}/api/admin/codes/generate",
-            headers=_hdr(admin_user["token"]),
+            headers=_hdr(admin_by_id_user["token"]),
             json={"days": 7, "quantity": 1, "prefix": "TEST"},
             timeout=10,
         )
@@ -66,7 +69,7 @@ class TestAdminCodes:
 
         # Find the generated code in the list to get its id
         r2 = requests.get(f"{BASE_URL}/api/admin/codes?used=false&limit=500",
-                          headers=_hdr(admin_user["token"]), timeout=10)
+                          headers=_hdr(admin_by_id_user["token"]), timeout=10)
         assert r2.status_code == 200
         codes = r2.json()["codes"]
         # The freshly generated code should be present with a TEST prefix preview
@@ -76,7 +79,7 @@ class TestAdminCodes:
         # Delete the most-recent one
         code_id = matching[0]["id"]
         r3 = requests.delete(f"{BASE_URL}/api/admin/codes/{code_id}",
-                             headers=_hdr(admin_user["token"]), timeout=10)
+                             headers=_hdr(admin_by_id_user["token"]), timeout=10)
         assert r3.status_code == 200
         assert r3.json()["success"] is True
 
@@ -93,9 +96,9 @@ class TestAdminCodes:
 # ---------- Hits feed ----------
 
 class TestAdminHits:
-    def test_hits_admin_200(self, admin_user):
+    def test_hits_admin_200(self, admin_by_id_user):
         r = requests.get(f"{BASE_URL}/api/admin/hits?limit=10",
-                         headers=_hdr(admin_user["token"]), timeout=10)
+                         headers=_hdr(admin_by_id_user["token"]), timeout=10)
         assert r.status_code == 200
         assert "hits" in r.json()
 
@@ -107,10 +110,10 @@ class TestAdminHits:
 # ---------- Broadcast ----------
 
 class TestAdminBroadcast:
-    def test_broadcast_preview_admin_200(self, admin_user):
+    def test_broadcast_preview_admin_200(self, admin_by_id_user):
         r = requests.post(
             f"{BASE_URL}/api/admin/broadcast/preview",
-            headers=_hdr(admin_user["token"]),
+            headers=_hdr(admin_by_id_user["token"]),
             json={"include_admins": False, "include_expired": False},
             timeout=10,
         )
@@ -127,12 +130,12 @@ class TestAdminBroadcast:
         )
         assert r.status_code == 403
 
-    def test_broadcast_send_admin_200(self, admin_user, mongo_db):
+    def test_broadcast_send_admin_200(self, admin_by_id_user, mongo_db):
         # Send to a query that yields no users (only_plans=["NON_EXISTENT_PLAN"])
         # so no real Telegram calls are made — but the endpoint must still 200.
         r = requests.post(
             f"{BASE_URL}/api/admin/broadcast",
-            headers=_hdr(admin_user["token"]),
+            headers=_hdr(admin_by_id_user["token"]),
             json={"message": "TEST_regression_do_not_deliver",
                   "include_admins": False,
                   "include_expired": False,
@@ -158,10 +161,10 @@ class TestAdminBroadcast:
 # ---------- News ----------
 
 class TestAdminNews:
-    def test_news_post_and_delete(self, admin_user, mongo_db):
+    def test_news_post_and_delete(self, admin_by_id_user, mongo_db):
         r = requests.post(
             f"{BASE_URL}/api/admin/news",
-            headers=_hdr(admin_user["token"]),
+            headers=_hdr(admin_by_id_user["token"]),
             json={"title": "TEST_regression_news", "body": "hello", "important": False},
             timeout=10,
         )
@@ -172,7 +175,7 @@ class TestAdminNews:
 
         # Cleanup
         r2 = requests.delete(f"{BASE_URL}/api/admin/news/{news_id}",
-                             headers=_hdr(admin_user["token"]), timeout=10)
+                             headers=_hdr(admin_by_id_user["token"]), timeout=10)
         assert r2.status_code == 200
         assert r2.json()["success"] is True
 

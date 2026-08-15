@@ -58,8 +58,11 @@ class TestPublicVersion:
             r = requests.get(f"{BASE_URL}/api/public/version", timeout=10)
             assert r.status_code == 200
             data = r.json()
-            assert data["minVersion"] == "2.4.1", data
-            assert data["latestVersion"] == "2.4.1", data
+            # Bogus "3" row must be ignored; both fields fall back to the
+            # server's hardcoded safe floor.
+            from routes.data import _FALLBACK_MIN_VERSION
+            assert data["minVersion"] == _FALLBACK_MIN_VERSION, data
+            assert data["latestVersion"] == _FALLBACK_MIN_VERSION, data
         finally:
             mongo_db.extension_releases.delete_many({"version": "3", "filename": "TEST_bogus.zip"})
             if existing:
@@ -78,7 +81,7 @@ class TestExtensionRequestsNot426:
         headers = {
             "Authorization": f"Bearer {active_user['token']}",
             "X-Fingerprint": FP,
-            "X-Extension-Version": "2.4.1",
+            "X-Extension-Version": "9.9.9",
         }
         r = requests.get(f"{BASE_URL}/api/user/hits", headers=headers, timeout=10)
         # Must NOT be 426. Accept 200/401/402/403 per review spec.
@@ -89,7 +92,7 @@ class TestExtensionRequestsNot426:
         headers = {
             "Authorization": f"Bearer {active_user['token']}",
             "X-Fingerprint": FP,
-            "X-Extension-Version": "2.4.1",
+            "X-Extension-Version": "9.9.9",
         }
         r = requests.get(f"{BASE_URL}/api/user/hits", headers=headers, timeout=10)
         assert r.status_code != 426

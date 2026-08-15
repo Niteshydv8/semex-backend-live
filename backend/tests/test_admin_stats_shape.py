@@ -9,13 +9,13 @@ import requests
 BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "https://address-mode-select.preview.emergentagent.com").rstrip("/")
 
 
-def test_admin_stats_shape(admin_user):
+def test_admin_stats_shape(admin_by_id_user):
     r = requests.get(
         f"{BASE_URL}/api/admin/stats",
         headers={
-            "Authorization": f"Bearer {admin_user['token']}",
-            "X-Fingerprint": admin_user["fingerprint"],
-            "X-Extension-Version": "2.4.1",
+            "Authorization": f"Bearer {admin_by_id_user['token']}",
+            "X-Fingerprint": admin_by_id_user["fingerprint"],
+            "X-Extension-Version": "9.9.9",
         },
         timeout=15,
     )

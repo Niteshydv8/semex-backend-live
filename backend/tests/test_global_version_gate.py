@@ -45,7 +45,6 @@ def _h(token: str, fp: str, version: str):
     return {
         "Authorization": f"Bearer {token}",
         "X-Fingerprint": fp,
-        "X-Extension-Version": "2.4.1",
         "X-Extension-Version": version,
         "Content-Type": "application/json",
     }
@@ -68,7 +67,10 @@ def test_old_extension_blocked_on_every_extension_endpoint(active_user):
         j = r.json()
         det = j.get("detail") or j
         assert det.get("code") == "EXTENSION_OUTDATED"
-        # Case B: extension sending NO version header at all → still 426
+        # Case B: extension sending NO version header at all → must NOT 426.
+        # (v2.3.5 treated missing-version as outdated and false-426'd current
+        # builds that occasionally omit the header — that incident is why the
+        # gate now only flags a build when it SENT a version below the minimum.)
         r2 = requests.request(
             method, f"{BASE_URL}{path}",
             json={} if method != "GET" else None,
@@ -76,12 +78,12 @@ def test_old_extension_blocked_on_every_extension_endpoint(active_user):
                 "Authorization": f"Bearer {active_user['token']}",
                 "X-Fingerprint": active_user["fingerprint"],
                 "Content-Type": "application/json",
-                # DELIBERATELY no X-Extension-Version — this is the new v2.3.5 gate
+                # DELIBERATELY no X-Extension-Version
             },
             timeout=15,
         )
-        assert r2.status_code == 426, (
-            f"{method} {path} should 426 for ext with NO version header, got {r2.status_code}"
+        assert r2.status_code != 426, (
+            f"{method} {path} must NOT 426 for ext with NO version header, got {r2.status_code}"
         )
 
 
@@ -120,12 +122,12 @@ def test_auth_endpoints_blocked_for_old_extension():
 
 
 def test_current_extension_passes_on_all_endpoints(active_user):
-    """v2.3.9 caller must NOT get 426 anywhere."""
+    """A caller at/above the minimum version must NOT get 426 anywhere."""
     for method, path in BLOCKED_PATHS[:3]:  # smaller subset
         r = requests.request(
             method, f"{BASE_URL}{path}",
             json={} if method != "GET" else None,
-            headers=_h(active_user["token"], active_user["fingerprint"], "2.4.1"),
+            headers=_h(active_user["token"], active_user["fingerprint"], "9.9.9"),
             timeout=15,
         )
         assert r.status_code != 426, f"{method} {path} 426'd for current version: {r.text[:200]}"

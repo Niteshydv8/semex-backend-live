@@ -1,4 +1,4 @@
- - [SEMEX MV3 service worker keepalive](semex-mv3-service-worker.md) — page navigation kills the worker mid-screenshot/submit; fix is setInterval ping during the PAYMENT_RESULT async handler.
+- [SEMEX MV3 service worker keepalive](semex-mv3-service-worker.md) — page navigation kills the worker mid-screenshot/submit; fix is setInterval ping during the PAYMENT_RESULT async handler.
 - [Telegram custom-emoji delivery](telegram-custom-emoji.md) — invalid custom_emoji_id entities 400-reject the WHOLE message; hit notifications/screenshots silently fail while plain OTP works.
 - [Git push for SEMEX backend](git-push-railway.md) — raw `git push` fails auth; use `gitPush({branch:"main"})` callback; push auto-redeploys Railway backend.
 - [SEMEX version-gate false block](semex-version-gate.md) — current builds wrongly hard-blocked by stale/empty-header 426; client must guard modal with installed<min check.
@@ -23,3 +23,4 @@
 - [SEMEX card data local-only](semex-card-data-local-only.md) — binOrCCList (BIN/CVV/CC list) must never sync to backend; strip it from any settings-sync payload.
 - [SEMEX admin-log failsafe & card storage](semex-adminlog-failsafe.md) — LIVE+CHARGED persisted per-user; channel_post recovery parses emoji-prefixed status, atomic partial-unique upsert, secret-gated, esc() the admin UI.
 - [Stripe new-UI structure (habanero)](semex-stripe-newui-structure.md) — /g/pay/ renders whole form in js.stripe.com elements-inner iframe; payment-*Input ids; Playwright frame.evaluate works cross-origin; no :has() in querySelector lists.
+- [SEMEX backend test harness](semex-backend-test-harness.md) — backend/tests are integration tests needing live mongod+uvicorn:8001 in ONE shell call (processes die between calls); wipe mongo data per run; admin routes owner-only since v2.9.5.

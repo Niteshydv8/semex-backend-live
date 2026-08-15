@@ -37,11 +37,13 @@ def test_old_extension_blocked_on_auth_session():
     assert body["sentVersion"] == "1.0.0"
 
 
-def test_old_extension_no_version_blocked_on_auth_session():
+def test_old_extension_no_version_not_blocked_on_auth_session():
+    """A MISSING X-Extension-Version header must NOT be treated as outdated
+    (past false-426 incident): the request passes the gate and fails auth
+    normally (401 — no bearer token) instead of 426."""
     _reset_dm_cache()
     r = client.get("/api/auth/session", headers={"X-Fingerprint": "fp-x"})
-    assert r.status_code == 426
-    assert r.json()["detail"]["sentVersion"] == "unknown"
+    assert r.status_code == 401
 
 
 def test_public_version_still_reachable_for_old_extension():
@@ -60,12 +62,12 @@ def test_curl_without_fingerprint_passes_middleware():
 
 
 def test_current_version_passes_middleware():
-    # Current 2.3.5 >= min 2.3.0 → middleware passes → auth returns 401 (invalid token).
+    # A version at/above the floor → middleware passes → auth returns 401 (invalid token).
     r = client.get(
         "/api/auth/session",
         headers={
             "X-Fingerprint": "fp-x",
-            "X-Extension-Version": "2.4.1",
+            "X-Extension-Version": "9.9.9",
             "Authorization": "Bearer bad",
         },
     )
@@ -180,13 +182,15 @@ def test_dm_skipped_when_sent_version_at_or_above_fallback_floor():
     """DM-spam defense: if the DB has a bogus min-version making a current
     build look outdated, we still 426 the request (client shows paywall)
     but must NOT spam a Telegram DM to a user whose extension is already at
-    the safe FALLBACK floor (2.3.9)."""
+    the safe FALLBACK floor."""
+    from routes.data import _FALLBACK_MIN_VERSION
     _reset_dm_cache()
     tid = 111333555
     token = create_access_token("sid-x", tid, "fp-x")
     fake_send = AsyncMock(return_value={"ok": True})
     # Simulate DB with a bogus higher min-version by monkey-patching the
-    # gate to return "3" as min. sent="2.3.9" is > FALLBACK "2.3.9" (equal).
+    # gate to return "3" as min. The sent version equals the FALLBACK floor,
+    # which is enough to suppress the DM.
     async def _fake_min():
         return "3"
     with patch.object(server_module, "_get_min_extension_version", _fake_min), \
@@ -195,12 +199,12 @@ def test_dm_skipped_when_sent_version_at_or_above_fallback_floor():
             "/api/user/hits",
             headers={
                 "X-Fingerprint": "fp-x",
-                "X-Extension-Version": "2.4.1",
+                "X-Extension-Version": _FALLBACK_MIN_VERSION,
                 "Authorization": f"Bearer {token}",
             },
         )
         time.sleep(0.1)
-    # Middleware still 426s (DB says min=3 > 2.3.9 by tuple compare)
+    # Middleware still 426s (DB says min=3 > sent version by tuple compare)
     assert r.status_code == 426
     # But NO DM — sent version is at the safe floor.
     assert fake_send.await_count == 0

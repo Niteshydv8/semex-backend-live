@@ -1,6 +1,7 @@
 """Auth routes: request OTP, verify OTP, redeem code, refresh, logout."""
 from __future__ import annotations
 
+import logging
 import secrets
 from datetime import datetime, timedelta, timezone
 from typing import Optional
@@ -31,6 +32,8 @@ from services.telegram import (
 from services.extra_formatters import format_purchase_receipt
 
 import asyncio as _asyncio
+
+log = logging.getLogger("semex.auth")
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 

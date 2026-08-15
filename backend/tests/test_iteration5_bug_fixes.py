@@ -29,7 +29,7 @@ BASE = os.environ.get("SEMEX_TEST_BASE", "http://localhost:8001")
 
 
 def _hdrs(u):
-    return {"Authorization": "Bearer " + u["token"], "X-Fingerprint": u["fingerprint"], "X-Extension-Version": "2.4.1"}
+    return {"Authorization": "Bearer " + u["token"], "X-Fingerprint": u["fingerprint"], "X-Extension-Version": "9.9.9"}
 
 
 # ----------------- is-owner shape -----------------
@@ -173,20 +173,17 @@ async def _run_owner_mirror_check(admin_user, mongo_db, monkeypatch):
 
     calls = []
 
-    async def fake_send_photo(chat_id, img, caption):
-        calls.append(("photo", chat_id, caption[:40] if caption else ""))
-        return {"ok": True, "result": {"message_id": 42}}
+    async def fake_enqueue_photo(db, chat_id, photo, caption, **kw):
+        calls.append(("photo", chat_id, (caption or "")[:40]))
+        return True
 
-    async def fake_send_message(chat_id, text, **kw):
+    async def fake_enqueue_message(db, chat_id, text, **kw):
         calls.append(("msg", chat_id, (text or "")[:40]))
-        return {"ok": True, "result": {"message_id": 43}}
+        return True
 
-    async def fake_pin(chat_id, message_id, **kw):
-        return {"ok": True}
-
-    monkeypatch.setattr(data_mod, "send_photo", fake_send_photo)
-    monkeypatch.setattr(data_mod, "send_message", fake_send_message)
-    monkeypatch.setattr(data_mod, "pin_message", fake_pin)
+    # v2.9.1+: forwarding goes through the durable outbox, not direct sends.
+    monkeypatch.setattr(data_mod.telegram_outbox, "enqueue_photo", fake_enqueue_photo)
+    monkeypatch.setattr(data_mod.telegram_outbox, "enqueue_message", fake_enqueue_message)
 
     async def fake_lookup(bin_code):
         return {"bin": bin_code, "brand": "visa"}
@@ -194,7 +191,12 @@ async def _run_owner_mirror_check(admin_user, mongo_db, monkeypatch):
 
     from db import get_db
     from models import User
-    db = get_db()
+    # Fresh Motor client bound to THIS event loop — the module-global one may
+    # have been created under a since-closed loop by an earlier test.
+    from motor.motor_asyncio import AsyncIOMotorClient
+    from config import settings as _s
+    db = AsyncIOMotorClient(_s.MONGO_URL)[_s.DB_NAME]
+    monkeypatch.setattr(data_mod, "get_db", lambda: db)
     doc = await db.users.find_one({"telegram_id": admin_user["telegram_id"]})
     user = User.from_mongo(doc)
     assert user.is_admin is True
@@ -205,10 +207,18 @@ async def _run_owner_mirror_check(admin_user, mongo_db, monkeypatch):
         gateway="TestGateway",
         response="thank_you",
         card={"number": "4430440012341234"},
+        amount=5.0,  # CHARGED without a plausible amount is dropped by the fake-hit guard
+        currency="USD",
         screenshot=base64.b64encode(b"pngdata").decode(),
     )
+    import types as _types
+    stub_request = _types.SimpleNamespace(
+        headers={"cf-connecting-ip": "203.0.113.50"},
+        client=_types.SimpleNamespace(host="203.0.113.50"),
+        state=_types.SimpleNamespace(extension_outdated=False),
+    )
 
-    resp = await data_mod.submit_status(body, user=user)
+    resp = await data_mod.submit_status(body, request=stub_request, user=user)
     assert resp["success"] is True
     assert resp["forwarded"] is True
 

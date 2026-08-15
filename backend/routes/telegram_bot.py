@@ -276,10 +276,17 @@ async def _fulfill_stars_payment(message: dict) -> None:
                 existing = existing.replace(tzinfo=timezone.utc)
             base = existing if (existing and existing > now) else now
             new_expiry = base + timedelta(days=30)
+            # upsert=True: a buyer can pay via /buy before ever registering —
+            # without the upsert the payment was recorded but no user doc
+            # existed, so Premium never actually activated.
             await db.users.update_one(
                 {"telegram_id": uid},
                 {"$set": {"plan": "MONTHLY", "plan_expires_at": new_expiry,
-                          "is_banned": False, "banned_reason": None}},
+                          "is_banned": False, "banned_reason": None},
+                 "$setOnInsert": {"telegram_id": uid, "telegram_username": username,
+                                  "created_at": now, "hit_count": 0,
+                                  "charged_count": 0, "live_count": 0}},
+                upsert=True,
             )
             await send_message(
                 chat_id,
@@ -490,7 +497,9 @@ async def _forward_proof_to_owner(
             )
             return
 
-    await _clear_proof_entry(chat_id)  # single-use
+    # NOTE: the proof entry is cleared ONLY after the copy to the owner
+    # succeeds — clearing it first meant a failed forward silently consumed the
+    # one-shot state and the user could never retry (proof lost).
     handle = entry.get("username") or "-"
     tid = entry.get("telegram_id") or chat_id
     user_caption = (photo_caption or "").strip()
@@ -514,6 +523,7 @@ async def _forward_proof_to_owner(
             message_id=user_message_id,
             caption=admin_caption,
         )
+        await _clear_proof_entry(chat_id)  # single-use — consumed on success only
         await send_message(
             chat_id,
             (
@@ -526,7 +536,7 @@ async def _forward_proof_to_owner(
         log.exception("proof forward failed: %s", e)
         await send_message(
             chat_id,
-            "⚠️ Couldn't forward the proof — please try again or DM the owner directly.",
+            "⚠️ Couldn't forward the proof — please send the screenshot again (your submission window is still open) or DM the owner directly.",
         )
 
 
@@ -608,6 +618,13 @@ async def _handle_callback(callback: dict) -> None:
         except Exception:
             pass
     if not chat_id:
+        return
+    # Privacy gate: menu callbacks carry the SENDER's identity (from_user_id)
+    # but post into the CHAT the button lives in. In a group (e.g. a forwarded
+    # or stale menu message) that would leak the tapper's plan, counters and
+    # saved BINs to the whole group. Menu actions are DM-only, same as the
+    # text-command gate below.
+    if chat.get("type") != "private":
         return
 
     if data == "menu:get":

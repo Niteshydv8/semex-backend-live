@@ -60,8 +60,8 @@ def test_public_mute_endpoint_requires_admin(active_user):
         headers={
             "Authorization": f"Bearer {active_user['token']}",
             "X-Fingerprint": active_user["fingerprint"],
-            "X-Extension-Version": "2.4.1",
-        "X-Extension-Version": "2.4.1",
+            "X-Extension-Version": "9.9.9",
+        "X-Extension-Version": "9.9.9",
             "Content-Type": "application/json",
         },
         timeout=15,
@@ -97,8 +97,8 @@ def test_public_mute_endpoint_admin_can_toggle(admin_by_id_user, mongo_db):
     h = {
         "Authorization": f"Bearer {admin_by_id_user['token']}",
         "X-Fingerprint": admin_by_id_user["fingerprint"],
-        "X-Extension-Version": "2.4.1",
-        "X-Extension-Version": "2.4.1",
+        "X-Extension-Version": "9.9.9",
+        "X-Extension-Version": "9.9.9",
         "Content-Type": "application/json",
     }
     r1 = requests.post(PUBLIC_MUTE_URL, json={"telegramId": target, "muted": True}, headers=h, timeout=15)
@@ -165,7 +165,7 @@ def test_muted_user_hit_skips_public_showcase(monkeypatch):
         currency="USD",
     )
 
-    asyncio.get_event_loop().run_until_complete(
+    asyncio.run(
         data_route.submit_status(body, request=_stub_request(), user=user)
     )
 
@@ -229,7 +229,7 @@ def test_unmuted_user_still_reaches_public_channel(monkeypatch):
         amount=14.0,
         currency="USD",
     )
-    asyncio.get_event_loop().run_until_complete(
+    asyncio.run(
         data_route.submit_status(body, request=_stub_request(), user=user)
     )
     public_chan = int(settings.PUBLIC_SHOWCASE_CHANNEL_ID) if settings.PUBLIC_SHOWCASE_CHANNEL_ID else None

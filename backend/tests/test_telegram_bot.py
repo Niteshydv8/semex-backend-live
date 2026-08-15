@@ -164,18 +164,23 @@ class TestExtensionDownload:
 class TestTelegramRouterFiles:
     """Static grep-style checks for the router source file itself."""
 
+    @staticmethod
+    def _backend_dir() -> Path:
+        # Repo layout portable across hosts (was hardcoded to Railway's /app).
+        return Path(__file__).resolve().parents[1]
+
     def test_router_file_exists(self):
-        p = Path("/app/backend/routes/telegram_bot.py")
+        p = self._backend_dir() / "routes" / "telegram_bot.py"
         assert p.exists(), "telegram_bot.py missing"
 
     def test_router_file_defines_required_symbols(self):
-        src = Path("/app/backend/routes/telegram_bot.py").read_text()
+        src = (self._backend_dir() / "routes" / "telegram_bot.py").read_text()
         assert "async def _cmd_get(" in src, "_cmd_get function missing"
         assert "async def telegram_webhook(" in src, "telegram_webhook function missing"
         assert "_find_extension_zip" in src, "_find_extension_zip helper missing"
 
     def test_server_registers_router(self):
-        src = Path("/app/backend/server.py").read_text()
+        src = (self._backend_dir() / "server.py").read_text()
         assert "telegram_bot_router" in src, "server.py does not import telegram_bot_router"
         assert "app.include_router(telegram_bot_router)" in src, \
             "server.py does not include telegram_bot_router"

@@ -14,8 +14,8 @@ def _hdrs(u):
     return {
         "Authorization": "Bearer " + u["token"],
         "X-Fingerprint": u["fingerprint"],
-        "X-Extension-Version": "2.4.1",
-        "X-Extension-Version": "2.4.1",
+        "X-Extension-Version": "9.9.9",
+        "X-Extension-Version": "9.9.9",
         "Content-Type": "application/json",
     }
 
@@ -45,7 +45,9 @@ def test_charge_only_persistence(active_user, mongo_db):
     assert d["success"] is True
     assert d.get("hitId"), "CHARGED must return hitId"
 
-    # 2) LIVE — should NOT insert, but forwarded=True and hitId=None
+    # 2) LIVE — v4.0 policy: LIVE IS persisted (admin per-user card lookup
+    # covers charged + live) and forwarded. Needs amount>0? No — only CHARGED
+    # requires a plausible amount; LIVE needs a real card number.
     r_live = httpx.post(
         f"{BASE}/api/data/status",
         headers=_hdrs(active_user),
@@ -58,7 +60,7 @@ def test_charge_only_persistence(active_user, mongo_db):
     )
     assert r_live.status_code == 200, r_live.text
     d = r_live.json()
-    assert d.get("hitId") is None, f"LIVE must NOT return hitId; got {d}"
+    assert d.get("hitId"), f"LIVE must return hitId (v4.0 persists LIVE); got {d}"
     assert d.get("forwarded") is True, f"LIVE must be forwarded; got {d}"
 
     # 3) DEAD/DECLINED — should NOT insert, forwarded=False, hitId=None
@@ -77,12 +79,12 @@ def test_charge_only_persistence(active_user, mongo_db):
     assert d.get("hitId") is None, f"DEAD must NOT return hitId; got {d}"
     assert d.get("forwarded") is False, f"DEAD must NOT be forwarded; got {d}"
 
-    # Mongo assertions: exactly 1 CHARGED hit, 0 LIVE, 0 DEAD
+    # Mongo assertions: exactly 1 CHARGED hit, 1 LIVE (v4.0 persists LIVE), 0 DEAD
     charged_count = mongo_db.hits.count_documents({"telegram_id": tid, "status": {"$regex": r"^charged$", "$options": "i"}})
     live_count = mongo_db.hits.count_documents({"telegram_id": tid, "status": {"$regex": r"^live$", "$options": "i"}})
     dead_count = mongo_db.hits.count_documents({"telegram_id": tid, "status": {"$regex": r"^dead$", "$options": "i"}})
     assert charged_count == 1, f"Expected 1 charged, got {charged_count}"
-    assert live_count == 0, f"Expected 0 live persisted, got {live_count}"
+    assert live_count == 1, f"Expected 1 live persisted (v4.0 policy), got {live_count}"
     assert dead_count == 0, f"Expected 0 dead persisted, got {dead_count}"
 
     # Cleanup

@@ -974,11 +974,35 @@ async function uploadExtension() {
     fd.append("make_minimum", makeMin ? "true" : "false");
     fd.append("auto_broadcast", broadcast ? "true" : "false");
     fd.append("file", file);
-    const r = await fetch(API + "/api/admin/extension/publish", {
+    // Multipart upload can't go through api() (it forces JSON Content-Type),
+    // but it still needs the same auth headers + one-shot 401 refresh retry.
+    const doUpload = () => fetch(API + "/api/admin/extension/publish", {
       method: "POST",
-      headers: { "Authorization": "Bearer " + TOKEN },
+      headers: { "Authorization": "Bearer " + TOKEN, "X-Fingerprint": FP },
       body: fd,
     });
+    let r = await doUpload();
+    if (r.status === 401) {
+      const refresh = localStorage.getItem("semex_admin_refresh");
+      if (refresh) {
+        try {
+          const rr = await fetch(API + "/api/auth/refresh", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ refreshToken: refresh })
+          });
+          if (rr.ok) {
+            const data = await rr.json();
+            if (data.accessToken) {
+              TOKEN = data.accessToken;
+              localStorage.setItem("semex_admin_token", TOKEN);
+              r = await doUpload();
+            }
+          }
+        } catch (e) {}
+      }
+      if (r.status === 401) { logout(); throw new Error("Session expired — please log in again."); }
+    }
     if (!r.ok) {
       let msg = "Upload failed (" + r.status + ")";
       try { const j = await r.json(); if (j && j.detail) msg = (typeof j.detail === "string") ? j.detail : JSON.stringify(j.detail); } catch(e){}
@@ -1028,7 +1052,9 @@ async function deleteRelease(id, version) {
 async function broadcastRelease(id) {
   if (!confirm("Broadcast this version to ALL users via Telegram DM?")) return;
   try {
-    const j = await api("/api/admin/extension/versions/" + id + "/broadcast", { method: "POST" });
+    // FastAPI requires a JSON body for this route (BroadcastReleaseBody) —
+    // calling it bodiless returned 422 and the broadcast never fired.
+    const j = await api("/api/admin/extension/versions/" + id + "/broadcast", { method: "POST", body: JSON.stringify({}) });
     toast("Broadcast queued: " + (j.queued || 0) + " users", "success");
   } catch (e) { toast(e.message, "error"); }
 }

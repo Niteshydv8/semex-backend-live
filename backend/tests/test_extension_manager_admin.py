@@ -24,7 +24,7 @@ FP = "test-fp-000000000000000000000000000000"
 
 
 def _hdr(token: str) -> dict:
-    return {"Authorization": f"Bearer {token}", "X-Fingerprint": FP, "X-Extension-Version": "2.4.1"}
+    return {"Authorization": f"Bearer {token}", "X-Fingerprint": FP, "X-Extension-Version": "9.9.9"}
 
 
 @pytest.fixture(autouse=True)
@@ -41,7 +41,8 @@ class TestListVersions:
         r = requests.get(f"{BASE_URL}/api/admin/extension/versions", timeout=10)
         assert r.status_code == 401
 
-    def test_admin_returns_releases_shape(self, admin_user, mongo_db):
+    def test_admin_returns_releases_shape(self, admin_by_id_user, mongo_db):
+        # owner token (all admin routes are owner-only since v2.9.5)
         # Seed one release doc directly so we can validate response shape
         from datetime import datetime, timezone
         oid = ObjectId()
@@ -61,7 +62,7 @@ class TestListVersions:
         })
         r = requests.get(
             f"{BASE_URL}/api/admin/extension/versions",
-            headers=_hdr(admin_user["token"]),
+            headers=_hdr(admin_by_id_user["token"]),
             timeout=10,
         )
         assert r.status_code == 200, r.text

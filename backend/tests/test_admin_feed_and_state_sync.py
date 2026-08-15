@@ -30,13 +30,13 @@ def _headers(token, fingerprint):
     return {
         "Authorization": f"Bearer {token}",
         "X-Fingerprint": fingerprint,
-        "X-Extension-Version": "2.4.1",
-        "X-Extension-Version": "2.4.1",
+        "X-Extension-Version": "9.9.9",
+        "X-Extension-Version": "9.9.9",
         "Content-Type": "application/json",
     }
 
 
-def test_admin_hits_feed_returns_username_card_site_amount(active_user, admin_user):
+def test_admin_hits_feed_returns_username_card_site_amount(active_user, admin_by_id_user):
     tag = f"adminfeed_{int(time.time() * 1000)}"
     body = {
         "status": "CHARGED",
@@ -62,10 +62,10 @@ def test_admin_hits_feed_returns_username_card_site_amount(active_user, admin_us
     r2 = requests.get(
         ADMIN_HITS_URL + "?limit=20",
         headers={
-            "Authorization": f"Bearer {admin_user['token']}",
-            "X-Fingerprint": admin_user["fingerprint"],
-            "X-Extension-Version": "2.4.1",
-        "X-Extension-Version": "2.4.1",
+            "Authorization": f"Bearer {admin_by_id_user['token']}",
+            "X-Fingerprint": admin_by_id_user["fingerprint"],
+            "X-Extension-Version": "9.9.9",
+        "X-Extension-Version": "9.9.9",
         },
         timeout=15,
     )

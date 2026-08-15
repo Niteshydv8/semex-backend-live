@@ -50,8 +50,10 @@ def test_parse_version_shows_the_bug_semantics():
 
 
 def test_fallback_min_version_is_current_build():
-    """The safe floor must be the version the current server code ships with."""
-    assert _FALLBACK_MIN_VERSION == "2.4.1"
+    """The safe floor must be a valid SEMEX semver (it is bumped as the build
+    moves forward, so don't pin a literal — pin the invariant)."""
+    assert _is_valid_semver(_FALLBACK_MIN_VERSION)
+    assert _parse_version(_FALLBACK_MIN_VERSION) > (0, 0, 0, 0)
 
 
 class _FakeCursor:
@@ -107,7 +109,10 @@ def test_get_min_version_skips_bogus_row(monkeypatch):
 
 
 def test_get_min_version_picks_first_valid_after_bad(monkeypatch):
-    """Mongo returns [ {v:'3'} , {v:'2.3.5'} ] — must pick 2.3.5."""
+    """Mongo returns [ {v:'3'} , {v:'2.3.5'} ] — the bogus row is skipped, and
+    the valid 2.3.5 is then clamped UP to the hardcoded floor (the floor always
+    wins over older DB values, so bumping the constant gates a new minimum
+    without touching the DB)."""
     _reset_cache()
     fake_db = _FakeDB(
         {
@@ -117,10 +122,11 @@ def test_get_min_version_picks_first_valid_after_bad(monkeypatch):
     import routes.data as data_mod
     monkeypatch.setattr(data_mod, "get_db", lambda: fake_db)
     v = _run(_get_min_extension_version())
-    assert v == "2.3.5"
+    assert v == _FALLBACK_MIN_VERSION
 
 
 def test_get_min_version_uses_latest_when_no_minimum(monkeypatch):
+    """No is_minimum row; latest=2.3.9 — again clamped up to the floor."""
     _reset_cache()
     fake_db = _FakeDB(
         {
@@ -131,4 +137,18 @@ def test_get_min_version_uses_latest_when_no_minimum(monkeypatch):
     import routes.data as data_mod
     monkeypatch.setattr(data_mod, "get_db", lambda: fake_db)
     v = _run(_get_min_extension_version())
-    assert v == "2.3.9"
+    assert v == _FALLBACK_MIN_VERSION
+
+
+def test_get_min_version_db_value_above_floor_wins(monkeypatch):
+    """A DB version HIGHER than the floor is honored (floor is a floor, not a cap)."""
+    _reset_cache()
+    fake_db = _FakeDB(
+        {
+            (("is_minimum", True),): [{"version": "99.0.0"}],
+        }
+    )
+    import routes.data as data_mod
+    monkeypatch.setattr(data_mod, "get_db", lambda: fake_db)
+    v = _run(_get_min_extension_version())
+    assert v == "99.0.0"

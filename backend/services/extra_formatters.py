@@ -84,10 +84,20 @@ def format_public_showcase(hit: dict, user: dict) -> str:
     )
 
 
+def _esc(v) -> str:
+    """HTML-escape a dynamic value for Telegram's HTML parse mode."""
+    import html
+    return html.escape(str(v), quote=False)
+
+
 def format_purchase_receipt(user: dict, plan_tag: str, duration_days: int, expires_at, code_preview: str) -> str:
     """Sent to the user when they redeem a code — like a purchase confirmation."""
     now = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
-    handle = user.get("telegram_username") or user.get("telegram_first_name") or "user"
+    # Escape user/plan/code data: a handle or plan containing &, < or > would
+    # make Telegram 400-reject the whole receipt message.
+    handle = _esc(user.get("telegram_username") or user.get("telegram_first_name") or "user")
+    plan_tag = _esc(plan_tag)
+    code_preview = _esc(code_preview)
     if duration_days < 0:
         duration_str = "LIFETIME ♾️"
     elif duration_days == 1:
@@ -116,8 +126,8 @@ def format_purchase_receipt(user: dict, plan_tag: str, duration_days: int, expir
 
 
 def format_expiry_alert(user: dict, hours_left: int) -> str:
-    handle = user.get("telegram_username") or user.get("telegram_first_name") or "there"
-    plan = user.get("plan", "TRIAL")
+    handle = _esc(user.get("telegram_username") or user.get("telegram_first_name") or "there")
+    plan = _esc(user.get("plan", "TRIAL"))
     hrs = "hour" if hours_left == 1 else "hours"
     return (
         f"⏰ <b>SEMEX Access Expiring Soon</b>\n\n"
@@ -129,7 +139,7 @@ def format_expiry_alert(user: dict, hours_left: int) -> str:
 
 
 def format_expired(user: dict) -> str:
-    handle = user.get("telegram_username") or user.get("telegram_first_name") or "there"
+    handle = _esc(user.get("telegram_username") or user.get("telegram_first_name") or "there")
     return (
         f"🔒 <b>SEMEX Access Expired</b>\n\n"
         f"Your access has ended, @{handle}.\n"

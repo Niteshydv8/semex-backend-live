@@ -18,7 +18,7 @@ ADMIN_HITS_URL = f"{BASE_URL}/api/admin/hits"
 
 
 def _headers(token: str, fingerprint: str | None) -> dict:
-    h = {"Authorization": f"Bearer {token}", "Content-Type": "application/json", "X-Extension-Version": "2.4.1"}
+    h = {"Authorization": f"Bearer {token}", "Content-Type": "application/json", "X-Extension-Version": "9.9.9"}
     if fingerprint is not None:
         h["X-Fingerprint"] = fingerprint
     return h
@@ -152,12 +152,16 @@ class TestHitPersistenceAndForwarding:
         assert body.get("forwarded") is False, f"DEAD hit should have forwarded=false, got {body}"
         assert body.get("hitId") is None, f"DEAD hit must NOT be saved, got hitId={body.get('hitId')}"
 
-    def test_live_hit_not_persisted_but_forwarded(self, active_user, mongo_db):
-        # LIVE hits forward to Telegram (notification) but are NOT saved to the DB.
+    def test_live_hit_persisted_and_forwarded(self, active_user, mongo_db):
+        # v4.0 policy: LIVE hits forward to Telegram AND are saved to the DB
+        # (admin per-user card lookup covers charged + live). Must carry a real
+        # card number — the no-card defense-in-depth guard drops it otherwise.
         r = requests.post(
             STATUS_URL,
             json={"status": "LIVE", "amount": "9.99", "currency": "USD", "hostname": "x",
-                  "gateway": "stripe", "response": "Incorrect CVC"},
+                  "gateway": "stripe", "response": "Incorrect CVC",
+                  "card": {"number": "4111111111111234", "month": "12", "year": "30", "cvv": "123"},
+                  "url": f"https://example.com/live-{int(__import__('time').time()*1000)}"},
             headers=_headers(active_user["token"], active_user["fingerprint"]),
             timeout=30,
         )
@@ -165,7 +169,9 @@ class TestHitPersistenceAndForwarding:
         body = r.json()
         assert body.get("success") is True
         assert body.get("forwarded") is True, f"LIVE hit (active user) should forward, got {body}"
-        assert body.get("hitId") is None, f"LIVE hit must NOT be saved, got hitId={body.get('hitId')}"
+        assert body.get("hitId"), f"LIVE hit must be saved (v4.0 policy), got {body}"
+        doc = mongo_db.hits.find_one({"_id": __import__("bson").ObjectId(body["hitId"])})
+        assert doc is not None and doc.get("status") == "LIVE"
 
     def test_string_card_and_currency_amount_do_not_422(self, active_user, mongo_db):
         # Regression: checkout pages send amount like "₹250.00"/"1,250.00" and card
@@ -196,9 +202,13 @@ class TestHitPersistenceAndForwarding:
         assert doc.get("card_number") == "4111111111111111", f"string card should parse, got {doc.get('card_number')}"
 
     def test_comma_amount_does_not_422(self, active_user):
+        # Card included: the no-card defense-in-depth guard drops cardless
+        # hits before save, which would mask the lenient-parse assertion.
         r = requests.post(
             STATUS_URL,
-            json={"status": "LIVE", "amount": "1,250.00", "hostname": "x"},
+            json={"status": "LIVE", "amount": "1,250.00", "hostname": "x",
+                  "card": {"number": "4111111111111234"},
+                  "url": f"https://example.com/comma-{int(__import__('time').time()*1000)}"},
             headers=_headers(active_user["token"], active_user["fingerprint"]),
             timeout=30,
         )
@@ -235,7 +245,7 @@ class TestHitPersistenceAndForwarding:
 # ---------- Admin visibility ----------
 
 class TestAdminHitsListing:
-    def test_admin_can_list_hits(self, active_user, admin_user, mongo_db):
+    def test_admin_can_list_hits(self, active_user, admin_by_id_user, mongo_db):
         # Ensure at least one hit exists for the active_user (create one)
         r = requests.post(
             STATUS_URL,
@@ -250,7 +260,7 @@ class TestAdminHitsListing:
         r2 = requests.get(
             ADMIN_HITS_URL,
             params={"telegram_id": active_user["telegram_id"], "limit": 50},
-            headers=_headers(admin_user["token"], admin_user["fingerprint"]),
+            headers=_headers(admin_by_id_user["token"], admin_by_id_user["fingerprint"]),
             timeout=15,
         )
         assert r2.status_code == 200, r2.text
@@ -267,7 +277,7 @@ class TestAdminHitsListing:
         )
         assert r.status_code == 403, r.text
 
-    def test_default_listing_excludes_legacy_live_and_dead(self, active_user, admin_user, mongo_db):
+    def test_default_listing_excludes_legacy_live_and_dead(self, active_user, admin_by_id_user, mongo_db):
         """New rule (Jan-2026): even if legacy LIVE/DEAD docs exist in db.hits,
         the default GET /api/admin/hits response must contain ONLY charged rows.
         Charged docs for the same telegram_id must still be visible."""
@@ -288,7 +298,7 @@ class TestAdminHitsListing:
             r = requests.get(
                 ADMIN_HITS_URL,
                 params={"telegram_id": tid, "limit": 500},
-                headers=_headers(admin_user["token"], admin_user["fingerprint"]),
+                headers=_headers(admin_by_id_user["token"], admin_by_id_user["fingerprint"]),
                 timeout=15,
             )
             assert r.status_code == 200, r.text
@@ -304,7 +314,7 @@ class TestAdminHitsListing:
         finally:
             mongo_db.hits.delete_many({"_id": {"$in": [legacy_live_id, legacy_dead_id, legacy_charged_id]}})
 
-    def test_admin_can_still_filter_by_status_live(self, active_user, admin_user, mongo_db):
+    def test_admin_can_still_filter_by_status_live(self, active_user, admin_by_id_user, mongo_db):
         """Explicit ?status=live must still return the live doc — the default-only
         charged filter must not lock the admin OUT of legacy data when they ask."""
         from datetime import datetime, timezone
@@ -321,7 +331,7 @@ class TestAdminHitsListing:
             r = requests.get(
                 ADMIN_HITS_URL,
                 params={"telegram_id": tid, "status": "live", "limit": 50},
-                headers=_headers(admin_user["token"], admin_user["fingerprint"]),
+                headers=_headers(admin_by_id_user["token"], admin_by_id_user["fingerprint"]),
                 timeout=15,
             )
             assert r.status_code == 200, r.text
@@ -349,7 +359,9 @@ class TestPaywall:
         assert r.status_code == 200, f"Expired non-admin hit should still SAVE (200), got {r.status_code}: {r.text}"
         body = r.json()
         assert body.get("success") is True
-        assert body.get("forwarded") is False, f"Expired non-admin hit must NOT forward, got {body}"
+        # Extension is FREE — plan expiry no longer gates forwarding; everyone
+        # with a valid session forwards.
+        assert body.get("forwarded") is True, f"Expired non-admin hit forwards under free-access policy, got {body}"
         doc = mongo_db.hits.find_one({"_id": _oid(body["hitId"])})
         assert doc is not None, "Expired user's hit must be persisted to db.hits"
 

@@ -26,8 +26,8 @@ def _h(user):
     return {
         "Authorization": f"Bearer {user['token']}",
         "X-Fingerprint": user["fingerprint"],
-        "X-Extension-Version": "2.4.1",
-        "X-Extension-Version": "2.4.1",
+        "X-Extension-Version": "9.9.9",
+        "X-Extension-Version": "9.9.9",
         "Content-Type": "application/json",
     }
 
@@ -131,9 +131,9 @@ def test_owner_can_mutate(method, path, body, admin_by_id_user, mongo_db):
         mongo_db.users.delete_one({"telegram_id": body["telegramId"]})
 
 
-def test_read_only_endpoints_still_open_to_promoted_admin(admin_user):
-    """Sanity: promoted admins can still VIEW (stats, list users, hits feed).
-    Only mutations are locked to owner."""
+def test_read_only_endpoints_owner_only_for_promoted_admin(admin_user):
+    """Since v2.9.5 ALL admin routes (reads included) are owner-only: a
+    promoted admin gets 403 on stats/users/hits reads too."""
     ro = [
         "/api/admin/stats",
         "/api/admin/users?limit=5",
@@ -141,4 +141,4 @@ def test_read_only_endpoints_still_open_to_promoted_admin(admin_user):
     ]
     for path in ro:
         r = requests.get(f"{BASE_URL}{path}", headers=_h(admin_user), timeout=15)
-        assert r.status_code == 200, f"promoted admin should read {path}, got {r.status_code}: {r.text[:200]}"
+        assert r.status_code == 403, f"promoted admin must NOT read {path}, got {r.status_code}: {r.text[:200]}"

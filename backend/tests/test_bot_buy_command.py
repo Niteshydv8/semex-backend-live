@@ -28,7 +28,8 @@ def _run(coro):
 
 def test_buy_command_message_shape(monkeypatch):
     """_cmd_buy must send a Telegram message with plan tiers + at least one
-    crypto section + owner handle."""
+    crypto section + owner handle. YEARLY/LIFETIME tiers are hidden when their
+    price env vars are empty (by design), so configure them here."""
     from routes import telegram_bot as tg
 
     captured = []
@@ -36,6 +37,8 @@ def test_buy_command_message_shape(monkeypatch):
         captured.append((chat_id, text))
         return {"ok": True, "result": {"message_id": 1}}
     monkeypatch.setattr(tg, "send_message", fake_send)
+    monkeypatch.setattr(tg.settings, "PLAN_PRICE_YEARLY", "$500")
+    monkeypatch.setattr(tg.settings, "PLAN_PRICE_LIFETIME", "$1000")
 
     _run(tg._cmd_buy(chat_id=12345, username="alice"))
     assert len(captured) == 1
