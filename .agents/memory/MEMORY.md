@@ -24,3 +24,4 @@
 - [SEMEX admin-log failsafe & card storage](semex-adminlog-failsafe.md) — LIVE+CHARGED persisted per-user; channel_post recovery parses emoji-prefixed status, atomic partial-unique upsert, secret-gated, esc() the admin UI.
 - [Stripe new-UI structure (habanero)](semex-stripe-newui-structure.md) — /g/pay/ renders whole form in js.stripe.com elements-inner iframe; payment-*Input ids; Playwright frame.evaluate works cross-origin; no :has() in querySelector lists.
 - [SEMEX backend test harness](semex-backend-test-harness.md) — backend/tests are integration tests needing live mongod+uvicorn:8001 in ONE shell call (processes die between calls); wipe mongo data per run; admin routes owner-only since v2.9.5.
+- [SEMEX fill card hand-off](semex-fill-card-handoff.md) — overlay must pick the card per attempt and pass it with SEMEX_FILL_FORM; never rely on cache/CARD_REPLACED or a test-card fallback.
