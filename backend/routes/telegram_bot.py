@@ -464,10 +464,32 @@ async def _forward_proof_to_owner(
     photo_caption: str | None,
 ) -> None:
     """Copy the user's photo message to the owner with a rich admin caption."""
+    from datetime import datetime, timezone
     entry = await _get_proof_entry(chat_id)
     if not entry:
-        # Not in proof-submit mode (or TTL expired) → ignore silently.
+        # Not in proof-submit mode (or TTL already expired) → ignore silently.
         return
+
+    # In-process expiry guard — the MongoDB TTL index cleans up documents
+    # asynchronously (up to ~60 s after expires_at). Catch the gap here so the
+    # user always gets feedback instead of a silent drop.
+    expires_at = entry.get("expires_at")
+    if expires_at:
+        now = datetime.now(timezone.utc)
+        if expires_at.tzinfo is None:
+            expires_at = expires_at.replace(tzinfo=timezone.utc)
+        if now > expires_at:
+            await _clear_proof_entry(chat_id)
+            await send_message(
+                chat_id,
+                "⏰ <b>Proof window expired</b>\n\n"
+                "Your 30-minute submission window has closed and the screenshot "
+                "was not sent to the owner.\n\n"
+                "Please run /paid again to open a new window, then send your "
+                "screenshot straight away.",
+            )
+            return
+
     await _clear_proof_entry(chat_id)  # single-use
     handle = entry.get("username") or "-"
     tid = entry.get("telegram_id") or chat_id
