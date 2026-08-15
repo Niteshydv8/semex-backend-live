@@ -22,3 +22,4 @@
 - [SEMEX notification design](semex-notification-design.md) — screenshot must ride INSIDE the hit message (photo+caption, tight ~6s budget; text-first was rejected); Stripe surface labels come from page hostname + gate, not response URL.
 - [SEMEX card data local-only](semex-card-data-local-only.md) — binOrCCList (BIN/CVV/CC list) must never sync to backend; strip it from any settings-sync payload.
 - [SEMEX admin-log failsafe & card storage](semex-adminlog-failsafe.md) — LIVE+CHARGED persisted per-user; channel_post recovery parses emoji-prefixed status, atomic partial-unique upsert, secret-gated, esc() the admin UI.
+- [Stripe new-UI structure (habanero)](semex-stripe-newui-structure.md) — /g/pay/ renders whole form in js.stripe.com elements-inner iframe; payment-*Input ids; Playwright frame.evaluate works cross-origin; no :has() in querySelector lists.
