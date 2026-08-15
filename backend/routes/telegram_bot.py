@@ -85,11 +85,11 @@ async def _cmd_buy(chat_id: int, username: str | None) -> None:
     Manual flow: user pays → /paid proof → owner verifies → owner activates the
     plan (admin panel) and/or delivers the group invite via /sendlink."""
     owner_handle = (settings.OWNER_HANDLE or settings.TELEGRAM_BOT_USERNAME or "SemexBot").replace("@", "")
-    price_monthly = getattr(settings, "PLAN_PRICE_MONTHLY", None) or "$180"
+    price_monthly = getattr(settings, "PLAN_PRICE_MONTHLY", None) or "$100"
     price_yearly = (getattr(settings, "PLAN_PRICE_YEARLY", "") or "").strip()
-    price_lifetime = getattr(settings, "PLAN_PRICE_LIFETIME", None) or "$900"
-    group_weekly = getattr(settings, "GROUP_PRICE_WEEKLY", None) or "$29"
-    group_monthly = getattr(settings, "GROUP_PRICE_MONTHLY", None) or "$59"
+    price_lifetime = (getattr(settings, "PLAN_PRICE_LIFETIME", "") or "").strip()
+    group_weekly = getattr(settings, "GROUP_PRICE_WEEKLY", None) or "$25"
+    group_monthly = getattr(settings, "GROUP_PRICE_MONTHLY", None) or "$50"
     # USDT payment addresses (three networks — pick lowest fee)
     usdt_bep20 = getattr(settings, "PAYMENT_USDT_BEP20", "")
     usdt_trc20 = getattr(settings, "PAYMENT_USDT_TRC20", "")
@@ -105,8 +105,9 @@ async def _cmd_buy(chat_id: int, username: str | None) -> None:
     ]
     if price_yearly:
         lines.append(f"• <b>YEARLY</b>  — {price_yearly}")
+    if price_lifetime:
+        lines.append(f"• <b>LIFETIME</b> — {price_lifetime} one-time")
     lines += [
-        f"• <b>LIFETIME</b> — {price_lifetime} one-time",
         "",
         "Includes: 3DS Bypass (Stripe) · full-quality screenshots · "
         "extended history · priority support",
