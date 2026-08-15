@@ -53,17 +53,24 @@ class Settings:
     # Prices are display-only — owner confirms crypto payment manually and
     # runs /extend via the admin panel. All fields have safe defaults.
     OWNER_HANDLE: str = _env("OWNER_HANDLE", "")   # @yourname (no @ needed)
-    PLAN_PRICE_MONTHLY: str = _env("PLAN_PRICE_MONTHLY", "$15")
-    PLAN_PRICE_YEARLY: str = _env("PLAN_PRICE_YEARLY", "$120")
-    PLAN_PRICE_LIFETIME: str = _env("PLAN_PRICE_LIFETIME", "$250")
-    PAYMENT_USDT_TRC20: str = _env("PAYMENT_USDT_TRC20", "")
+    PLAN_PRICE_MONTHLY: str = _env("PLAN_PRICE_MONTHLY", "$180")
+    PLAN_PRICE_YEARLY: str = _env("PLAN_PRICE_YEARLY", "")   # hidden when empty
+    PLAN_PRICE_LIFETIME: str = _env("PLAN_PRICE_LIFETIME", "$900")
+    # Owner's USDT wallets — shown in /buy. Defaults are the live addresses.
+    PAYMENT_USDT_BEP20: str = _env("PAYMENT_USDT_BEP20", "0xb1ab479abe81d6be059d5bb9d55a6e8d99b64bfd")
+    PAYMENT_USDT_TRC20: str = _env("PAYMENT_USDT_TRC20", "TCn8eNownsyUzMeHNMeUpzXJFDruCWYr5w")
+    PAYMENT_USDT_TON: str = _env("PAYMENT_USDT_TON", "UQAmwQDBLUHsSZI3SiKTDwSnvte-Y8MkwoDvzHzOGa-3xk68")
     PAYMENT_USDT_ERC20: str = _env("PAYMENT_USDT_ERC20", "")
     PAYMENT_BTC_ADDRESS: str = _env("PAYMENT_BTC_ADDRESS", "")
     PAYMENT_LTC_ADDRESS: str = _env("PAYMENT_LTC_ADDRESS", "")
 
-    # Invite link to the subscription-only premium private group (owner adds
-    # paid users manually). Shown behind the "Premium Group" bot button. When
-    # empty, the button falls back to the /buy plans + payment info instead.
+    # Private group (CC drop + methods) pricing — manual subscription.
+    GROUP_PRICE_WEEKLY: str = _env("GROUP_PRICE_WEEKLY", "$29")
+    GROUP_PRICE_MONTHLY: str = _env("GROUP_PRICE_MONTHLY", "$59")
+
+    # Invite link to the subscription-only premium private group. NEVER shown
+    # publicly — the owner sends it to a verified buyer via /sendlink after
+    # payment. The "Premium Group" bot button always shows the offer + wallets.
     PREMIUM_GROUP_LINK: str = _env("PREMIUM_GROUP_LINK", "")
 
     # Optional Telegram webhook secret — set this value when registering the webhook:
