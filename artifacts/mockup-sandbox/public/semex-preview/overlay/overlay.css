@@ -1450,3 +1450,325 @@
     background: rgba(248, 113, 113, 0.07) !important;
 }
 #semex-overlay .ctrl-btn.blur { color: #8b9a90 !important; }
+
+/* ============================================================
+   v4.0.1 BALANCE PASS — terminal look, humane proportions.
+   The v4.0 compact pass went too far (252px panel, 20px
+   buttons, 7.5px labels). This pass keeps the terminal
+   aesthetic but restores readable sizes and 34px+ touch
+   targets so every control is tappable on mobile.
+   Appended LAST so it wins over the compact pass.
+   ============================================================ */
+
+/* Panel: balanced width — room to breathe, not sprawling */
+#semex-overlay .overlay-full {
+    width: 300px !important;
+    border-radius: 14px !important;
+}
+@media (max-width: 640px) {
+    #semex-overlay .overlay-full { width: min(320px, 94vw) !important; max-width: 94vw !important; }
+}
+
+/* Header: comfortable padding, tappable buttons (was 20px) */
+#semex-overlay .full-header { padding: 10px 12px !important; }
+#semex-overlay .full-brand-logo { width: 26px !important; height: 26px !important; font-size: 13px !important; }
+#semex-overlay .full-brand-name { font-size: 13px !important; }
+#semex-overlay .full-brand-tag { font-size: 8.5px !important; }
+#semex-overlay .header-btns { gap: 6px !important; }
+#semex-overlay .header-btn {
+    width: 30px !important;
+    height: 30px !important;
+    font-size: 12px !important;
+    border-radius: 7px !important;
+}
+
+/* Body rhythm: even breathing room */
+#semex-overlay .full-body { padding: 12px !important; gap: 10px !important; }
+
+/* Status line: readable */
+#semex-overlay .full-status { font-size: 12px !important; padding: 2px 2px !important; }
+
+/* Stats strip: legible labels/values */
+#semex-overlay .full-stats { padding: 8px 10px !important; gap: 6px !important; }
+#semex-overlay .full-stats .stat-label { font-size: 9px !important; }
+#semex-overlay .full-stats .stat-value { font-size: 14px !important; }
+#semex-overlay .stat-item { gap: 4px !important; }
+
+/* Details grid: readable rows */
+#semex-overlay .full-details { padding: 8px 10px !important; }
+#semex-overlay .full-details .detail-row { font-size: 11px !important; padding: 3px 0 !important; }
+
+/* Controls: real touch targets (was 5px padding / 10px font) */
+#semex-overlay .full-controls { gap: 7px !important; }
+#semex-overlay .ctrl-btn {
+    padding: 9px 4px !important;
+    min-height: 36px !important;
+    font-size: 12px !important;
+    border-radius: 8px !important;
+}
+#semex-overlay .ctrl-btn.stop,
+#semex-overlay .ctrl-btn.blur { min-width: 44px !important; width: auto !important; }
+
+/* BIN/CC picker: tappable segments and rows */
+#semex-overlay .full-binswitch { padding: 8px 9px !important; gap: 7px !important; }
+#semex-overlay .seg-btn { padding: 7px 0 !important; font-size: 10.5px !important; }
+#semex-overlay .binswitch-btn { padding: 7px 8px !important; font-size: 11px !important; }
+#semex-overlay .binswitch-cyc { width: 32px !important; height: 30px !important; font-size: 13px !important; }
+#semex-overlay .binswitch-add input { padding: 7px 8px !important; font-size: 11px !important; }
+#semex-overlay .binswitch-add button { padding: 0 12px !important; min-height: 30px !important; }
+#semex-overlay .binswitch-menu .binswitch-item { padding: 8px 10px !important; font-size: 11px !important; }
+
+/* ============================================================
+   v4.0.2 DASHBOARD SYNC PASS — recolors the terminal-green
+   accents to the user dashboard's purple/pink identity and
+   bumps readability another notch. Loaded last: wins ties.
+   ============================================================ */
+
+/* Brand logo tile: real logo image fills the tile */
+#semex-overlay .full-brand-logo,
+#semex-overlay .pill-logo,
+#semex-overlay .dock-logo {
+    background: linear-gradient(135deg, #8B5CF6, #EC4899) !important;
+    overflow: hidden !important;
+}
+#semex-overlay .full-brand-logo img,
+#semex-overlay .pill-logo img,
+#semex-overlay .dock-logo img {
+    width: 100% !important;
+    height: 100% !important;
+    object-fit: contain !important;
+    display: block !important;
+}
+
+/* Accent recolor: terminal green → dashboard purple/pink */
+#semex-overlay .overlay-full {
+    border-color: rgba(139, 92, 246, 0.30) !important;
+    box-shadow: 0 0 28px rgba(139, 92, 246, 0.22), 0 18px 48px rgba(0, 0, 0, 0.6) !important;
+}
+#semex-overlay .full-header {
+    background: linear-gradient(180deg, rgba(139, 92, 246, 0.12), transparent) !important;
+    border-bottom-color: rgba(139, 92, 246, 0.22) !important;
+}
+#semex-overlay .full-status { color: #c4b5fd !important; }
+#semex-overlay .header-btn { border-color: rgba(139, 92, 246, 0.28) !important; }
+#semex-overlay .header-btn:hover { border-color: #8B5CF6 !important; color: #c4b5fd !important; }
+
+/* Start button: dashboard gradient */
+#semex-overlay .ctrl-btn.start {
+    background: linear-gradient(135deg, #8B5CF6, #EC4899) !important;
+    border-color: transparent !important;
+    color: #fff !important;
+    box-shadow: 0 4px 16px rgba(139, 92, 246, 0.45) !important;
+}
+#semex-overlay .ctrl-btn.start:hover {
+    box-shadow: 0 6px 22px rgba(236, 72, 153, 0.5) !important;
+}
+
+/* BIN/CC picker accents */
+#semex-overlay .seg-btn.on {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.35), rgba(236, 72, 153, 0.25)) !important;
+    color: #e9d5ff !important;
+    border-color: rgba(139, 92, 246, 0.5) !important;
+}
+#semex-overlay .binswitch-cyc { color: #a78bfa !important; border-color: rgba(139, 92, 246, 0.3) !important; }
+#semex-overlay .binswitch-cyc:hover { border-color: #8B5CF6 !important; }
+#semex-overlay .binswitch-add button {
+    background: linear-gradient(135deg, #8B5CF6, #EC4899) !important;
+    border-color: transparent !important;
+    color: #fff !important;
+}
+#semex-overlay .binswitch-item.active { border-left-color: #a78bfa !important; }
+#semex-overlay .binswitch-btn.flash { border-color: #8B5CF6 !important; box-shadow: 0 0 10px rgba(139, 92, 246, 0.5) !important; }
+
+/* Pill + dock recolor to match */
+#semex-overlay .overlay-pill {
+    border-color: rgba(139, 92, 246, 0.30) !important;
+    box-shadow: 0 0 20px rgba(139, 92, 246, 0.20), 0 10px 28px rgba(0, 0, 0, 0.55) !important;
+}
+#semex-overlay .pill-text { color: #c4b5fd !important; }
+#semex-overlay .overlay-dock {
+    border-color: rgba(139, 92, 246, 0.30) !important;
+}
+#semex-overlay .dock-text { color: #c4b5fd !important; }
+
+/* ---- Readability bump (user: text still too small) ---- */
+#semex-overlay .full-brand-name { font-size: 13px !important; letter-spacing: 0.06em !important; }
+#semex-overlay .full-brand-tag { font-size: 9.5px !important; }
+#semex-overlay .full-status { font-size: 13px !important; }
+#semex-overlay .full-stats .stat-label { font-size: 10px !important; }
+#semex-overlay .full-stats .stat-value { font-size: 16px !important; }
+#semex-overlay .full-details .detail-row { font-size: 12px !important; padding: 4px 0 !important; }
+#semex-overlay .full-details .detail-val { font-size: 12px !important; }
+#semex-overlay .ctrl-btn { font-size: 13px !important; min-height: 40px !important; }
+#semex-overlay .ctrl-btn.stop,
+#semex-overlay .ctrl-btn.blur { min-width: 48px !important; }
+#semex-overlay .seg-btn { font-size: 11.5px !important; padding: 8px 0 !important; }
+#semex-overlay .binswitch-btn { font-size: 12px !important; }
+#semex-overlay .binswitch-add input { font-size: 12px !important; }
+#semex-overlay .binswitch-menu .binswitch-item { font-size: 12px !important; }
+#semex-overlay .pill-text { font-size: 11.5px !important; }
+#semex-overlay .dock-text { font-size: 11.5px !important; }
+
+/* ============================================================
+   v4.0.11 PC PROPORTION PASS — user report: panel too tall and
+   narrow on desktop, buttons/text too small, rows spilling out.
+   Wider panel (better width:height ratio), larger controls and
+   text, and a hard height cap with internal scroll so content
+   can NEVER be clipped by overflow:hidden again. Appended LAST:
+   wins over every earlier pass. Pill/dock untouched.
+   ============================================================ */
+#semex-overlay .overlay-full {
+    width: 380px !important;
+    max-width: calc(100vw - 32px) !important;
+    max-height: calc(100vh - 32px) !important;
+    flex-direction: column !important;
+}
+/* Flex MUST be scoped to the full state - a global display:flex !important
+   would override the display:none that hides the panel in pill/dock modes. */
+#semex-overlay.state-full .overlay-full {
+    display: flex !important;
+    flex-direction: column !important;
+}
+#semex-overlay .full-header { flex: 0 0 auto !important; }
+#semex-overlay .full-body {
+    flex: 1 1 auto !important;
+    min-height: 0 !important;
+    overflow-y: auto !important;
+    overflow-x: hidden !important;
+    scrollbar-width: thin !important;
+}
+@media (max-width: 640px) {
+    /* Keep a 20px margin on BOTH sides even at 320px — 94vw plus the preset
+       20px side offset overflowed narrow screens. */
+    #semex-overlay .overlay-full { width: min(360px, calc(100vw - 40px)) !important; max-width: calc(100vw - 40px) !important; }
+}
+
+/* Wider panel gives the 2-col details grid room — no more spill */
+#semex-overlay .full-details { gap: 0 14px !important; }
+#semex-overlay #detailBinInfo,
+#semex-overlay #detailIp { max-width: 210px !important; }
+#semex-overlay .full-details .detail-row,
+#semex-overlay .full-details .detail-val { font-size: 13px !important; }
+#semex-overlay .semex-type-badge { font-size: 10px !important; }
+
+/* Bigger, finger-friendly controls (desktop readability too) */
+#semex-overlay .full-status { font-size: 14px !important; }
+#semex-overlay .full-stats .stat-label { font-size: 10.5px !important; }
+#semex-overlay .full-stats .stat-value { font-size: 17px !important; }
+#semex-overlay .full-brand-name { font-size: 14px !important; }
+#semex-overlay .full-brand-tag { font-size: 10px !important; }
+#semex-overlay .header-btn { width: 32px !important; height: 32px !important; font-size: 13px !important; }
+#semex-overlay .ctrl-btn { min-height: 44px !important; font-size: 14px !important; }
+#semex-overlay .ctrl-btn.stop,
+#semex-overlay .ctrl-btn.blur { min-width: 52px !important; }
+#semex-overlay .seg-btn { font-size: 12px !important; padding: 9px 0 !important; }
+#semex-overlay .binswitch-btn { font-size: 12.5px !important; padding: 8px 9px !important; }
+#semex-overlay .binswitch-cyc { width: 36px !important; height: 32px !important; font-size: 14px !important; }
+#semex-overlay .binswitch-add input { font-size: 12.5px !important; padding: 8px 9px !important; }
+#semex-overlay .binswitch-add button { min-height: 32px !important; padding: 0 14px !important; font-size: 13px !important; }
+
+/* ============================================================
+   v4.0.12 HOST-PAGE ISOLATION PASS
+   Hardens the overlay against real Stripe / merchant-page CSS
+   that can cascade into extension-injected styles even with
+   !important on individual rules.
+
+   Confirmed risks on checkout.stripe.com / buy.stripe.com:
+     - host `*, *::before, *::after { box-sizing: content-box }`
+       (some merchant themes reset before Stripe re-sets it)
+     - `html, body { overflow: hidden }` (safe for position:fixed
+       roots but still documented here for clarity)
+     - `button { all: unset }` on merchant-owned hosts that embed
+       Payment Element
+     - Ancestor `max-height` caps on layout containers
+
+   This pass is appended LAST so it wins every tie.
+   ============================================================ */
+
+/* 1. Force border-box everywhere inside the overlay regardless of
+      any host `* { box-sizing: content-box }` reset. */
+#semex-overlay * {
+    box-sizing: border-box !important;
+}
+
+/* 2. Harden the root container against any host rule that could
+      undo position:fixed via a wildcard or framework reset. */
+#semex-overlay {
+    position: fixed !important;
+    pointer-events: none !important;
+}
+
+/* 3. Prevent host max-height rules collapsing the flex children
+      that power the sticky-header + scrolling-body layout. */
+#semex-overlay .full-header {
+    max-height: none !important;
+}
+#semex-overlay .full-body {
+    max-height: none !important;
+}
+
+/* 4. Binswitch dropdown escape — the menu is `position:absolute;
+      bottom:calc(100
+/* ============================================================
+   v4.0.12 HOST-PAGE ISOLATION PASS
+   Hardens the overlay against real Stripe / merchant-page CSS
+   that can cascade into extension-injected styles even with
+   !important on individual rules.
+
+   Confirmed risks on checkout.stripe.com / buy.stripe.com:
+     - host "*, *::before, *::after { box-sizing: content-box }"
+       (some merchant themes reset before Stripe re-sets it)
+     - "html, body { overflow: hidden }" (safe for position:fixed
+       roots but still documented here for clarity)
+     - "button { all: unset }" on merchant-owned hosts that embed
+       Payment Element
+     - Ancestor max-height caps on layout containers
+
+   This pass is appended LAST so it wins every tie.
+   ============================================================ */
+
+/* 1. Force border-box everywhere inside the overlay regardless of
+      any host "* { box-sizing: content-box }" reset. */
+#semex-overlay * {
+    box-sizing: border-box !important;
+}
+
+/* 2. Harden the root container against any host rule that could
+      undo position:fixed via a wildcard or framework reset. */
+#semex-overlay {
+    position: fixed !important;
+    pointer-events: none !important;
+}
+
+/* 3. Prevent host max-height rules collapsing the flex children
+      that power the sticky-header + scrolling-body layout. */
+#semex-overlay .full-header {
+    max-height: none !important;
+}
+#semex-overlay .full-body {
+    max-height: none !important;
+}
+
+/* 4. Binswitch dropdown escape: the menu uses
+      position:absolute; bottom:calc(100% + 6px) which extends
+      ABOVE its trigger. Both .overlay-full { overflow:hidden }
+      and .full-body { overflow-y:auto } clip it at their
+      respective boundaries.
+      :has() is Chrome 105+ (above the extension minimum floor),
+      so this is safe to ship.
+      When the menu opens, we temporarily lift overflow on both
+      the scroll-container and the panel outer boundary so the
+      dropdown renders fully without any clipping. */
+#semex-overlay .full-body:has(.binswitch-menu.open) {
+    overflow: visible !important;
+}
+#semex-overlay .overlay-full:has(.binswitch-menu.open) {
+    overflow: visible !important;
+}
+
+/* 5. Mobile width contract at 375px DevTools emulation:
+      Existing @media (max-width:640px) rule gives
+      width: min(360px, calc(100vw - 40px))
+      At 375px viewport: min(360, 375-40) = min(360, 335) = 335px
+      This satisfies the <=335px contract without a new rule.
+      Documented here so future passes do not accidentally widen it. */

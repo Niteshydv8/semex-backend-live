@@ -1683,6 +1683,29 @@ body { display: flex; align-items: flex-end; justify-content: flex-start; paddin
 #semex-overlay .binswitch-add input { font-size: 12.5px !important; padding: 8px 9px !important; }
 #semex-overlay .binswitch-add button { min-height: 32px !important; padding: 0 14px !important; font-size: 13px !important; }
 
+/* ============================================================
+   v4.0.12 HOST-PAGE ISOLATION PASS (mirrored from overlay.css)
+   ============================================================ */
+#semex-overlay * {
+    box-sizing: border-box !important;
+}
+#semex-overlay {
+    position: fixed !important;
+    pointer-events: none !important;
+}
+#semex-overlay .full-header {
+    max-height: none !important;
+}
+#semex-overlay .full-body {
+    max-height: none !important;
+}
+#semex-overlay .full-body:has(.binswitch-menu.open) {
+    overflow: visible !important;
+}
+#semex-overlay .overlay-full:has(.binswitch-menu.open) {
+    overflow: visible !important;
+}
+
 
 /* ---- FRAME OVERRIDES: convert fixed positioning for mockup display ---- */
 #semex-overlay {
@@ -1885,6 +1908,51 @@ body.menu-open .binswitch-btn {
     const shortWin = p.get('shortwin') === '1';
     const menuOpen = p.get('binmenu') === '1';
     const idle = p.get('idle') === '1';
+    const stripeHost = p.get('stripe-host') === '1';
+
+    // ── Stripe / merchant host-page style simulation ──────────────────────
+    // Inject a <style> element BEFORE the overlay <style> block so the
+    // extension CSS loads later and should override via specificity + order.
+    // This is the correct direction: host CSS first, extension CSS second.
+    if (stripeHost) {
+        const hostStyle = document.createElement('style');
+        hostStyle.id = 'stripe-host-sim';
+        hostStyle.textContent = `
+/* ═══ SIMULATED STRIPE / MERCHANT HOST-PAGE CSS ═══
+   Represents the most hostile patterns seen on
+   checkout.stripe.com and buy.stripe.com.
+   ═══════════════════════════════════════════════ */
+
+/* 1. Box-model reset (common in Tailwind/Normalize setups) */
+*, *::before, *::after { box-sizing: content-box; }
+
+/* 2. Stripe's layout root: overflow hidden on html + body */
+html, body { overflow: hidden; height: 100%; }
+
+/* 3. Merchant theme: button all:unset (breaks unstyled buttons) */
+button { all: unset; cursor: pointer; display: inline-flex;
+         align-items: center; justify-content: center; }
+
+/* 4. Aggressive max-height on ancestor containers
+      (some merchant pages set this on .container or main) */
+div, section, main { max-height: 100vh; }
+
+/* 5. Merchant font override */
+body { font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+       font-size: 16px; line-height: 1.5; color: #1a1a2e; }
+
+/* 6. Stripe checkout page background */
+body { background: #f6f9fc; }
+`;
+        // Prepend before the first <style> so extension CSS wins by ordering
+        const firstStyle = document.head.querySelector('style');
+        document.head.insertBefore(hostStyle, firstStyle);
+        // Also give the body a checkout-page background so the overlay is
+        // visually readable against a real Stripe-white background
+        document.body.style.background = '#f6f9fc';
+    }
+    // ──────────────────────────────────────────────────────────────────────
+
     const ov = document.getElementById('semex-overlay');
     ov.className = 'state-' + state + ' pos-bl';
     if (shortWin) document.body.classList.add('short-win');
