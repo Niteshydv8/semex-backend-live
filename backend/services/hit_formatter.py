@@ -99,27 +99,24 @@ _GATEWAY_LABELS = {
 
 
 def _mask_success_url(url: Optional[str]) -> str:
-    """SHORT, PLAIN-TEXT display of a success/invoice URL — host + path only,
-    query string dropped.
-
-    These URLs carry a huge ``access_token`` query param. Emitting the raw URL
-    inside an ``<a href="…">`` tag was a double failure: (a) the unescaped ``&``
-    in the query string 400-rejects Telegram's HTML parser, dropping the WHOLE
-    hit to a raw plaintext wall, and (b) its length blows past Telegram's
-    message caps (4096 text / 1024 caption), truncating every field printed
-    AFTER this line (Customer Email, IP, Checked-by, Creator). We therefore show
-    a clean, escaped ``host/path`` snippet only — the full URL is still stored on
-    the hit and visible in the dashboard/admin panel."""
+    # ⚠️ KEEP the clickable full-link form below. The owner has TWICE
+    # (2026-08-05, 2026-08-16) chosen it over a shorter/plain/escaped variant,
+    # knowingly accepting that a long token-laden URL can push later fields past
+    # Telegram's length cap. Do NOT change this to plain-text / escaped /
+    # shortened / removed unless the owner explicitly asks for it. If they ever
+    # want the trailing fields protected WITHOUT losing the link, the only lever
+    # is reordering format_hit so this URL sits LAST — confirm order first.
+    # See .agents/memory/semex-telegram-silent-failures.md.
     if not url:
         return "—"
     try:
         p = urlparse(url)
-        short = f"{p.netloc}{p.path}".rstrip("/") or url
+        short = f"{p.netloc}{p.path}"
+        if len(short) > 40:
+            short = short[:37] + "..."
+        return f'<a href="{url}">{short}</a>'
     except Exception:
-        short = url
-    if len(short) > 60:
-        short = short[:57] + "..."
-    return _esc(short)
+        return url
 
 
 def _status_line(hit: dict) -> str:
