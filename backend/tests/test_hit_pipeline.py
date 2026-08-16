@@ -137,12 +137,12 @@ class TestHitPersistenceAndForwarding:
         assert doc is not None
         assert doc["status"] == "charged"
 
-    def test_dead_hit_not_persisted(self, active_user, mongo_db):
-        # NEW policy: only CHARGED hits are saved permanently. DEAD/declined are
-        # neither persisted nor forwarded.
+    def test_dead_hit_persisted_not_forwarded(self, active_user, mongo_db):
+        # v4.1 policy: a DECLINED/DEAD hit that carries a real card IS persisted
+        # (so it shows in the user's History tab) but is NOT forwarded to Telegram.
         r = requests.post(
             STATUS_URL,
-            json=_dead_payload("dead-noforward"),
+            json=_dead_payload("dead-persist"),
             headers=_headers(active_user["token"], active_user["fingerprint"]),
             timeout=30,
         )
@@ -150,7 +150,9 @@ class TestHitPersistenceAndForwarding:
         body = r.json()
         assert body.get("success") is True
         assert body.get("forwarded") is False, f"DEAD hit should have forwarded=false, got {body}"
-        assert body.get("hitId") is None, f"DEAD hit must NOT be saved, got hitId={body.get('hitId')}"
+        assert body.get("hitId"), f"DEAD hit with a card must be persisted (v4.1), got {body}"
+        doc = mongo_db.hits.find_one({"_id": _oid(body["hitId"])})
+        assert doc is not None and doc.get("status") == "declined"
 
     def test_live_hit_persisted_and_forwarded(self, active_user, mongo_db):
         # v4.0 policy: LIVE hits forward to Telegram AND are saved to the DB
