@@ -13,3 +13,11 @@ description: Owner-approved design — auto-open every detected embedded shareab
 **How to apply:**
 - True embedded Stripe **Payment Element / Embedded Checkout has NO shareable URL** — impossible to reopen; keep the in-built fill path (`__SEMEX_LAST_BILLING` recovery) for those. Never promise otherwise.
 - The background `SEMEX_OPEN_CHECKOUT_TAB` allow-list regex must include any host the extractor can emit, or tabs silently never open.
+
+**Detection must be three-layered; DOM-only scanning misses real embeds.** A checkout session id (`cs_live_`/`cs_test_`) may never appear in a DOM-visible iframe src — site JS can hold it in inline scripts / data-attributes, and iframes get src assigned late. The extractor therefore scans: (1) iframes/buy-buttons + MutationObserver on node-adds AND src attribute changes, (2) inline script bodies + common session data-attributes (one bounded full-HTML fallback, once), (3) a background `webRequest` sub_frame watcher as the wire-level catch-all.
+**Why:** v4.0.12-era DOM-only scanning missed submagic-style JS-embedded checkouts; owner expects "grab the link from their code".
+**How to apply:** keep all three layers in sync when touching the extractor; never let one layer assume another caught it (shared background dedupe handles overlaps).
+
+**MV3 duplicate suppression must persist in `chrome.storage.session`, not in-memory Maps.** Worker suspension wipes in-memory dedupe, so the same checkout reopens after a forced restart within the dedupe window.
+**Why:** architect FAIL on v4.0.13 round 1 — in-memory 60s dedupe didn't survive restarts.
+**How to apply:** any background "don't do X twice within N seconds" guard: storage.session record + in-memory fast path + in-flight Set for the async race.
