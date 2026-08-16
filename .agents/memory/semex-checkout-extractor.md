@@ -19,9 +19,5 @@ description: Owner-approved design — auto-open every detected embedded shareab
 **How to apply:** keep all three layers in sync when touching the extractor; never let one layer assume another caught it (shared background dedupe handles overlaps).
 
 **MV3 duplicate suppression must persist in `chrome.storage.session`, not in-memory Maps.** Worker suspension wipes in-memory dedupe, so the same checkout reopens after a forced restart within the dedupe window.
-**Why:** in-memory-only dedupe reopened the same checkout after a forced worker restart within the dedupe window.
+**Why:** architect FAIL on v4.0.13 round 1 — in-memory 60s dedupe didn't survive restarts.
 **How to apply:** any background "don't do X twice within N seconds" guard: storage.session record + in-memory fast path + in-flight Set for the async race.
-
-**Never regex-match webRequest URLs — parse `new URL().hostname`.** `documentUrl` is a full URL but `initiator` is a bare origin, and both may carry query/fragment straight after the host; slash-anchored regexes silently miss those forms.
-**Why:** a host-plus-slash loop guard passed full-path parents but missed bare-origin and `?x=1`/`#x` parents.
-**How to apply:** any host check against webRequest fields (loop guards, allow-lists) should parse the hostname and compare exactly.
