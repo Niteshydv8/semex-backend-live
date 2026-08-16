@@ -1706,6 +1706,29 @@ body { display: flex; align-items: flex-end; justify-content: flex-start; paddin
     overflow: visible !important;
 }
 
+/* ============================================================
+   v4.0.14 MOBILE FIT PASS — phone report: Speed/IP/BIN values
+   clipped at the panel edge (flex/grid children can't shrink
+   below content size by default), checkout-info block too tall,
+   and BIN/CC tabs + binswitch controls too small to tap
+   reliably. Appended LAST: wins over every earlier pass.
+   ============================================================ */
+@media (max-width: 640px) {
+    /* Squeeze the checkout-info block; grid tracks must be minmax(0,1fr)
+       so values can actually shrink instead of forcing overflow. */
+    #semex-overlay .full-details { padding: 5px 7px !important; margin-bottom: 5px !important; gap: 0 8px !important; grid-template-columns: minmax(0,1fr) minmax(0,1fr) !important; }
+    #semex-overlay .full-details .detail-row { min-width: 0 !important; padding: 1px 0 !important; margin-bottom: 1px !important; font-size: 11px !important; overflow: hidden !important; }
+    #semex-overlay .full-details .detail-val { font-size: 11px !important; min-width: 0 !important; max-width: 100% !important; overflow: hidden !important; text-overflow: ellipsis !important; white-space: nowrap !important; }
+    #semex-overlay #detailBinInfo, #semex-overlay #detailIp { max-width: 130px !important; }
+    #semex-overlay .semex-type-badge { font-size: 9px !important; }
+
+    /* Finger-friendly BIN/CC controls (~40px touch targets) */
+    #semex-overlay .seg-btn { min-height: 40px !important; font-size: 12px !important; padding: 8px 0 !important; }
+    #semex-overlay .binswitch-btn { min-height: 40px !important; font-size: 12px !important; padding: 8px 9px !important; }
+    #semex-overlay .binswitch-cyc { width: 40px !important; height: 40px !important; font-size: 15px !important; }
+    #semex-overlay .binswitch-add input { min-height: 40px !important; font-size: 12.5px !important; padding: 8px 9px !important; }
+    #semex-overlay .binswitch-add button { min-height: 40px !important; padding: 0 14px !important; font-size: 14px !important; }
+}
 
 /* ---- FRAME OVERRIDES: convert fixed positioning for mockup display ---- */
 #semex-overlay {
@@ -2000,6 +2023,20 @@ body { background: #f6f9fc; }
             const fb = document.querySelector('.full-body');
             if (fb) fb.scrollTop = fb.scrollHeight;
         });
+    }
+
+    // mobile-stress=1: populate long/IPv6 values to stress-test the
+    // v4.0.14 mobile fit pass — Speed "3.6 cards/min", IPv6 IP, long BIN.
+    const mobileStress = p.get('mobile-stress') === '1';
+    if (mobileStress) {
+        const spd = document.getElementById('detailSpeed');
+        if (spd) spd.textContent = '3.6 cards/min';
+        const ip = document.getElementById('detailIp');
+        if (ip) ip.textContent = '2604:a880:4:1d0::2:1001 · DE (145ms)';
+        const bin = document.getElementById('detailBinInfo');
+        if (bin) bin.textContent = 'VISA · CREDIT · US · JPMORGAN CHASE';
+        const card = document.getElementById('detailCard');
+        if (card) card.textContent = '4242••••••••1234';
     }
 })();
 </script>

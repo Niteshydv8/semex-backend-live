@@ -1,0 +1,104 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+  html, body { margin: 0; height: 100%; overflow: hidden; }
+  body {
+    /* Simulated checkout-page background so toast contrast is realistic */
+    background:
+      radial-gradient(600px 400px at 60% 0%, rgba(139,92,246,0.10), transparent 55%),
+      radial-gradient(500px 400px at 20% 100%, rgba(236,72,153,0.08), transparent 55%),
+      #0d0d18;
+    font-family: system-ui, -apple-system, sans-serif;
+  }
+  /* Ghost checkout form so we can see how much the toast covers */
+  .fake-checkout {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 40px 16px 16px;
+    opacity: 0.18;
+    pointer-events: none;
+  }
+  .fake-field {
+    height: 40px;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.10);
+  }
+  .fake-btn {
+    height: 48px;
+    border-radius: 8px;
+    background: rgba(139,92,246,0.25);
+    margin-top: 8px;
+  }
+</style>
+</head>
+<body>
+<!-- Ghost checkout form to reveal coverage on narrow screens -->
+<div class="fake-checkout">
+  <div class="fake-field"></div>
+  <div class="fake-field"></div>
+  <div class="fake-field" style="width:55%"></div>
+  <div class="fake-field" style="width:40%"></div>
+  <div class="fake-btn"></div>
+</div>
+
+<script src="/__mockup/toast/toast-notifier-v2.js"></script>
+<script>
+  // Fire the key test cases for the v4.0.14 phone fit verification:
+  //   1. DEAD toast with a long decline reason — tests text-overflow:ellipsis
+  //   2. CHARGED toast — tests green treatment + compact width
+  //   3. LIVE toast — tests gold treatment
+  // The stack cap (3 toasts) means all three ride simultaneously so we can
+  // verify the container width and per-card ellipsis in one view.
+  function fire() {
+    setTimeout(function () {
+      window.showToastV2({
+        type: "dead",
+        title: "Card Declined",
+        rows: [
+          { label: "GATEWAY",  value: "Stripe Checkout",                         tone: "bad" },
+          { label: "RESPONSE", value: "Your card was declined due to insufficient_funds; please try a different card", tone: "bad" },
+          { label: "CARD",     value: "4242••••••••1234",                         tone: "mono-bad" },
+          { label: "TIME",     value: "1.24s",                                    tone: "" }
+        ]
+      });
+    }, 200);
+
+    setTimeout(function () {
+      window.showToastV2({
+        type: "charged",
+        title: "Payment Successful",
+        rows: [
+          { label: "GATEWAY",  value: "Stripe Checkout",                          tone: "good" },
+          { label: "RESPONSE", value: "pi_3PxKq2BkXOCVP9nV1aXZuYjD",             tone: "mono-good" },
+          { label: "CARD",     value: "4242••••••••1234",                          tone: "mono-good" },
+          { label: "TIME",     value: "2.18s",                                    tone: "" }
+        ]
+      });
+    }, 700);
+
+    setTimeout(function () {
+      window.showToastV2({
+        type: "live",
+        title: "Card Live",
+        rows: [
+          { label: "GATEWAY",  value: "Stripe Invoice",  tone: "warn" },
+          { label: "RESPONSE", value: "requires_payment_method", tone: "mono-warn" },
+          { label: "CARD",     value: "5200••••••••1234", tone: "mono-warn" },
+          { label: "TIME",     value: "0.95s",           tone: "" }
+        ]
+      });
+    }, 1300);
+  }
+
+  fire();
+  setInterval(fire, 9000);
+</script>
+</body>
+</html>
