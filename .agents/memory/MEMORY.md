@@ -28,3 +28,4 @@
 - [SEMEX backend test harness](semex-backend-test-harness.md) — backend/tests are integration tests needing live mongod+uvicorn:8001 in ONE shell call (processes die between calls); wipe mongo data per run; admin routes owner-only since v2.9.5.
 - [SEMEX fill card hand-off](semex-fill-card-handoff.md) — overlay must pick the card per attempt and pass it with SEMEX_FILL_FORM; never rely on cache/CARD_REPLACED or a test-card fallback.
 - [SEMEX dashboard hit hydration](semex-dashboard-hit-hydration.md) — SSE 'hit' → dashboard pulls /api/user/hits (all builds ≥v2.9.12); backend-persisted statuses show with NO reinstall; owner prefers backend-only fixes.
+- [SEMEX embedded checkout fill gate](semex-embedded-checkout-fill-gate.md) — _semexIsCheckoutFill silently blocks fills on merchant pages with embedded Stripe; sessionStorage IS_STRIPE_CHECKOUT is set in the iframe's origin, not the top frame; fix is iframe src includes("js.stripe.com") detection.
