@@ -29,29 +29,21 @@ from services.telegram import (
     send_otp,
     send_welcome,
 )
+from services.sessions import issue_session
 from services.extra_formatters import format_purchase_receipt
-
-import asyncio as _asyncio
 
 log = logging.getLogger("semex.auth")
 
 router = APIRouter(prefix="/api/auth", tags=["auth"])
 
-# Per-user locks serializing session creation (see verify-otp device limit —
-# concurrent verifies could otherwise both pass the count check and exceed
-# MAX_DEVICES_PER_USER).
-_session_locks: dict = {}
 
-
-def _get_session_lock(telegram_id) -> "_asyncio.Lock":
-    lock = _session_locks.get(telegram_id)
-    if lock is None:
-        lock = _asyncio.Lock()
-        _session_locks[telegram_id] = lock
-        if len(_session_locks) > 10000:  # bound memory; holders keep their ref
-            _session_locks.clear()
-            _session_locks[telegram_id] = lock
-    return lock
+def _client_ip(request: Request) -> str:
+    """Best-effort client IP: prefer the first X-Forwarded-For hop (Railway /
+    reverse proxy), fall back to the direct peer."""
+    fwd = (request.headers.get("x-forwarded-for") or "").split(",")[0].strip()
+    if fwd:
+        return fwd
+    return request.client.host if request.client else ""
 
 
 class RequestOTPBody(BaseModel):
@@ -247,42 +239,22 @@ async def verify_otp_endpoint(body: VerifyOTPBody, request: Request):
     if user.is_banned:
         raise HTTPException(403, f"Banned: {user.banned_reason or 'no reason'}")
 
-    # Enforce 4-device concurrent session limit (FIFO kick oldest) — under a
-    # per-user lock: concurrent verifies could otherwise both observe "below
-    # limit" and exceed MAX_DEVICES_PER_USER.
-    async with _get_session_lock(body.telegram_id):
-        active_sessions = await db.sessions.count_documents(
-            {"telegram_id": body.telegram_id, "revoked": False}
-        )
-        if active_sessions >= settings.MAX_DEVICES_PER_USER:
-            # Revoke oldest active
-            oldest = await db.sessions.find_one(
-                {"telegram_id": body.telegram_id, "revoked": False},
-                sort=[("last_used_at", 1)],
-            )
-            if oldest:
-                await db.sessions.update_one(
-                    {"_id": oldest["_id"]}, {"$set": {"revoked": True}}
-                )
-
-        # Create new session
-        session_id = secrets.token_urlsafe(24)
-        session = Session(
-            session_id=session_id,
-            telegram_id=body.telegram_id,
-            fingerprint=body.fingerprint,
-            device_info=body.device_info or {},
-            created_at=now,
-            last_used_at=now,
-            expires_at=now + timedelta(days=settings.REFRESH_TOKEN_TTL_DAYS),
-        )
-        await db.sessions.insert_one(session.to_mongo())
-
-    access = create_access_token(session_id, body.telegram_id, body.fingerprint)
-    refresh = create_refresh_token(session_id, body.telegram_id, body.fingerprint)
+    # Session issuance is shared with the Telegram deep-link login path
+    # (services/sessions.py) so device-limit + minting logic can't drift.
+    issued = await issue_session(
+        db,
+        body.telegram_id,
+        body.fingerprint,
+        device_info=body.device_info,
+        ip_address=_client_ip(request),
+        user_agent=request.headers.get("user-agent"),
+    )
+    session_id = issued["sessionId"]
+    access = issued["accessToken"]
+    refresh = issued["refreshToken"]
 
     # Fire off welcome (fresh users only — skip existing sessions)
-    if active_sessions == 0:
+    if issued["isFirstSession"]:
         try:
             await send_welcome(body.telegram_id, user.telegram_username)
         except Exception:
@@ -296,8 +268,11 @@ async def verify_otp_endpoint(body: VerifyOTPBody, request: Request):
             pe = pe.replace(tzinfo=timezone.utc)
         plan_expires_iso = pe.isoformat()
 
-    # Extension is FREE — everyone gets full access on login.
-    has_access = True
+    # Accounts created via Telegram deep-link login start LOCKED
+    # (requires_redeem=True) until they redeem an invite code; everyone who
+    # already had an account keeps full access.
+    requires_redeem = bool(getattr(user, "requires_redeem", False))
+    has_access = not requires_redeem
 
     return {
         "success": True,
@@ -305,7 +280,7 @@ async def verify_otp_endpoint(body: VerifyOTPBody, request: Request):
         "refreshToken": refresh,
         "sessionId": session_id,
         "hasAccess": has_access,
-        "requiresRedeem": False,
+        "requiresRedeem": requires_redeem,
         "user": {
             "telegramId": user.telegram_id,
             "username": user.telegram_username,
@@ -361,7 +336,7 @@ async def redeem(body: RedeemBody, user: User = Depends(get_current_user_allow_e
     try:
         await db.users.update_one(
             {"telegram_id": user.telegram_id},
-            {"$set": {"plan": plan_tag, "plan_expires_at": new_expiry, "expired_notified": False, "expiry_alerts_sent": {}}},
+            {"$set": {"plan": plan_tag, "plan_expires_at": new_expiry, "expired_notified": False, "expiry_alerts_sent": {}, "requires_redeem": False}},
         )
     except Exception:
         # v2.9.3: never burn a valid code — if the entitlement write fails
@@ -440,12 +415,12 @@ async def get_session(user: User = Depends(get_current_user_allow_expired)):
         if pe.tzinfo is None:
             pe = pe.replace(tzinfo=timezone.utc)
         plan_expires_iso = pe.isoformat()
-    # Extension is FREE — every logged-in user has full access.
-    has_access = True
+    requires_redeem = bool(getattr(user, "requires_redeem", False))
+    has_access = not requires_redeem
     return {
         "valid": True,
         "hasAccess": has_access,
-        "requiresRedeem": False,
+        "requiresRedeem": requires_redeem,
         "user": {
             "telegramId": user.telegram_id,
             "username": user.telegram_username,
@@ -461,3 +436,82 @@ async def get_session(user: User = Depends(get_current_user_allow_expired)):
             "is_banned": False,
         },
     }
+
+
+# ─── Telegram deep-link login ────────────────────────────────────────────────
+# Flow: extension calls /start → opens t.me/<bot>?start=login_<token> → bot
+# binds the token to the first Telegram account that opens it and sends an
+# Authorize/Deny card → on Authorize the bot mints the session and stores the
+# auth payload on the token doc → extension polls /status until authorized.
+TELEGRAM_LOGIN_TTL_SECONDS = 300  # 5 min, same as OTP
+
+
+class TelegramLoginStartBody(BaseModel):
+    fingerprint: str
+    device_info: Optional[dict] = Field(default=None, alias="deviceInfo")
+
+    model_config = {"populate_by_name": True}
+
+
+@router.post("/telegram-login/start")
+async def telegram_login_start(body: TelegramLoginStartBody, request: Request):
+    ip = _client_ip(request)
+    await rate_limit(f"tglogin-start:{ip or body.fingerprint}", settings.LOGIN_RATE_LIMIT_PER_HOUR * 2)
+
+    db = get_db()
+    now = datetime.now(timezone.utc)
+    token = "login_" + secrets.token_urlsafe(24)
+    await db.telegram_login_tokens.insert_one({
+        "token": token,
+        "status": "pending",  # pending → authorized | denied | expired
+        "fingerprint": body.fingerprint,
+        "device_info": body.device_info or {},
+        "ip": ip,
+        "user_agent": request.headers.get("user-agent", ""),
+        "telegram_id": None,   # bound when someone opens the deep link
+        "auth_payload": None,  # filled by the bot on authorize
+        "created_at": now,
+        "expires_at": now + timedelta(seconds=TELEGRAM_LOGIN_TTL_SECONDS),
+    })
+    # Best-effort sweep of ancient tokens so the collection can't grow forever.
+    try:
+        await db.telegram_login_tokens.delete_many(
+            {"expires_at": {"$lt": now - timedelta(hours=1)}}
+        )
+    except Exception:
+        pass
+
+    return {
+        "success": True,
+        "token": token,
+        "botUsername": settings.TELEGRAM_BOT_USERNAME,
+        "deepLink": f"https://t.me/{settings.TELEGRAM_BOT_USERNAME}?start={token}",
+        "expiresIn": TELEGRAM_LOGIN_TTL_SECONDS,
+    }
+
+
+@router.get("/telegram-login/status")
+async def telegram_login_status(token: str = ""):
+    """Polled by the extension's background worker while the user authorizes
+    in Telegram. Short-lived bearer token; polling cost is trivial."""
+    if not token or len(token) > 80:
+        raise HTTPException(400, "Invalid token.")
+    db = get_db()
+    doc = await db.telegram_login_tokens.find_one({"token": token})
+    if not doc:
+        raise HTTPException(404, "Unknown login token.")
+    now = datetime.now(timezone.utc)
+    exp = doc.get("expires_at")
+    if exp and exp.tzinfo is None:
+        exp = exp.replace(tzinfo=timezone.utc)
+    status = doc.get("status", "pending")
+    if status == "pending" and exp and exp < now:
+        await db.telegram_login_tokens.update_one(
+            {"_id": doc["_id"]}, {"$set": {"status": "expired"}}
+        )
+        status = "expired"
+    if status == "authorized" and doc.get("auth_payload"):
+        payload = dict(doc["auth_payload"])
+        payload["status"] = "authorized"
+        return payload
+    return {"status": status}

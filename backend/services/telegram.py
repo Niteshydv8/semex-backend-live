@@ -197,6 +197,20 @@ async def send_document(chat_id: int, doc_bytes: bytes, filename: str, caption: 
     return await _post("sendDocument", data, files=files)
 
 
+async def edit_message_text(chat_id: int, message_id: int, text: str, reply_markup: Optional[dict] = None) -> Optional[dict]:
+    """Edit a bot message in place (used by the login authorize card)."""
+    payload = {
+        "chat_id": chat_id,
+        "message_id": message_id,
+        "text": text[:4093] + "..." if isinstance(text, str) and len(text) > 4096 else text,
+        "parse_mode": "HTML",
+        "disable_web_page_preview": True,
+    }
+    if reply_markup is not None:
+        payload["reply_markup"] = reply_markup
+    return await _post("editMessageText", payload)
+
+
 async def answer_callback_query(callback_query_id: str, text: str = "", show_alert: bool = False) -> Optional[dict]:
     """Ack an inline-button tap so the client stops its loading spinner. Optional
     toast/alert text can be shown to the user."""

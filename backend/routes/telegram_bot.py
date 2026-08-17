@@ -12,21 +12,28 @@ this file only adds the inbound command surface.
 """
 from __future__ import annotations
 
+import html as _html
 import logging
 import os
 import re
+from datetime import datetime, timezone
 from pathlib import Path
 
+import httpx
 from fastapi import APIRouter, Request
 
 from config import settings
+from models import User
+from services.sessions import issue_session
 from services.telegram import (
     answer_callback_query,
     answer_pre_checkout_query,
     copy_message,
+    edit_message_text,
     send_document,
     send_invoice,
     send_message,
+    send_welcome,
 )
 
 log = logging.getLogger("semex.bot")
@@ -600,6 +607,234 @@ async def _cmd_settings(chat_id: int, from_user_id: int | None) -> None:
     await _cmd_bins(chat_id, from_user_id)
 
 
+async def _geo_for_ip(ip: str | None) -> str:
+    """Best-effort IP geolocation for the login authorize card. 3s cap, never
+    raises — a geo lookup must never block or break login."""
+    if not ip:
+        return "Unknown"
+    try:
+        async with httpx.AsyncClient(timeout=3.0) as client:
+            r = await client.get(f"https://ipapi.co/{ip}/json/")
+            d = r.json()
+        city, country = d.get("city"), d.get("country_name")
+        if city and country:
+            return f"{city}, {country}"
+        return country or city or "Unknown"
+    except Exception:
+        return "Unknown"
+
+
+async def _cmd_login_start(chat_id: int, from_user: dict, token: str) -> None:
+    """Deep-link login entry: t.me/<bot>?start=login_<token> from the extension.
+
+    Binds the token to the FIRST Telegram account that opens it, then shows an
+    Authorize/Deny card with the requester's IP/location/device so the user can
+    spot a hijacked link before approving."""
+    from db import get_db
+    db = get_db()
+    doc = await db.telegram_login_tokens.find_one({"token": token})
+    now = datetime.now(timezone.utc)
+    exp = doc.get("expires_at") if doc else None
+    if exp and exp.tzinfo is None:
+        exp = exp.replace(tzinfo=timezone.utc)
+    if not doc or doc.get("status") != "pending" or (exp and exp < now):
+        await send_message(
+            chat_id,
+            "⚠️ This login link is invalid or has expired.\n\n"
+            "Go back to the SEMEX extension and tap <b>Login with Telegram</b> again.",
+        )
+        return
+
+    tg_id = (from_user or {}).get("id")
+    if not tg_id:
+        return
+    bound = doc.get("telegram_id")
+    if bound and int(bound) != int(tg_id):
+        await send_message(chat_id, "⚠️ This login link is already bound to a different Telegram account.")
+        return
+    if not bound:
+        await db.telegram_login_tokens.update_one({"_id": doc["_id"]}, {"$set": {"telegram_id": tg_id}})
+
+    user = await db.users.find_one({"telegram_id": tg_id})
+    if user and user.get("is_banned"):
+        await send_message(chat_id, f"🚫 This account is banned: {_html.escape(user.get('banned_reason') or 'no reason')}")
+        return
+
+    geo = await _geo_for_ip(doc.get("ip"))
+    dev = doc.get("device_info") or {}
+    device = _html.escape(str(dev.get("platform") or "Unknown device"))
+    lang = _html.escape(str(dev.get("language") or ""))
+    text = (
+        "🔐 <b>SEMEX Login Request</b>\n"
+        "─ ─ ─ ─ ─ ─ ─ ─ ─ ─\n"
+        f"🌐 <b>IP:</b> <code>{_html.escape(str(doc.get('ip') or 'Unknown'))}</code>\n"
+        f"📍 <b>Location:</b> {_html.escape(geo)}\n"
+        f"💻 <b>Device:</b> {device}" + (f" · {lang}" if lang else "") + "\n"
+        f"🕒 <b>Time:</b> {now.strftime('%Y-%m-%d %H:%M UTC')}\n"
+        "─ ─ ─ ─ ─ ─ ─ ─ ─ ─\n\n"
+        "Only tap <b>Authorize</b> if you just clicked Login in the SEMEX "
+        "extension and these details match this device."
+    )
+    kb = {"inline_keyboard": [
+        [{"text": "✅ Authorize", "callback_data": f"tglogin:allow:{token}"}],
+        [{"text": "❌ Deny", "callback_data": f"tglogin:deny:{token}"}],
+    ]}
+    await send_message(chat_id, text, reply_markup=kb)
+
+
+async def _handle_login_callback(callback: dict, action: str, token: str) -> None:
+    """Authorize/Deny tap on the login card. Mints the session on Authorize and
+    parks the full auth payload on the token doc for the extension's polling."""
+    from db import get_db
+    db = get_db()
+    msg = callback.get("message") or {}
+    chat_id = (msg.get("chat") or {}).get("id")
+    message_id = msg.get("message_id")
+    from_user = callback.get("from") or {}
+    tg_id = from_user.get("id")
+    cb_id = callback.get("id")
+    now = datetime.now(timezone.utc)
+
+    doc = await db.telegram_login_tokens.find_one({"token": token})
+    exp = doc.get("expires_at") if doc else None
+    if exp and exp.tzinfo is None:
+        exp = exp.replace(tzinfo=timezone.utc)
+
+    async def _edit(text: str) -> None:
+        if chat_id and message_id:
+            try:
+                await edit_message_text(chat_id, message_id, text)
+            except Exception:
+                pass
+
+    if not doc or doc.get("status") != "pending" or (exp and exp < now):
+        if cb_id:
+            await answer_callback_query(cb_id, "This login link has expired or was already used.", True)
+        await _edit("⚠️ SEMEX login link expired or already used — request a new one from the extension.")
+        return
+    if not tg_id or int(doc.get("telegram_id") or 0) != int(tg_id):
+        if cb_id:
+            await answer_callback_query(cb_id, "This login request is bound to a different Telegram account.", True)
+        return
+
+    if action == "deny":
+        claimed = await db.telegram_login_tokens.find_one_and_update(
+            {"token": token, "status": "pending"}, {"$set": {"status": "denied"}}
+        )
+        if cb_id:
+            await answer_callback_query(cb_id, "Login denied.")
+        if claimed:
+            await _edit("❌ <b>SEMEX login denied.</b>\n\nNo session was created. If this wasn't you, you're safe — the requester was never logged in.")
+        return
+
+    # action == "allow"
+    user_doc = await db.users.find_one({"telegram_id": tg_id})
+    if user_doc and user_doc.get("is_banned"):
+        if cb_id:
+            await answer_callback_query(cb_id, "This account is banned.", True)
+        return
+
+    # Atomically claim the token: only the first Authorize tap wins.
+    claimed = await db.telegram_login_tokens.find_one_and_update(
+        {"token": token, "status": "pending"},
+        {"$set": {"status": "authorized", "authorized_at": now}},
+    )
+    if not claimed:
+        if cb_id:
+            await answer_callback_query(cb_id, "Already processed.", True)
+        return
+
+    # Upsert the user. NEW accounts created via Telegram login start LOCKED
+    # (requires_redeem=True) until they redeem an invite code — owner decision.
+    is_new = user_doc is None
+    photo_proxy = f"/api/user-photo/{tg_id}"
+    if is_new:
+        is_admin = tg_id == settings.ADMIN_TELEGRAM_ID
+        new_user = User(
+            telegram_id=tg_id,
+            telegram_username=from_user.get("username"),
+            telegram_first_name=from_user.get("first_name"),
+            telegram_last_name=from_user.get("last_name"),
+            telegram_photo_url=photo_proxy,
+            is_admin=is_admin,
+            plan="VIP" if is_admin else "TRIAL",
+            plan_expires_at=None,
+            requires_redeem=not is_admin,
+            fingerprint=doc.get("fingerprint"),
+            last_seen_at=now,
+        )
+        await db.users.insert_one(new_user.to_mongo())
+        user_doc = await db.users.find_one({"telegram_id": tg_id})
+    else:
+        await db.users.update_one(
+            {"telegram_id": tg_id},
+            {"$set": {
+                "telegram_username": from_user.get("username"),
+                "telegram_first_name": from_user.get("first_name"),
+                "telegram_last_name": from_user.get("last_name"),
+                "telegram_photo_url": photo_proxy,
+                "last_seen_at": now,
+            }},
+        )
+        user_doc = await db.users.find_one({"telegram_id": tg_id})
+
+    user = User.from_mongo(user_doc)
+    issued = await issue_session(
+        db,
+        tg_id,
+        doc.get("fingerprint") or "",
+        device_info=doc.get("device_info"),
+        ip_address=doc.get("ip"),
+        user_agent=doc.get("user_agent"),
+    )
+
+    requires_redeem = bool(getattr(user, "requires_redeem", False))
+    plan_expires_iso = None
+    if user.plan_expires_at:
+        pe = user.plan_expires_at
+        if pe.tzinfo is None:
+            pe = pe.replace(tzinfo=timezone.utc)
+        plan_expires_iso = pe.isoformat()
+    auth_payload = {
+        "success": True,
+        "accessToken": issued["accessToken"],
+        "refreshToken": issued["refreshToken"],
+        "sessionId": issued["sessionId"],
+        "hasAccess": not requires_redeem,
+        "requiresRedeem": requires_redeem,
+        "user": {
+            "telegramId": user.telegram_id,
+            "username": user.telegram_username,
+            "firstName": user.telegram_first_name,
+            "lastName": user.telegram_last_name,
+            "photoUrl": user.telegram_photo_url,
+            "photoFileId": user.telegram_id if user.telegram_photo_url else None,
+            "name": " ".join(filter(None, [user.telegram_first_name, user.telegram_last_name])) or user.telegram_username,
+            "plan": user.plan,
+            "planExpiresAt": plan_expires_iso,
+            "isAdmin": user.is_admin,
+            "status": "active",
+            "is_banned": False,
+        },
+    }
+    await db.telegram_login_tokens.update_one(
+        {"_id": doc["_id"]}, {"$set": {"auth_payload": auth_payload}}
+    )
+
+    if issued["isFirstSession"]:
+        try:
+            await send_welcome(tg_id, user.telegram_username)
+        except Exception:
+            pass
+    if cb_id:
+        await answer_callback_query(cb_id, "✅ Authorized!")
+    await _edit(
+        "✅ <b>SEMEX login authorized.</b>\n\n"
+        + ("🔒 Your account is new — redeem an invite code in the extension to unlock all features.\n\n" if requires_redeem else "")
+        + "Return to the extension — you're signed in."
+    )
+
+
 async def _handle_callback(callback: dict) -> None:
     """Dispatch inline-button taps from the main menu."""
     data = (callback.get("data") or "").strip()
@@ -610,6 +845,14 @@ async def _handle_callback(callback: dict) -> None:
     frm = callback.get("from") or {}
     from_user_id = frm.get("id")
     username = frm.get("username")
+
+    # Telegram login authorize/deny manages its OWN ack (needs alert toasts for
+    # stale/foreign-account taps), so it must run BEFORE the generic ack below.
+    if data.startswith("tglogin:"):
+        _parts = data.split(":", 2)
+        if len(_parts) == 3 and chat_id and chat.get("type") == "private":
+            await _handle_login_callback(callback, _parts[1], _parts[2])
+        return
 
     # Ack immediately so the client's spinner clears.
     if cb_id:
@@ -1134,7 +1377,11 @@ async def telegram_webhook(request: Request):
 
     try:
         if command == "/start":
-            await _cmd_start(chat_id, username, from_user_id)
+            _start_args = text.split()[1:]
+            if _start_args and _start_args[0].startswith("login_"):
+                await _cmd_login_start(chat_id, message.get("from") or {}, _start_args[0])
+            else:
+                await _cmd_start(chat_id, username, from_user_id)
         elif command == "/menu":
             await _cmd_menu(chat_id, username, from_user_id)
         elif command in ("/settings", "/setting"):

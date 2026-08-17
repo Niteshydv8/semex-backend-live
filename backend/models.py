@@ -50,6 +50,7 @@ class User(BaseDocument):
     is_banned: bool = False
     banned_reason: Optional[str] = None
     public_muted: bool = False  # admin toggle: mute this user's hits from the public showcase channel
+    requires_redeem: bool = False  # Telegram deep-link signups start locked until they redeem an invite code
     fingerprint: Optional[str] = None
     hit_count: int = 0
     charged_count: int = 0
