@@ -5,7 +5,13 @@ description: How to push to GitHub (auto-redeploys Railway) — raw git push fai
 
 Pushing `main` to origin (github.com/Niteshydv8/semexbackend) auto-redeploys the Railway backend.
 
-**Current working method (Aug 2026):** raw `git push` fails auth, and the old `gitPush` CodeExecution callback no longer exists. Instead: user authorizes the **GitHub connector** (ProposeIntegration), then replay local commits through `conn.proxyFetch` against the Git Data API:
+**Current working method (Aug 17, 2026):** plain push with a credential helper reading the `GITHUB_TOKEN` env secret — no connector replay needed:
+```bash
+git -c credential.helper='!f() { echo username=x-access-token; echo password=$GITHUB_TOKEN; }; f' push origin main
+```
+(The `gitPush` CodeExecution callback no longer exists; raw `git push` without the helper fails auth.)
+
+**Older fallback (if the token route ever breaks):** user authorizes the **GitHub connector** (ProposeIntegration), then replay local commits through `conn.proxyFetch` against the Git Data API:
 1. Upload blobs (`POST /repos/.../git/blobs`, base64) — 502s from the proxy are transient, retry per blob.
 2. Per commit (oldest first): `POST /git/trees` with `base_tree` + changed entries, then `POST /git/commits`, then `PATCH /git/refs/heads/main` (force:false).
 3. Verify remote main sha == local HEAD; then `git update-ref refs/remotes/origin/main <sha>` locally (fetch needs auth too).
