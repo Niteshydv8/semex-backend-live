@@ -14,4 +14,9 @@ To make the overlay + checkout detection work on a new Stripe-hosted surface, ed
 Stripe hosted invoices live on `invoice.stripe.com`; payment links on pay/buy/donate.stripe.com. Users reported "popup doesn't appear on invoice/inbuilt" purely because those hosts weren't in the overlay match list. v2.6.0 added `invoice.stripe.com` to both places.
 
 ## How to apply
-Add the host to both files, then rebuild. **Caveat:** "Stripe inbuilt" (Elements on an arbitrary MERCHANT domain) can NOT be covered by an overlay host-match — overlay only injects on fixed stripe.com hosts. Inbuilt hits are captured by the all_urls interceptor (api.stripe.com response detection) + status-parser, which is a separate concern from overlay visibility. If inbuilt hits "don't grab," debug the interceptor/status-parser, not the overlay matches.
+Add the host to both files, then rebuild.
+
+## Merchant-embedded Stripe (inbill-style) — covered since the embedded-detection fix
+"Stripe inbuilt" (Payment Element on an arbitrary MERCHANT domain) is now handled WITHOUT host matches: the interceptor only detects checkout-session API responses, which merchant-embedded Elements never produce on the top page — so detection is DOM-based instead. `content.js` runs `_semexWatchEmbeddedStripe` (top frame only): a one-shot MutationObserver waits for a `js.stripe.com` iframe (covers late "Load form" insertions; 5-min cap), then sends `INJECT_OVERLAY` (skips when `#semex-overlay[data-semex-live]` already exists). overlay.js's init gate accepts a `js.stripe.com` iframe as a checkout signal. Fill dispatch for these pages is the FILL_FORM_SUBFRAMES branch in fillForm (merchant-embedded case).
+**Why:** dynamic injection needs no manifest host list; the iframe presence is a precise enough trigger.
+**How to apply:** if a merchant-embedded checkout still shows no overlay, debug the watcher (did the iframe src match? did INJECT_OVERLAY reach background? did the init gate pass?) — NOT the manifest matches. Inbuilt HIT capture remains a separate interceptor/status-parser concern.
