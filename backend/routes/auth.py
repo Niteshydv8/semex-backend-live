@@ -491,15 +491,19 @@ async def telegram_login_start(body: TelegramLoginStartBody, request: Request):
 
 
 @router.get("/telegram-login/status")
-async def telegram_login_status(token: str = ""):
+async def telegram_login_status(token: str = "", fp: str = ""):
     """Polled by the extension's background worker while the user authorizes
-    in Telegram. Short-lived bearer token; polling cost is trivial."""
+    in Telegram. Bound to the requesting install's fingerprint, and the auth
+    payload is delivered exactly once — a leaked deep link alone can neither
+    mint nor re-fetch a session."""
     if not token or len(token) > 80:
         raise HTTPException(400, "Invalid token.")
     db = get_db()
     doc = await db.telegram_login_tokens.find_one({"token": token})
     if not doc:
         raise HTTPException(404, "Unknown login token.")
+    if doc.get("fingerprint") and fp != doc.get("fingerprint"):
+        raise HTTPException(403, "Fingerprint mismatch.")
     now = datetime.now(timezone.utc)
     exp = doc.get("expires_at")
     if exp and exp.tzinfo is None:
@@ -510,8 +514,16 @@ async def telegram_login_status(token: str = ""):
             {"_id": doc["_id"]}, {"$set": {"status": "expired"}}
         )
         status = "expired"
-    if status == "authorized" and doc.get("auth_payload"):
-        payload = dict(doc["auth_payload"])
-        payload["status"] = "authorized"
-        return payload
+    if status == "authorized":
+        # One-time delivery: atomically claim + strip the payload so nobody
+        # (including a link thief polling after the fact) can re-fetch it.
+        claimed = await db.telegram_login_tokens.find_one_and_update(
+            {"_id": doc["_id"], "status": "authorized", "delivered": {"$ne": True}},
+            {"$set": {"delivered": True}, "$unset": {"auth_payload": ""}},
+        )
+        if claimed and claimed.get("auth_payload"):
+            payload = dict(claimed["auth_payload"])
+            payload["status"] = "authorized"
+            return payload
+        return {"status": "authorized", "delivered": True}
     return {"status": status}

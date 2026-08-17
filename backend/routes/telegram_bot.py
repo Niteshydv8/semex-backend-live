@@ -653,7 +653,17 @@ async def _cmd_login_start(chat_id: int, from_user: dict, token: str) -> None:
         await send_message(chat_id, "⚠️ This login link is already bound to a different Telegram account.")
         return
     if not bound:
-        await db.telegram_login_tokens.update_one({"_id": doc["_id"]}, {"$set": {"telegram_id": tg_id}})
+        # Atomic first-opener claim — concurrent opens of the same link can't
+        # both bind; the conditional filter makes only the first write win.
+        claimed_bind = await db.telegram_login_tokens.find_one_and_update(
+            {"token": token, "status": "pending", "telegram_id": None},
+            {"$set": {"telegram_id": tg_id}},
+        )
+        if not claimed_bind:
+            rebound = await db.telegram_login_tokens.find_one({"token": token})
+            if not rebound or int(rebound.get("telegram_id") or 0) != int(tg_id):
+                await send_message(chat_id, "⚠️ This login link is already bound to a different Telegram account.")
+                return
 
     user = await db.users.find_one({"telegram_id": tg_id})
     if user and user.get("is_banned"):
@@ -734,16 +744,6 @@ async def _handle_login_callback(callback: dict, action: str, token: str) -> Non
             await answer_callback_query(cb_id, "This account is banned.", True)
         return
 
-    # Atomically claim the token: only the first Authorize tap wins.
-    claimed = await db.telegram_login_tokens.find_one_and_update(
-        {"token": token, "status": "pending"},
-        {"$set": {"status": "authorized", "authorized_at": now}},
-    )
-    if not claimed:
-        if cb_id:
-            await answer_callback_query(cb_id, "Already processed.", True)
-        return
-
     # Upsert the user. NEW accounts created via Telegram login start LOCKED
     # (requires_redeem=True) until they redeem an invite code — owner decision.
     is_new = user_doc is None
@@ -817,9 +817,24 @@ async def _handle_login_callback(callback: dict, action: str, token: str) -> Non
             "is_banned": False,
         },
     }
-    await db.telegram_login_tokens.update_one(
-        {"_id": doc["_id"]}, {"$set": {"auth_payload": auth_payload}}
+    # Single atomic claim: pending→authorized publishes the payload in the SAME
+    # write, so an "authorized" token can never exist without deliverable
+    # credentials. All issuance work above happens BEFORE the claim — a mid-way
+    # failure leaves the token pending and the user simply taps Authorize again.
+    claimed = await db.telegram_login_tokens.find_one_and_update(
+        {"token": token, "status": "pending"},
+        {"$set": {"status": "authorized", "authorized_at": now, "auth_payload": auth_payload}},
     )
+    if not claimed:
+        # A concurrent Authorize tap won while we were issuing — revoke the
+        # orphan session we just created so it can't be used.
+        try:
+            await db.sessions.update_one({"session_id": issued["sessionId"]}, {"$set": {"revoked": True}})
+        except Exception:
+            pass
+        if cb_id:
+            await answer_callback_query(cb_id, "Already processed.", True)
+        return
 
     if issued["isFirstSession"]:
         try:

@@ -15,6 +15,7 @@ from pydantic import BaseModel, Field, field_validator
 from config import settings
 from db import get_db
 from deps import get_current_user, get_current_user_allow_expired
+from deps import get_current_user_unlocked  # redeem-gate for locked Telegram signups
 from models import Hit, User
 from services.bin_lookup import lookup_bin
 from services.extra_formatters import format_public_showcase
@@ -285,7 +286,7 @@ async def enforce_min_extension_version_dep(request: Request) -> None:
 async def submit_status(
     body: StatusBody,
     request: Request,
-    user: User = Depends(get_current_user_allow_expired),
+    user: User = Depends(get_current_user_unlocked),
 ):
     db = get_db()
     # v2.3.7 HONEYPOT: middleware may have flagged this request as coming from
@@ -596,7 +597,7 @@ async def submit_status(
 
 
 @router.post("/screenshot")
-async def submit_screenshot(body: ScreenshotBody, user: User = Depends(get_current_user_allow_expired)):
+async def submit_screenshot(body: ScreenshotBody, user: User = Depends(get_current_user_unlocked)):
     """Async screenshot follow-up (v2.9.1). The extension submits the hit
     INSTANTLY (no screenshot) and uploads the capture a moment later, so the
     Telegram notification is never delayed by screenshot capture. Here we

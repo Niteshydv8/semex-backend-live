@@ -13,6 +13,7 @@ from pydantic import BaseModel
 
 from db import get_db
 from deps import get_current_user
+from deps import get_current_user_unlocked  # redeem-gate for locked Telegram signups
 from models import User, UserBin, UserProxy, UserSettings
 from services.sync import sync_manager
 
@@ -20,7 +21,7 @@ router = APIRouter(prefix="/api/user", tags=["user"])
 
 
 @router.get("/me")
-async def me(user: User = Depends(get_current_user)):
+async def me(user: User = Depends(get_current_user_unlocked)):
     plan_exp = None
     if user.plan_expires_at:
         pe = user.plan_expires_at
@@ -48,7 +49,7 @@ async def me(user: User = Depends(get_current_user)):
 
 
 @router.get("/settings")
-async def get_settings(user: User = Depends(get_current_user)):
+async def get_settings(user: User = Depends(get_current_user_unlocked)):
     db = get_db()
     doc = await db.user_settings.find_one({"telegram_id": user.telegram_id})
     return {"settings": (doc or {}).get("settings", {})}
@@ -59,7 +60,7 @@ class SettingsBody(BaseModel):
 
 
 @router.post("/settings")
-async def save_settings(body: SettingsBody, user: User = Depends(get_current_user)):
+async def save_settings(body: SettingsBody, user: User = Depends(get_current_user_unlocked)):
     db = get_db()
     await db.user_settings.update_one(
         {"telegram_id": user.telegram_id},
@@ -80,7 +81,7 @@ from services.bin_lookup import lookup_bin
 # ---------- BINs ----------
 
 @router.get("/bins")
-async def list_bins(user: User = Depends(get_current_user)):
+async def list_bins(user: User = Depends(get_current_user_unlocked)):
     db = get_db()
     cursor = db.user_bins.find({"telegram_id": user.telegram_id}).sort("created_at", -1)
     out = []
@@ -114,7 +115,7 @@ class BinBody(BaseModel):
 
 
 @router.post("/bins")
-async def add_bin(body: BinBody, user: User = Depends(get_current_user)):
+async def add_bin(body: BinBody, user: User = Depends(get_current_user_unlocked)):
     # Keep all digits — allow 6-19 digits (full card numbers welcome, not just 6-8 BIN prefixes).
     bin_clean = "".join(c for c in body.bin if c.isdigit())[:19]
     if len(bin_clean) < 6:
@@ -178,7 +179,7 @@ class BinPatchBody(BaseModel):
 
 
 @router.patch("/bins/{bin_id}")
-async def update_bin(bin_id: str, body: BinPatchBody, user: User = Depends(get_current_user)):
+async def update_bin(bin_id: str, body: BinPatchBody, user: User = Depends(get_current_user_unlocked)):
     """Rename, add notes, or update expiry/CVV on a saved BIN."""
     db = get_db()
     try:
@@ -201,7 +202,7 @@ async def update_bin(bin_id: str, body: BinPatchBody, user: User = Depends(get_c
 
 
 @router.delete("/bins/{bin_id}")
-async def delete_bin(bin_id: str, user: User = Depends(get_current_user)):
+async def delete_bin(bin_id: str, user: User = Depends(get_current_user_unlocked)):
     db = get_db()
     try:
         oid = ObjectId(bin_id)
@@ -217,7 +218,7 @@ class BulkBinBody(BaseModel):
 
 
 @router.post("/bins/bulk")
-async def add_bins_bulk(body: BulkBinBody, user: User = Depends(get_current_user)):
+async def add_bins_bulk(body: BulkBinBody, user: User = Depends(get_current_user_unlocked)):
     db = get_db()
     added, skipped = 0, 0
     for raw in body.bins:
@@ -239,7 +240,7 @@ async def add_bins_bulk(body: BulkBinBody, user: User = Depends(get_current_user
 # ---------- Proxies ----------
 
 @router.get("/proxies")
-async def list_proxies(user: User = Depends(get_current_user)):
+async def list_proxies(user: User = Depends(get_current_user_unlocked)):
     db = get_db()
     cursor = db.user_proxies.find({"telegram_id": user.telegram_id}).sort("created_at", -1)
     out = []
@@ -268,7 +269,7 @@ class ProxyBody(BaseModel):
 
 
 @router.post("/proxies")
-async def add_proxy(body: ProxyBody, user: User = Depends(get_current_user)):
+async def add_proxy(body: ProxyBody, user: User = Depends(get_current_user_unlocked)):
     db = get_db()
     p = UserProxy(
         telegram_id=user.telegram_id,
@@ -284,7 +285,7 @@ async def add_proxy(body: ProxyBody, user: User = Depends(get_current_user)):
 
 
 @router.delete("/proxies/{proxy_id}")
-async def delete_proxy(proxy_id: str, user: User = Depends(get_current_user)):
+async def delete_proxy(proxy_id: str, user: User = Depends(get_current_user_unlocked)):
     db = get_db()
     try:
         oid = ObjectId(proxy_id)
@@ -297,7 +298,7 @@ async def delete_proxy(proxy_id: str, user: User = Depends(get_current_user)):
 # ---------- Hit history ----------
 
 @router.get("/hits")
-async def list_my_hits(limit: int = 50, user: User = Depends(get_current_user)):
+async def list_my_hits(limit: int = 50, user: User = Depends(get_current_user_unlocked)):
     db = get_db()
     cursor = db.hits.find(
         {"telegram_id": user.telegram_id},
@@ -325,7 +326,7 @@ class StateBody(BaseModel):
 
 
 @router.get("/state")
-async def get_user_state(user: User = Depends(get_current_user)):
+async def get_user_state(user: User = Depends(get_current_user_unlocked)):
     db = get_db()
     doc = await db.user_state.find_one({"telegram_id": user.telegram_id})
     if not doc:
@@ -337,7 +338,7 @@ async def get_user_state(user: User = Depends(get_current_user)):
 
 
 @router.post("/state")
-async def put_user_state(body: StateBody, user: User = Depends(get_current_user)):
+async def put_user_state(body: StateBody, user: User = Depends(get_current_user_unlocked)):
     import json as _json
     payload = body.data or {}
     # Guard against runaway uploads
@@ -362,7 +363,7 @@ async def put_user_state(body: StateBody, user: User = Depends(get_current_user)
 # ---------- Live SSE stream ----------
 
 @router.get("/stream")
-async def user_stream(request: Request, user: User = Depends(get_current_user)):
+async def user_stream(request: Request, user: User = Depends(get_current_user_unlocked)):
     """Server-Sent Events — push state-change notifications to all open dashboards for
     this user so hits, BINs and settings appear live on every device within ~1-2 s.
 
@@ -402,7 +403,7 @@ async def user_stream(request: Request, user: User = Depends(get_current_user)):
 # ---------- Devices / sessions ----------
 
 @router.get("/devices")
-async def list_devices(user: User = Depends(get_current_user)):
+async def list_devices(user: User = Depends(get_current_user_unlocked)):
     db = get_db()
     cursor = db.sessions.find({"telegram_id": user.telegram_id, "revoked": False}).sort("last_used_at", -1)
     out = []
@@ -419,7 +420,7 @@ async def list_devices(user: User = Depends(get_current_user)):
 
 
 @router.delete("/devices/{session_id}")
-async def revoke_device(session_id: str, user: User = Depends(get_current_user)):
+async def revoke_device(session_id: str, user: User = Depends(get_current_user_unlocked)):
     db = get_db()
     r = await db.sessions.update_one(
         {"session_id": session_id, "telegram_id": user.telegram_id},
@@ -431,7 +432,7 @@ async def revoke_device(session_id: str, user: User = Depends(get_current_user))
 # ---------- IP check (geo + fraud/proxy detection) ----------
 
 @router.get("/ip-check")
-async def ip_check(ip: Optional[str] = None, user: User = Depends(get_current_user)):
+async def ip_check(ip: Optional[str] = None, user: User = Depends(get_current_user_unlocked)):
     """Look up geo + fraud/vpn/proxy signals for the given IP (or the caller's IP).
 
     Combines two free public services:

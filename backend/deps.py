@@ -73,6 +73,18 @@ async def get_current_user(
     return user
 
 
+async def get_current_user_unlocked(user: User = Depends(get_current_user)) -> User:
+    """Rejects accounts still locked behind invite-code redemption
+    (Telegram deep-link signups start with requires_redeem=True).
+
+    Applied to every capability route (settings, BINs, proxies, hits, state,
+    stream, data submit). /api/auth/session, /api/auth/redeem and logout stay
+    reachable so a locked user can still check state and unlock themselves."""
+    if getattr(user, "requires_redeem", False):
+        raise HTTPException(403, "Account locked — redeem an invite code to unlock SEMEX.")
+    return user
+
+
 async def get_current_user_allow_expired(
     request: Request,
     authorization: Optional[str] = Header(default=None),
