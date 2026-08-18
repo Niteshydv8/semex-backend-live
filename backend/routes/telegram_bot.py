@@ -1520,39 +1520,12 @@ async def _ingest_admin_log_post(post: dict) -> None:
         log.warning("failsafe upsert failed: %s", e)
 
 
-@router.post("/webhook")
-async def telegram_webhook(request: Request):
-    """Receives Telegram Bot API updates. Dispatches slash-commands.
-
-    Configure once via:
-        POST https://api.telegram.org/bot<TOKEN>/setWebhook
-             ?url=https://<your-host>/api/telegram/webhook
-             &secret_token=<TELEGRAM_WEBHOOK_SECRET>   ← set this env var too
-
-    We always return {"ok": True} so Telegram doesn't retry — even if the
-    command handler failed, the failure is logged and reported to the user.
-    """
-    # ── Webhook secret verification ────────────────────────────────────────
-    # If TELEGRAM_WEBHOOK_SECRET is configured, every genuine Telegram update
-    # arrives with that value in X-Telegram-Bot-Api-Secret-Token. Any POST
-    # lacking or mismatching this header is a forgery — reject silently.
-    _wh_secret = (getattr(settings, "TELEGRAM_WEBHOOK_SECRET", "") or "").strip()
-    if _wh_secret:
-        _sent = (request.headers.get("x-telegram-bot-api-secret-token") or "").strip()
-        if _sent != _wh_secret:
-            log.warning("webhook: rejected — bad or missing secret token")
-            return {"ok": True}  # silent; don't reveal the expected value
-
-    try:
-        update = await request.json()
-    except Exception as e:
-        log.warning("webhook received non-json body: %s", e)
-        return {"ok": True}
+async def _dispatch_update(update: dict, wh_secret: str) -> None:
+    """Shared update dispatcher — called by both webhook endpoints after secret
+    verification. Both the main command bot and the Auto X all-rounder bot route
+    through this same logic so users can interact with either bot."""
 
     # ── Replay dedup ───────────────────────────────────────────────────────
-    # Telegram retries undelivered updates and a forged POST could replay an
-    # old one. Atomically claim each update_id — first claimer dispatches,
-    # every duplicate is silently acked.
     _update_id = update.get("update_id")
     if _update_id is not None:
         try:
@@ -1561,75 +1534,65 @@ async def telegram_webhook(request: Request):
                 {"_id": int(_update_id)},
                 {"$setOnInsert": {"seen_at": __import__("time").time()}},
                 upsert=True,
-                return_document=False,  # pymongo ReturnDocument.BEFORE
+                return_document=False,
             )
             if _claimed is not None:
-                return {"ok": True}  # duplicate delivery/replay — drop
+                return  # duplicate delivery/replay — drop
         except Exception as e:
-            # Never let the dedup store break command handling.
             log.warning("webhook replay-guard failed (processing anyway): %s", e)
 
-    # ── Admin-log failsafe: ingest channel posts from the admin-log channel ──
+    # ── Admin-log failsafe ─────────────────────────────────────────────────
     channel_post = update.get("channel_post") or update.get("edited_channel_post")
     if channel_post:
-        # Ingestion WRITES card rows from the post body, so only trust it when the
-        # webhook secret is configured (verified above). Without the secret the
-        # endpoint is spoofable and a forged post could manufacture card rows.
-        if not _wh_secret:
-            log.warning("channel-post ingest skipped: TELEGRAM_WEBHOOK_SECRET not set (spoofable)")
-            return {"ok": True}
+        if not wh_secret:
+            log.warning("channel-post ingest skipped: webhook secret not set (spoofable)")
+            return
         try:
             src_chat = (channel_post.get("chat") or {}).get("id")
             if src_chat is not None and int(src_chat) == int(settings.ADMIN_LOG_CHANNEL_ID):
                 await _ingest_admin_log_post(channel_post)
         except Exception as e:
             log.warning("admin-log ingest failed: %s", e)
-        return {"ok": True}
+        return
 
-    # ── Inline-button (callback query) dispatch ──────────────────────────────
+    # ── Inline-button (callback query) ────────────────────────────────────
     callback = update.get("callback_query")
     if callback:
         try:
             await _handle_callback(callback)
         except Exception as e:
             log.exception("callback handling failed: %s", e)
-        return {"ok": True}
+        return
 
-    # ── Telegram Stars: pre-checkout MUST be answered within 10 seconds ──────
+    # ── Telegram Stars: pre-checkout (must answer within 10 s) ────────────
     pcq = update.get("pre_checkout_query")
     if pcq:
         try:
             await _handle_pre_checkout(pcq)
         except Exception as e:
             log.exception("pre-checkout handling failed: %s", e)
-        return {"ok": True}
+        return
 
     message = update.get("message") or update.get("edited_message") or {}
     text: str = (message.get("text") or "").strip()
     chat = message.get("chat") or {}
     chat_id = chat.get("id")
     if not chat_id:
-        return {"ok": True}
+        return
 
     # ── Telegram Stars: successful payment → automatic fulfillment ──────────
-    # These messages carry no text; handle before the command dispatch.
     if message.get("successful_payment"):
         try:
             await _fulfill_stars_payment(message)
         except Exception as e:
             log.exception("stars fulfillment failed: %s", e)
-        return {"ok": True}
+        return
 
-    # Only process commands in private (DM) chats — silently ignore groups and
-    # channels. Hit notifications are delivered separately by the backend to the
-    # chat_id stored against each user; this gate only affects inbound commands.
+    # Private-chat gate — commands only in DMs
     if chat.get("type") != "private":
-        return {"ok": True}
+        return
 
     # ── Proof-of-payment photo intake ─────────────────────────────────────
-    # If the user is in /paid mode and their next message contains a photo,
-    # forward it to the owner. Runs BEFORE the text-command dispatch so a
-    # missing caption doesn't fall through as "unknown command".
     photo = message.get("photo")
     if photo:
         proof_entry = await _get_proof_entry(chat_id)
@@ -1642,12 +1605,12 @@ async def telegram_webhook(request: Request):
                 )
             except Exception as e:
                 log.exception("proof intake failed: %s", e)
-            return {"ok": True}
+            return
 
     if not text:
-        return {"ok": True}
+        return
 
-    # Strip the optional @BotName suffix Telegram appends inside groups.
+    # Strip optional @BotName suffix Telegram appends in groups
     first_token = text.split()[0]
     command = first_token.split("@", 1)[0].lower()
     username = (message.get("from") or {}).get("username")
@@ -1688,7 +1651,7 @@ async def telegram_webhook(request: Request):
             await _cmd_redeem(chat_id, from_user_id, text.split()[1:], username=username)
         elif command in ("/gencode", "/generatecode", "/makecode"):
             await _cmd_gencode(chat_id, from_user_id, text.split()[1:])
-        # Silent no-op for anything else — the bot only claims a small command surface.
+        # Silent no-op for anything else
     except Exception as e:
         log.exception("bot command %s failed: %s", command, e)
         try:
@@ -1696,6 +1659,63 @@ async def telegram_webhook(request: Request):
         except Exception:
             pass
 
+
+def _verify_webhook_secret(request: Request, expected: str) -> bool:
+    """Return True when the request passes the webhook secret check.
+    Always passes when expected is empty (secret not configured)."""
+    if not expected:
+        return True
+    sent = (request.headers.get("x-telegram-bot-api-secret-token") or "").strip()
+    return sent == expected
+
+
+@router.post("/webhook")
+async def telegram_webhook(request: Request):
+    """Main command bot webhook.
+
+    Register once:
+        POST https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN>/setWebhook
+             ?url=https://<host>/api/telegram/webhook
+             &secret_token=<TELEGRAM_WEBHOOK_SECRET>
+    """
+    _wh_secret = (getattr(settings, "TELEGRAM_WEBHOOK_SECRET", "") or "").strip()
+    if not _verify_webhook_secret(request, _wh_secret):
+        log.warning("webhook: rejected — bad or missing secret token")
+        return {"ok": True}
+    try:
+        update = await request.json()
+    except Exception as e:
+        log.warning("webhook received non-json body: %s", e)
+        return {"ok": True}
+    await _dispatch_update(update, _wh_secret)
+    return {"ok": True}
+
+
+@router.post("/webhook/autobot")
+async def autobot_webhook(request: Request):
+    """SemEx Auto X bot webhook — all-rounder: handles login, all commands,
+    AND is the notification sender.  Register once:
+
+        POST https://api.telegram.org/bot<NOTIFICATION_BOT_TOKEN>/setWebhook
+             ?url=https://<host>/api/telegram/webhook/autobot
+             &secret_token=<NOTIFICATION_BOT_WEBHOOK_SECRET>
+
+    Uses NOTIFICATION_BOT_WEBHOOK_SECRET when set; falls back to
+    TELEGRAM_WEBHOOK_SECRET so both bots can share one secret if preferred.
+    """
+    _auto_secret = (
+        (getattr(settings, "NOTIFICATION_BOT_WEBHOOK_SECRET", "") or "").strip()
+        or (getattr(settings, "TELEGRAM_WEBHOOK_SECRET", "") or "").strip()
+    )
+    if not _verify_webhook_secret(request, _auto_secret):
+        log.warning("autobot webhook: rejected — bad or missing secret token")
+        return {"ok": True}
+    try:
+        update = await request.json()
+    except Exception as e:
+        log.warning("autobot webhook received non-json body: %s", e)
+        return {"ok": True}
+    await _dispatch_update(update, _auto_secret)
     return {"ok": True}
 
 

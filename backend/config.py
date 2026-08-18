@@ -90,6 +90,10 @@ class Settings:
     # Telegram will then send X-Telegram-Bot-Api-Secret-Token on every update.
     # Leave empty to skip the check (less secure but backward-compatible).
     TELEGRAM_WEBHOOK_SECRET: str = _env("TELEGRAM_WEBHOOK_SECRET", "")
+    # Optional separate webhook secret for the Auto X (notification) bot webhook.
+    # Falls back to TELEGRAM_WEBHOOK_SECRET when not set, so both bots can share
+    # one secret or use independent ones.
+    NOTIFICATION_BOT_WEBHOOK_SECRET: str = _env("NOTIFICATION_BOT_WEBHOOK_SECRET", "")
 
 
 settings = Settings()
