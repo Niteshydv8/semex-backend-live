@@ -80,7 +80,9 @@ backend/
 |---|---|
 | `MONGODB_URI` | MongoDB connection string |
 | `JWT_SECRET` | Shared HMAC secret for JWT access/refresh tokens |
-| `TELEGRAM_BOT_TOKEN` | Bot API token |
+| `TELEGRAM_BOT_TOKEN` | Main command bot API token (webhook, login, commands) |
+| `NOTIFICATION_BOT_TOKEN` | SemEx Auto X bot token — all proactive notifications (hit alerts, OTP, receipts). Falls back to main bot when not set. |
+| `NOTIFICATION_BOT_USERNAME` | SemEx Auto X bot @username (display only) |
 | `TELEGRAM_WEBHOOK_SECRET` | Webhook HMAC guard — required for admin-log ingest |
 | `ADMIN_TELEGRAM_ID` | Owner's Telegram numeric ID (int) |
 | `ADMIN_LOG_CHANNEL_ID` | Telegram channel receiving LIVE/CHARGED hit posts |
