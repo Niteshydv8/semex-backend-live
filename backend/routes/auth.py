@@ -12,14 +12,13 @@ from pydantic import BaseModel, Field
 from config import settings
 from db import get_db
 from deps import get_current_session_id, get_current_user, get_current_user_allow_expired, rate_limit
-from models import OTP, RedeemCode, Session, User
+from models import OTP, Session, User
 from security import (
     create_access_token,
     create_refresh_token,
     decode_token,
     generate_otp,
     hash_otp,
-    hash_redeem_code,
     verify_otp,
 )
 from services.telegram import (
@@ -31,6 +30,7 @@ from services.telegram import (
 )
 from services.sessions import issue_session
 from services.extra_formatters import format_purchase_receipt
+from services.redeem import RedeemError, redeem_code_for_user
 
 log = logging.getLogger("semex.auth")
 
@@ -70,33 +70,6 @@ class RefreshBody(BaseModel):
     refresh_token: str = Field(alias="refreshToken")
 
     model_config = {"populate_by_name": True}
-
-
-PLAN_TAG_BY_DAYS = {
-    1: "TRIAL",
-    3: "TRIAL",
-    7: "WEEKLY",
-    10: "PLUS",
-    14: "PLUS",
-    30: "MONTHLY",
-    90: "MONTHLY",
-    180: "MONTHLY",
-    365: "YEARLY",
-}
-
-
-def _plan_for_days(days: int) -> str:
-    if days < 0:
-        return "VIP"
-    if days in PLAN_TAG_BY_DAYS:
-        return PLAN_TAG_BY_DAYS[days]
-    if days >= 365:
-        return "YEARLY"
-    if days >= 30:
-        return "MONTHLY"
-    if days >= 7:
-        return "WEEKLY"
-    return "TRIAL"
 
 
 @router.post("/request-otp")
@@ -301,60 +274,20 @@ async def verify_otp_endpoint(body: VerifyOTPBody, request: Request):
 @router.post("/redeem")
 async def redeem(body: RedeemBody, user: User = Depends(get_current_user_allow_expired)):
     db = get_db()
-    code_h = hash_redeem_code(body.code.strip().upper())
-    doc = await db.redeem_codes.find_one({"code_hash": code_h})
-    if not doc:
-        raise HTTPException(400, "Invalid code.")
-    if doc.get("used"):
-        raise HTTPException(400, "Code already redeemed.")
-
-    now = datetime.now(timezone.utc)
-    duration_days = int(doc.get("duration_days", 0))
-    plan_tag = doc.get("plan_tag") or _plan_for_days(duration_days)
-
-    # Compute new expiry (stack onto existing if any)
-    existing_expiry = user.plan_expires_at
-    if existing_expiry and existing_expiry.tzinfo is None:
-        existing_expiry = existing_expiry.replace(tzinfo=timezone.utc)
-    base = existing_expiry if (existing_expiry and existing_expiry > now) else now
-
-    if duration_days < 0:
-        new_expiry = None  # lifetime
-        plan_tag = "VIP"
-    else:
-        new_expiry = base + timedelta(days=duration_days)
-
-    # Atomically claim the code BEFORE granting entitlement. Only the request
-    # that flips used→True wins; a concurrent duplicate gets None and is
-    # rejected, so a single code can never extend two accounts (or one twice).
-    claimed = await db.redeem_codes.find_one_and_update(
-        {"_id": doc["_id"], "used": {"$ne": True}},
-        {"$set": {"used": True, "used_by": user.telegram_id, "used_at": now}},
-    )
-    if not claimed:
-        raise HTTPException(400, "Code already redeemed.")
     try:
-        await db.users.update_one(
-            {"telegram_id": user.telegram_id},
-            {"$set": {"plan": plan_tag, "plan_expires_at": new_expiry, "expired_notified": False, "expiry_alerts_sent": {}, "requires_redeem": False}},
-        )
-    except Exception:
-        # v2.9.3: never burn a valid code — if the entitlement write fails
-        # (Mongo blip/timeout), roll the claim back so the user can retry.
-        try:
-            await db.redeem_codes.update_one(
-                {"_id": doc["_id"]},
-                {"$set": {"used": False}, "$unset": {"used_by": "", "used_at": ""}},
-            )
-        except Exception:
-            log.error("redeem rollback ALSO failed for code %s — manual fix needed", doc.get("code_preview"))
-        raise HTTPException(500, "Redemption failed — please try again. Your code was NOT used.")
+        result = await redeem_code_for_user(db, user, body.code)
+    except RedeemError as e:
+        raise HTTPException(e.status, e.message)
+
+    plan_tag = result["planTag"]
+    new_expiry = result["newExpiry"]
+    duration_days = result["durationDays"]
 
     # Send purchase receipt to user via Telegram
     try:
         user_dict = user.model_dump()
         receipt = format_purchase_receipt(
-            user_dict, plan_tag, duration_days, new_expiry, doc.get("code_preview", "SEMEX-****")
+            user_dict, plan_tag, duration_days, new_expiry, result["codePreview"]
         )
         await send_message(user.telegram_id, receipt)
     except Exception:

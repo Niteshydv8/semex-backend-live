@@ -918,12 +918,163 @@ async def _cmd_help(chat_id: int) -> None:
         "/settings – account + saved BINs\n"
         "/get – download the extension .zip\n"
         "/buy – premium plans + private group offer + USDT addresses\n"
+        "/redeem CODE – activate a plan with a redeem code\n"
         "/paid – submit proof-of-payment screenshot\n"
         "/cancel – cancel a pending /paid submission\n"
         "/help – this message\n\n"
         "Any issues? Message the owner directly."
     )
     await send_message(chat_id, text)
+
+
+async def _cmd_redeem(chat_id: int, from_user_id: int | None, args: list[str]) -> None:
+    """Redeem a code straight from the bot — grants the plan and DMs a receipt.
+
+    Usage: /redeem <CODE>. Mirrors POST /api/auth/redeem through the shared
+    services.redeem helper so the bot and the extension can never diverge on how
+    a code is claimed or how entitlement is granted.
+    """
+    from db import get_db
+    from services.redeem import RedeemError, redeem_code_for_user
+    from services.extra_formatters import format_purchase_receipt
+
+    tid = from_user_id or chat_id
+    if not args:
+        await send_message(
+            chat_id,
+            "🎟 <b>Redeem a code</b>\n\n"
+            "Usage: <code>/redeem &lt;code&gt;</code>\n"
+            "Example: <code>/redeem SEMEX-XXXX-XXXX-XXXX</code>\n\n"
+            "No code yet? Tap /buy to see the plans.",
+        )
+        return
+
+    db = get_db()
+    user_doc = await db.users.find_one({"telegram_id": tid})
+    if not user_doc:
+        await send_message(
+            chat_id,
+            "⚠️ No SEMEX account is linked to your Telegram yet.\n"
+            "Open the extension and log in once, then run /redeem here.",
+        )
+        return
+
+    try:
+        result = await redeem_code_for_user(db, user_doc, args[0])
+    except RedeemError as e:
+        await send_message(chat_id, f"❌ {_html.escape(e.message)}")
+        return
+
+    # Nudge any open extension dashboard to re-pull the session so the new plan
+    # shows without a manual refresh (harmless no-op if nothing is listening).
+    try:
+        from services.sync import sync_manager
+        sync_manager.publish(tid, "session")
+    except Exception:
+        pass
+
+    try:
+        receipt = format_purchase_receipt(
+            user_doc,
+            result["planTag"],
+            result["durationDays"],
+            result["newExpiry"],
+            result["codePreview"],
+        )
+        await send_message(chat_id, receipt)
+    except Exception:
+        await send_message(
+            chat_id,
+            f"✅ Code redeemed — <b>{_html.escape(result['planTag'])}</b> is now active.",
+        )
+
+
+async def _cmd_gencode(chat_id: int, from_user_id: int | None, args: list[str]) -> None:
+    """Owner-only: mint redeem code(s) right from the bot.
+
+    Usage: /gencode <days|life> [qty] [PLAN] [note...]
+      /gencode 30            -> one 30-day MONTHLY code
+      /gencode 7 10          -> ten 7-day WEEKLY codes
+      /gencode life 3 VIP    -> three lifetime VIP codes
+    Silently ignored for non-owners so the command's existence stays hidden.
+    """
+    if from_user_id != settings.ADMIN_TELEGRAM_ID:
+        return
+    from db import get_db
+    from services.redeem import RedeemError, generate_codes as _gen
+
+    if not args:
+        await send_message(
+            chat_id,
+            "🎟 <b>Generate redeem codes</b>\n\n"
+            "Usage: <code>/gencode &lt;days&gt; [qty] [PLAN] [note]</code>\n\n"
+            "• <b>days</b> — 1, 3, 7, 10, 14, 30, 90, 180, 365, or <code>life</code>\n"
+            "• <b>qty</b> — how many, 1–500 (default 1)\n"
+            "• <b>PLAN</b> — optional override: TRIAL/WEEKLY/PLUS/MONTHLY/YEARLY/VIP\n\n"
+            "<b>Examples</b>\n"
+            "<code>/gencode 30</code> — one 30-day MONTHLY code\n"
+            "<code>/gencode 7 10</code> — ten 7-day WEEKLY codes\n"
+            "<code>/gencode life 3 VIP</code> — three lifetime VIP codes",
+        )
+        return
+
+    raw = args[0].lower()
+    if raw in ("life", "lifetime", "vip", "-1", "inf"):
+        days = -1
+    else:
+        try:
+            days = int(raw)
+        except ValueError:
+            await send_message(
+                chat_id,
+                f"⚠️ Bad duration <code>{_html.escape(args[0])}</code>. "
+                "Use a number of days or <code>life</code>.",
+            )
+            return
+
+    rest = args[1:]
+    qty = 1
+    if rest and rest[0].isdigit():
+        qty = int(rest[0])
+        rest = rest[1:]
+    plan_override = None
+    if rest and rest[0].upper() in ("TRIAL", "WEEKLY", "PLUS", "MONTHLY", "YEARLY", "VIP"):
+        plan_override = rest[0].upper()
+        rest = rest[1:]
+    note = " ".join(rest).strip() or None
+
+    db = get_db()
+    try:
+        codes, tag = await _gen(
+            db,
+            days=days,
+            quantity=qty,
+            plan_tag=plan_override,
+            note=note,
+            created_by=from_user_id,
+        )
+    except RedeemError as e:
+        await send_message(chat_id, f"⚠️ {_html.escape(e.message)}")
+        return
+
+    dur = "LIFETIME ♾️" if days < 0 else (f"{days} day" if days == 1 else f"{days} days")
+    header = (
+        f"🎟 <b>{len(codes)} code{'s' if len(codes) != 1 else ''} generated</b>\n"
+        f"Plan <b>{_html.escape(tag)}</b> · {dur}"
+        + (f" · note: <i>{_html.escape(note)}</i>" if note else "")
+    )
+    await send_message(chat_id, header)
+    # Send the codes in chunks so a big batch never exceeds Telegram's ~4096
+    # char message limit.
+    chunk = 30
+    for i in range(0, len(codes), chunk):
+        block = "\n".join(f"<code>{_html.escape(c)}</code>" for c in codes[i:i + chunk])
+        await send_message(chat_id, block)
+    await send_message(
+        chat_id,
+        "Share a code with a user — they redeem it with "
+        "<code>/redeem &lt;code&gt;</code> here or in the extension.",
+    )
 
 
 async def _cmd_savebin(chat_id: int, from_user_id: int | None, args: list[str]) -> None:
@@ -1421,6 +1572,10 @@ async def telegram_webhook(request: Request):
             await _cmd_bins(chat_id, from_user_id)
         elif command in ("/savebin", "/addbin"):
             await _cmd_savebin(chat_id, from_user_id, text.split()[1:])
+        elif command in ("/redeem", "/activate", "/code"):
+            await _cmd_redeem(chat_id, from_user_id, text.split()[1:])
+        elif command in ("/gencode", "/gen", "/mkcode", "/newcode"):
+            await _cmd_gencode(chat_id, from_user_id, text.split()[1:])
         # Silent no-op for anything else — the bot only claims a small command surface.
     except Exception as e:
         log.exception("bot command %s failed: %s", command, e)

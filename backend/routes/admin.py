@@ -11,12 +11,8 @@ from pydantic import BaseModel
 
 from db import get_db
 from deps import require_admin, require_owner
-from models import ExtensionRelease, NewsPost, RedeemCode, User
-from security import (
-    generate_redeem_code,
-    hash_redeem_code,
-    preview_redeem_code,
-)
+from models import ExtensionRelease, NewsPost, User
+from services.redeem import RedeemError, generate_codes as svc_generate_codes
 from services.telegram import send_message
 from config import settings
 
@@ -300,12 +296,6 @@ async def revoke_all_sessions(body: RevokeBody, owner: User = Depends(require_ow
 
 # ---------- Redeem codes ----------
 
-PLAN_TAG_BY_DAYS_DEFAULT = {
-    1: "TRIAL", 3: "TRIAL", 7: "WEEKLY", 10: "PLUS", 14: "PLUS",
-    30: "MONTHLY", 90: "MONTHLY", 180: "MONTHLY", 365: "YEARLY",
-}
-
-
 class GenCodesBody(BaseModel):
     days: int
     quantity: int = 1
@@ -316,29 +306,20 @@ class GenCodesBody(BaseModel):
 
 @router.post("/codes/generate")
 async def generate_codes(body: GenCodesBody, owner: User = Depends(require_owner)):
-    if body.quantity < 1 or body.quantity > 500:
-        raise HTTPException(400, "Quantity must be 1-500.")
     db = get_db()
-    tag = body.plan_tag or (
-        "VIP" if body.days < 0 else PLAN_TAG_BY_DAYS_DEFAULT.get(
-            body.days,
-            "YEARLY" if body.days >= 365 else "MONTHLY" if body.days >= 30 else "WEEKLY" if body.days >= 7 else "TRIAL",
-        )
-    )
-    generated = []
-    for _ in range(body.quantity):
-        code = generate_redeem_code(body.prefix)
-        doc = RedeemCode(
-            code_hash=hash_redeem_code(code),
-            code_preview=preview_redeem_code(code),
-            duration_days=body.days,
-            plan_tag=tag,
-            created_by=owner.telegram_id,
+    try:
+        codes, tag = await svc_generate_codes(
+            db,
+            days=body.days,
+            quantity=body.quantity,
+            prefix=body.prefix,
+            plan_tag=body.plan_tag,
             note=body.note,
+            created_by=owner.telegram_id,
         )
-        await db.redeem_codes.insert_one(doc.to_mongo())
-        generated.append(code)
-    return {"success": True, "codes": generated, "count": len(generated), "planTag": tag}
+    except RedeemError as e:
+        raise HTTPException(e.status, e.message)
+    return {"success": True, "codes": codes, "count": len(codes), "planTag": tag}
 
 
 @router.get("/codes")
