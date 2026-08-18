@@ -198,3 +198,113 @@ class TestBotGencodeRedeem:
                 from security import hash_redeem_code
                 hashes = [hash_redeem_code(c) for c in codes]
                 mongo_db.redeem_codes.delete_many({"code_hash": {"$in": hashes}})
+
+
+class TestGencodeCapEnforcement:
+    """Verify that _cmd_gencode clamps quantity: max 20, min 1.
+
+    Each test uses a unique note marker so Mongo can be queried by that marker
+    to count *all* persisted documents — including any the bot didn't report.
+    Cleanup deletes by marker, not by parsed codes, so undisclosed extras are
+    also removed even on assertion failure.
+    """
+
+    def _run_gencode_raw(
+        self, monkeypatch, owner_id: int, days: int, qty_arg: int, note: str
+    ) -> tuple[list[str], str]:
+        """Call _cmd_gencode with qty_arg and return (codes_from_reply, reply_text).
+
+        Does NOT assert len(codes) == qty_arg — callers make their own clamping
+        assertions and verify the DB count independently.
+        """
+        from routes import telegram_bot as tg
+
+        sent: list[str] = []
+
+        async def _fake_send(chat_id, text, **kw):
+            sent.append(text)
+            return {"ok": True, "result": {"message_id": 1}}
+
+        monkeypatch.setattr(tg, "send_message", _fake_send)
+
+        asyncio.run(tg._cmd_gencode(
+            chat_id=owner_id,
+            from_user_id=owner_id,
+            args=[str(days), str(qty_arg), note],
+        ))
+        _reset_motor()
+
+        assert sent, "_cmd_gencode produced no Telegram message"
+        return _parse_codes(sent[-1]), sent[-1]
+
+    # ── upper-cap test ─────────────────────────────────────────────────────────
+
+    def test_gencode_cap_at_20(self, monkeypatch, mongo_db):
+        """Requesting 25 codes must silently clamp to 20 — both in the reply and
+        in the database. A regression that persists 25 but only reports 20 fails."""
+        import uuid
+        from config import settings
+
+        owner_id = settings.ADMIN_TELEGRAM_ID
+        # Unique marker so we can count exactly the docs this test inserted
+        marker = f"cap-test-{uuid.uuid4().hex}"
+
+        try:
+            codes_in_reply, reply_text = self._run_gencode_raw(
+                monkeypatch, owner_id, days=30, qty_arg=25, note=marker
+            )
+
+            # 1. Reply must advertise exactly 20 codes
+            assert len(codes_in_reply) == 20, (
+                f"Expected 20 codes in bot reply (cap), got {len(codes_in_reply)}:\n"
+                f"  codes={codes_in_reply!r}\n  reply={reply_text!r}"
+            )
+            assert "generated 20" in reply_text.lower(), (
+                f"Expected bot message to say 'Generated 20 codes', got: {reply_text!r}"
+            )
+
+            # 2. Mongo must contain EXACTLY 20 docs with this marker — not 21+
+            db_count = mongo_db.redeem_codes.count_documents({"note": marker})
+            assert db_count == 20, (
+                f"Expected exactly 20 persisted redeem_code documents (note={marker!r}), "
+                f"found {db_count}. A regression may have inserted more than the cap."
+            )
+
+        finally:
+            # Delete ALL docs bearing this marker — catches undisclosed extras too
+            mongo_db.redeem_codes.delete_many({"note": marker})
+
+    # ── lower-clamp test ───────────────────────────────────────────────────────
+
+    def test_gencode_min_clamp_to_1(self, monkeypatch, mongo_db):
+        """Requesting 0 codes must clamp to 1 — both in the reply and in the
+        database. A regression that persists 0 or 2+ docs also fails."""
+        import uuid
+        from config import settings
+
+        owner_id = settings.ADMIN_TELEGRAM_ID
+        marker = f"min-clamp-test-{uuid.uuid4().hex}"
+
+        try:
+            codes_in_reply, reply_text = self._run_gencode_raw(
+                monkeypatch, owner_id, days=30, qty_arg=0, note=marker
+            )
+
+            # 1. Reply must advertise exactly 1 code
+            assert len(codes_in_reply) == 1, (
+                f"Expected 1 code in bot reply (min clamp), got {len(codes_in_reply)}:\n"
+                f"  codes={codes_in_reply!r}\n  reply={reply_text!r}"
+            )
+            assert "generated 1" in reply_text.lower(), (
+                f"Expected bot message to say 'Generated 1 code', got: {reply_text!r}"
+            )
+
+            # 2. Mongo must contain EXACTLY 1 doc with this marker
+            db_count = mongo_db.redeem_codes.count_documents({"note": marker})
+            assert db_count == 1, (
+                f"Expected exactly 1 persisted redeem_code document (note={marker!r}), "
+                f"found {db_count}."
+            )
+
+        finally:
+            mongo_db.redeem_codes.delete_many({"note": marker})
