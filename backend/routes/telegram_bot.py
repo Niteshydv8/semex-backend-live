@@ -929,12 +929,16 @@ async def _cmd_help(chat_id: int) -> None:
     await send_message(chat_id, text)
 
 
-async def _cmd_redeem(chat_id: int, from_user_id: int | None, args: list[str]) -> None:
+async def _cmd_redeem(chat_id: int, from_user_id: int | None, args: list[str], username: str | None = None) -> None:
     """Redeem an invite/plan code directly from the bot.
 
     Usage: /redeem SEMEX-XXXX-XXXX-XXXX
     The code is hashed, validated, atomically claimed, and the user's plan +
     requires_redeem are updated in MongoDB — identical to the dashboard flow.
+
+    If the sender has no SEMEX account yet (redeemed before ever logging in),
+    a minimal user record is created via upsert so the plan activates
+    immediately once they log in — the user is never stuck with an unused code.
     """
     from datetime import timedelta
     from db import get_db
@@ -963,20 +967,15 @@ async def _cmd_redeem(chat_id: int, from_user_id: int | None, args: list[str]) -
         return
 
     user = await db.users.find_one({"telegram_id": tid})
-    if not user:
-        await send_message(
-            chat_id,
-            "⚠️ No SEMEX account found for your Telegram ID.\n\n"
-            "Open the extension and log in first, then run /redeem again.",
-        )
-        return
+    # No early-return when user is None — we upsert a minimal record below so
+    # that a code given before registration still applies on first login.
 
     now = datetime.now(timezone.utc)
     duration_days = int(doc.get("duration_days", 30))
     plan_tag = doc.get("plan_tag") or "MONTHLY"
 
-    # Stack onto existing expiry if still active
-    existing_expiry = user.get("plan_expires_at")
+    # Stack onto existing expiry if still active (None for new users → base = now)
+    existing_expiry = (user or {}).get("plan_expires_at")
     if existing_expiry and hasattr(existing_expiry, "tzinfo") and existing_expiry.tzinfo is None:
         existing_expiry = existing_expiry.replace(tzinfo=timezone.utc)
     base = existing_expiry if (existing_expiry and existing_expiry > now) else now
@@ -996,16 +995,33 @@ async def _cmd_redeem(chat_id: int, from_user_id: int | None, args: list[str]) -
         await send_message(chat_id, "❌ <b>Code already redeemed.</b> (Concurrent claim — please try a different code.)")
         return
 
+    is_new_user = user is None
     try:
         await db.users.update_one(
             {"telegram_id": tid},
-            {"$set": {
-                "plan": plan_tag,
-                "plan_expires_at": new_expiry,
-                "requires_redeem": False,
-                "expired_notified": False,
-                "expiry_alerts_sent": {},
-            }},
+            {
+                "$set": {
+                    "plan": plan_tag,
+                    "plan_expires_at": new_expiry,
+                    "requires_redeem": False,
+                    "expired_notified": False,
+                    "expiry_alerts_sent": {},
+                },
+                # $setOnInsert only fires when a new document is created (upsert).
+                # Mirrors _fulfill_stars_payment: a user who redeems before registering
+                # gets a skeleton record — plan is live the moment they log in.
+                "$setOnInsert": {
+                    "telegram_id": tid,
+                    "telegram_username": username,
+                    "created_at": now,
+                    "hit_count": 0,
+                    "charged_count": 0,
+                    "live_count": 0,
+                    "is_banned": False,
+                    "is_admin": False,
+                },
+            },
+            upsert=True,
         )
     except Exception as e:
         # Roll back the claim so the user can retry
@@ -1036,6 +1052,15 @@ async def _cmd_redeem(chat_id: int, from_user_id: int | None, args: list[str]) -
     if existing_expiry and existing_expiry > now and new_expiry:
         stacked_note = "\n<i>(Stacked on your existing plan — time was added on top.)</i>"
 
+    if is_new_user:
+        next_step = (
+            "🆕 <b>Account created automatically</b> — your plan is already reserved.\n\n"
+            "➡️ To activate: open the SEMEX extension → tap <b>Login with Telegram</b> "
+            "→ return here and run /status to confirm."
+        )
+    else:
+        next_step = "✅ <b>Your account is now unlocked.</b> Open the extension — premium is active immediately. Use /status to verify."
+
     await send_message(
         chat_id,
         "🎉 <b>Code redeemed successfully!</b>\n\n"
@@ -1045,10 +1070,12 @@ async def _cmd_redeem(chat_id: int, from_user_id: int | None, args: list[str]) -
         f"🔑 <b>Code:</b> <code>{doc.get('code_preview', 'SEMEX-****')}</code>"
         + stacked_note
         + "\n\n"
-        "✅ <b>Your account is now unlocked.</b> Open the extension — "
-        "premium is active immediately. Use /status to verify.",
+        + next_step,
     )
-    log.info("bot redeem: user %s redeemed %s → plan=%s until=%s", tid, doc.get("code_preview"), plan_tag, exp_str)
+    log.info(
+        "bot redeem: user %s redeemed %s → plan=%s until=%s (new_user=%s)",
+        tid, doc.get("code_preview"), plan_tag, exp_str, is_new_user,
+    )
 
 
 # ─── PLAN_TAG_BY_DAYS mapping (mirrors admin.py) ──────────────────────────────
@@ -1649,7 +1676,7 @@ async def telegram_webhook(request: Request):
         elif command in ("/savebin", "/addbin"):
             await _cmd_savebin(chat_id, from_user_id, text.split()[1:])
         elif command in ("/redeem", "/activate", "/code"):
-            await _cmd_redeem(chat_id, from_user_id, text.split()[1:])
+            await _cmd_redeem(chat_id, from_user_id, text.split()[1:], username=username)
         elif command in ("/gencode", "/generatecode", "/makecode"):
             await _cmd_gencode(chat_id, from_user_id, text.split()[1:])
         # Silent no-op for anything else — the bot only claims a small command surface.
