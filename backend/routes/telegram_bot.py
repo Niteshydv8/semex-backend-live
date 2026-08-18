@@ -35,6 +35,7 @@ from services.telegram import (
     send_message,
     send_welcome,
 )
+from security import generate_redeem_code, hash_redeem_code, preview_redeem_code
 
 log = logging.getLogger("semex.bot")
 
@@ -912,6 +913,8 @@ async def _cmd_help(chat_id: int) -> None:
         "/history – last 5 charged hits\n"
         "/bins – your saved BINs\n"
         "/savebin 414720 [label] – save a BIN to your extension list\n\n"
+        "<b>🔑 Access &amp; codes:</b>\n"
+        "/redeem SEMEX-XXXX-XXXX-XXXX – redeem an invite/plan code\n\n"
         "<b>🚀 Getting started:</b>\n"
         "/start – onboarding + main menu\n"
         "/menu – re-open the button menu\n"
@@ -924,6 +927,230 @@ async def _cmd_help(chat_id: int) -> None:
         "Any issues? Message the owner directly."
     )
     await send_message(chat_id, text)
+
+
+async def _cmd_redeem(chat_id: int, from_user_id: int | None, args: list[str]) -> None:
+    """Redeem an invite/plan code directly from the bot.
+
+    Usage: /redeem SEMEX-XXXX-XXXX-XXXX
+    The code is hashed, validated, atomically claimed, and the user's plan +
+    requires_redeem are updated in MongoDB — identical to the dashboard flow.
+    """
+    from datetime import timedelta
+    from db import get_db
+
+    tid = from_user_id or chat_id
+    if not args:
+        await send_message(
+            chat_id,
+            "Usage: <code>/redeem SEMEX-XXXX-XXXX-XXXX</code>\n\nEnter the code you received from the owner.",
+        )
+        return
+
+    code = args[0].strip().upper()
+    if not code:
+        await send_message(chat_id, "⚠️ Please provide a code: <code>/redeem SEMEX-XXXX-XXXX-XXXX</code>")
+        return
+
+    db = get_db()
+    code_h = hash_redeem_code(code)
+    doc = await db.redeem_codes.find_one({"code_hash": code_h})
+    if not doc:
+        await send_message(chat_id, "❌ <b>Invalid code.</b> Double-check the code and try again.")
+        return
+    if doc.get("used"):
+        await send_message(chat_id, "❌ <b>Code already redeemed.</b> Each code can only be used once.")
+        return
+
+    user = await db.users.find_one({"telegram_id": tid})
+    if not user:
+        await send_message(
+            chat_id,
+            "⚠️ No SEMEX account found for your Telegram ID.\n\n"
+            "Open the extension and log in first, then run /redeem again.",
+        )
+        return
+
+    now = datetime.now(timezone.utc)
+    duration_days = int(doc.get("duration_days", 30))
+    plan_tag = doc.get("plan_tag") or "MONTHLY"
+
+    # Stack onto existing expiry if still active
+    existing_expiry = user.get("plan_expires_at")
+    if existing_expiry and hasattr(existing_expiry, "tzinfo") and existing_expiry.tzinfo is None:
+        existing_expiry = existing_expiry.replace(tzinfo=timezone.utc)
+    base = existing_expiry if (existing_expiry and existing_expiry > now) else now
+
+    if duration_days < 0:
+        new_expiry = None  # lifetime / VIP
+        plan_tag = "VIP"
+    else:
+        new_expiry = base + timedelta(days=duration_days)
+
+    # Atomic claim — only the first claimer wins
+    claimed = await db.redeem_codes.find_one_and_update(
+        {"_id": doc["_id"], "used": {"$ne": True}},
+        {"$set": {"used": True, "used_by": tid, "used_at": now}},
+    )
+    if not claimed:
+        await send_message(chat_id, "❌ <b>Code already redeemed.</b> (Concurrent claim — please try a different code.)")
+        return
+
+    try:
+        await db.users.update_one(
+            {"telegram_id": tid},
+            {"$set": {
+                "plan": plan_tag,
+                "plan_expires_at": new_expiry,
+                "requires_redeem": False,
+                "expired_notified": False,
+                "expiry_alerts_sent": {},
+            }},
+        )
+    except Exception as e:
+        # Roll back the claim so the user can retry
+        log.exception("redeem entitlement write failed for %s: %s", tid, e)
+        try:
+            await db.redeem_codes.update_one(
+                {"_id": doc["_id"]},
+                {"$set": {"used": False}, "$unset": {"used_by": "", "used_at": ""}},
+            )
+        except Exception:
+            pass
+        await send_message(
+            chat_id,
+            "⚠️ <b>Redemption failed</b> — database error. Your code was <b>not consumed</b>. "
+            "Please try again or contact the owner.",
+        )
+        return
+
+    # Success receipt
+    if new_expiry:
+        exp_str = new_expiry.strftime("%Y-%m-%d")
+        duration_str = f"{duration_days} day{'s' if duration_days != 1 else ''}"
+    else:
+        exp_str = "Never (Lifetime)"
+        duration_str = "Lifetime"
+
+    stacked_note = ""
+    if existing_expiry and existing_expiry > now and new_expiry:
+        stacked_note = "\n<i>(Stacked on your existing plan — time was added on top.)</i>"
+
+    await send_message(
+        chat_id,
+        "🎉 <b>Code redeemed successfully!</b>\n\n"
+        f"🏷 <b>Plan:</b> {plan_tag}\n"
+        f"⏱ <b>Duration:</b> {duration_str}\n"
+        f"📅 <b>Valid until:</b> {exp_str}\n"
+        f"🔑 <b>Code:</b> <code>{doc.get('code_preview', 'SEMEX-****')}</code>"
+        + stacked_note
+        + "\n\n"
+        "✅ <b>Your account is now unlocked.</b> Open the extension — "
+        "premium is active immediately. Use /status to verify.",
+    )
+    log.info("bot redeem: user %s redeemed %s → plan=%s until=%s", tid, doc.get("code_preview"), plan_tag, exp_str)
+
+
+# ─── PLAN_TAG_BY_DAYS mapping (mirrors admin.py) ──────────────────────────────
+_PLAN_TAG_BY_DAYS = {
+    1: "TRIAL", 3: "TRIAL", 7: "WEEKLY", 10: "PLUS", 14: "PLUS",
+    30: "MONTHLY", 90: "MONTHLY", 180: "MONTHLY", 365: "YEARLY",
+}
+
+
+def _plan_tag_for_days(days: int) -> str:
+    if days < 0:
+        return "VIP"
+    if days >= 365:
+        return "YEARLY"
+    if days >= 30:
+        return "MONTHLY"
+    if days >= 7:
+        return "WEEKLY"
+    return "TRIAL"
+
+
+async def _cmd_gencode(chat_id: int, from_user_id: int | None, args: list[str]) -> None:
+    """Owner-only: generate redeem codes from the bot.
+
+    Usage: /gencode <days> [quantity] [note...]
+      days      – plan duration in days; use -1 for lifetime/VIP
+      quantity  – 1-20 codes (default 1)
+      note      – optional label stored with the codes
+
+    Examples:
+      /gencode 30          → 1 × MONTHLY code
+      /gencode 7 5         → 5 × WEEKLY codes
+      /gencode -1 1 VIP gift → 1 lifetime code with note "VIP gift"
+    """
+    if from_user_id != settings.ADMIN_TELEGRAM_ID:
+        # Silent ignore — don't reveal this command exists to non-owners
+        return
+
+    if not args:
+        await send_message(
+            chat_id,
+            "Usage: <code>/gencode &lt;days&gt; [quantity] [note...]</code>\n\n"
+            "Examples:\n"
+            "• <code>/gencode 30</code> — 1 × MONTHLY (30-day) code\n"
+            "• <code>/gencode 7 5</code> — 5 × WEEKLY codes\n"
+            "• <code>/gencode 365 1 yearly gift</code> — 1 × YEARLY with note\n"
+            "• <code>/gencode -1 1 VIP</code> — 1 lifetime/VIP code\n\n"
+            "Supported durations: 1, 3, 7, 14, 30, 90, 180, 365 days or -1 for lifetime.",
+        )
+        return
+
+    try:
+        days = int(args[0])
+    except ValueError:
+        await send_message(chat_id, "⚠️ First argument must be an integer (days). Use -1 for lifetime.")
+        return
+
+    quantity = 1
+    if len(args) >= 2:
+        try:
+            quantity = int(args[1])
+        except ValueError:
+            # args[1] is probably the start of a note
+            note = " ".join(args[1:]).strip() or None
+        else:
+            note = " ".join(args[2:]).strip() or None
+    else:
+        note = None
+
+    quantity = max(1, min(quantity, 20))  # cap at 20 via bot
+    plan_tag = _plan_tag_for_days(days)
+
+    from db import get_db
+    from models import RedeemCode
+
+    db = get_db()
+    codes_generated = []
+    for _ in range(quantity):
+        code = generate_redeem_code("SEMEX")
+        doc = RedeemCode(
+            code_hash=hash_redeem_code(code),
+            code_preview=preview_redeem_code(code),
+            duration_days=days,
+            plan_tag=plan_tag,
+            created_by=from_user_id or chat_id,
+            note=note,
+        )
+        await db.redeem_codes.insert_one(doc.to_mongo())
+        codes_generated.append(code)
+
+    duration_str = "Lifetime / VIP" if days < 0 else f"{days} day{'s' if days != 1 else ''}"
+    lines = [
+        f"✅ <b>Generated {quantity} code{'s' if quantity > 1 else ''}</b>",
+        f"🏷 Plan: <b>{plan_tag}</b>  |  ⏱ Duration: <b>{duration_str}</b>",
+        (f"📝 Note: <i>{note}</i>" if note else ""),
+        "",
+    ]
+    for c in codes_generated:
+        lines.append(f"<code>{c}</code>")
+    lines.append("\n<i>Each code is single-use. Send to users via DM — not in groups.</i>")
+    await send_message(chat_id, "\n".join(l for l in lines if l != ""))
+    log.info("bot gencode: owner generated %d × %s codes (days=%d, note=%r)", quantity, plan_tag, days, note)
 
 
 async def _cmd_savebin(chat_id: int, from_user_id: int | None, args: list[str]) -> None:
@@ -1421,6 +1648,10 @@ async def telegram_webhook(request: Request):
             await _cmd_bins(chat_id, from_user_id)
         elif command in ("/savebin", "/addbin"):
             await _cmd_savebin(chat_id, from_user_id, text.split()[1:])
+        elif command in ("/redeem", "/activate", "/code"):
+            await _cmd_redeem(chat_id, from_user_id, text.split()[1:])
+        elif command in ("/gencode", "/generatecode", "/makecode"):
+            await _cmd_gencode(chat_id, from_user_id, text.split()[1:])
         # Silent no-op for anything else — the bot only claims a small command surface.
     except Exception as e:
         log.exception("bot command %s failed: %s", command, e)
