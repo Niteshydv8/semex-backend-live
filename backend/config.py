@@ -22,7 +22,9 @@ class Settings:
     CORS_ORIGINS: str = _env("CORS_ORIGINS", "*")
 
     TELEGRAM_BOT_TOKEN: str = _env("TELEGRAM_BOT_TOKEN")
-    TELEGRAM_BOT_USERNAME: str = _env("TELEGRAM_BOT_USERNAME")
+    # Optional at load time — routes that require it check at request time and
+    # return HTTP 503 with a clear error if it is blank or unset.
+    TELEGRAM_BOT_USERNAME: str = _env("TELEGRAM_BOT_USERNAME", "")
 
     ADMIN_TELEGRAM_ID: int = int(_env("ADMIN_TELEGRAM_ID"))
     ADMIN_LOG_CHANNEL_ID: int = int(_env("ADMIN_LOG_CHANNEL_ID"))

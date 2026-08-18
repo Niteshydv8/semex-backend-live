@@ -455,6 +455,13 @@ class TelegramLoginStartBody(BaseModel):
 
 @router.post("/telegram-login/start")
 async def telegram_login_start(body: TelegramLoginStartBody, request: Request):
+    if not settings.TELEGRAM_BOT_USERNAME:
+        raise HTTPException(
+            503,
+            "Login unavailable: TELEGRAM_BOT_USERNAME is not configured on this server. "
+            "Contact the administrator.",
+        )
+
     ip = _client_ip(request)
     await rate_limit(f"tglogin-start:{ip or body.fingerprint}", settings.LOGIN_RATE_LIMIT_PER_HOUR * 2)
 
