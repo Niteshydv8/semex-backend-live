@@ -30,6 +30,7 @@ from services.telegram import (
     answer_pre_checkout_query,
     copy_message,
     edit_message_text,
+    notify_message,
     send_document,
     send_invoice,
     send_message,
@@ -96,68 +97,64 @@ def _find_extension_zip() -> Path | None:
 
 
 async def _cmd_buy(chat_id: int, username: str | None) -> None:
-    """Show premium plans + private-group offer + USDT wallets (BEP20/TRC20/TON).
-    Manual flow: user pays → /paid proof → owner verifies → owner activates the
-    plan (admin panel) and/or delivers the group invite via /sendlink."""
+    """Show premium plans + private-group offer + USDT wallets (BEP20/TRC20/TON)."""
     owner_handle = (settings.OWNER_HANDLE or settings.TELEGRAM_BOT_USERNAME or "SemexBot").replace("@", "")
     price_monthly = getattr(settings, "PLAN_PRICE_MONTHLY", None) or "$100"
     price_yearly = (getattr(settings, "PLAN_PRICE_YEARLY", "") or "").strip()
     price_lifetime = (getattr(settings, "PLAN_PRICE_LIFETIME", "") or "").strip()
     group_weekly = getattr(settings, "GROUP_PRICE_WEEKLY", None) or "$25"
     group_monthly = getattr(settings, "GROUP_PRICE_MONTHLY", None) or "$50"
-    # USDT payment addresses (three networks — pick lowest fee)
     usdt_bep20 = getattr(settings, "PAYMENT_USDT_BEP20", "")
     usdt_trc20 = getattr(settings, "PAYMENT_USDT_TRC20", "")
     usdt_ton = getattr(settings, "PAYMENT_USDT_TON", "")
 
-    name_line = f" @{username}" if username else ""
+    greeting = f"@{username}" if username else "there"
     lines = [
-        f"<b>💎 SEMEX Premium</b>{name_line}",
-        "─ ─ ─ ─ ─ ─ ─ ─ ─ ─",
+        f"💎 <b>SEMEX Premium</b>  ·  Hey {greeting}",
+        "━━━━━━━━━━━━━━━━━━━━",
         "",
-        "<b>📦 BOT ACCESS (Premium):</b>",
-        f"• <b>MONTHLY</b> — {price_monthly}",
+        "📦 <b>BOT ACCESS — Premium</b>",
+        f"├ <b>MONTHLY</b>  ·  {price_monthly}",
     ]
     if price_yearly:
-        lines.append(f"• <b>YEARLY</b>  — {price_yearly}")
+        lines.append(f"├ <b>YEARLY</b>   ·  {price_yearly}")
     if price_lifetime:
-        lines.append(f"• <b>LIFETIME</b> — {price_lifetime} one-time")
+        lines.append(f"└ <b>LIFETIME</b> ·  {price_lifetime}  <i>(one-time)</i>")
+    else:
+        lines[-1] = lines[-1].replace("├", "└")
+
     lines += [
         "",
-        "Includes: 3DS Bypass (Stripe) · full-quality screenshots · "
-        "extended history · priority support",
+        "<i>Includes: 3DS Bypass · full-quality screenshots · extended history · priority support</i>",
         "",
-        "<b>🔥 PRIVATE GROUP — CC Drop + Methods:</b>",
-        f"• <b>WEEKLY</b> — {group_weekly}",
-        f"• <b>MONTHLY</b> — {group_monthly}",
+        "🔥 <b>PRIVATE GROUP — CC Drop + Methods</b>",
+        f"├ <b>WEEKLY</b>  ·  {group_weekly}",
+        f"└ <b>MONTHLY</b> ·  {group_monthly}",
         "",
-        "You get: fresh CCs · mix lines · unchecked lines · on-request CCs "
-        "(weekly, 1 person) · hitting tips · charged BINs + sites · "
-        "non-VBV BINs · non-VBV CCs & more on request.",
-        "<i>Refund available for any issues.</i>",
+        "<i>Fresh CCs · mix lines · unchecked lines · charged BINs &amp; sites · non-VBV BINs · tips &amp; more.</i>",
         "",
-        "<b>💵 Payment — USDT:</b>",
+        "━━━━━━━━━━━━━━━━━━━━",
+        "💵 <b>Pay with USDT</b>",
         "",
-        "✅ <b>BEP20</b> (BNB Smart Chain)",
+        "🔵 <b>BEP20</b>  (BNB Smart Chain — lowest fee)",
         f"<code>{usdt_bep20}</code>",
         "",
-        "💰 <b>TRC20</b> (Tron)",
+        "🔴 <b>TRC20</b>  (Tron)",
         f"<code>{usdt_trc20}</code>",
         "",
-        "🪙 <b>TON</b> (The Open Network)",
+        "⚪ <b>TON</b>  (The Open Network)",
         f"<code>{usdt_ton}</code>",
         "",
-        "<b>➡️ How to buy:</b>",
-        "1. Send USDT to any address above (BEP20 recommended — lowest fee)",
-        "2. Screenshot the transaction (must show <b>amount + tx hash</b>)",
-        "3. Run <code>/paid</code> in this chat, then send the screenshot",
-        f"4. Owner @{owner_handle} verifies → activates your plan and/or sends "
-        "your private-group invite right here in the bot",
+        "━━━━━━━━━━━━━━━━━━━━",
+        "📋 <b>How to buy:</b>",
+        "1️⃣  Send USDT to any address above",
+        "2️⃣  Screenshot the tx — must show <b>amount &amp; tx hash</b>",
+        "3️⃣  Run /paid and send the screenshot",
+        f"4️⃣  @{owner_handle} verifies → activates your plan in minutes",
         "",
-        "<i>All tap-to-copy addresses — hold on mobile to copy.</i>",
+        "<i>Hold any address on mobile to copy. Refund available for issues.</i>",
         "",
-        "⭐ <b>Prefer Telegram Stars?</b> Tap a button below — instant, in-app, "
-        "no crypto needed. Activation is automatic.",
+        "⭐ <b>Prefer Telegram Stars?</b>  Tap a button below — instant, no crypto.",
     ]
     await send_message(chat_id, "\n".join(lines), reply_markup=_buy_stars_kb())
 
@@ -284,9 +281,6 @@ async def _fulfill_stars_payment(message: dict) -> None:
                 existing = existing.replace(tzinfo=timezone.utc)
             base = existing if (existing and existing > now) else now
             new_expiry = base + timedelta(days=30)
-            # upsert=True: a buyer can pay via /buy before ever registering —
-            # without the upsert the payment was recorded but no user doc
-            # existed, so Premium never actually activated.
             await db.users.update_one(
                 {"telegram_id": uid},
                 {"$set": {"plan": "MONTHLY", "plan_expires_at": new_expiry,
@@ -296,12 +290,16 @@ async def _fulfill_stars_payment(message: dict) -> None:
                                   "charged_count": 0, "live_count": 0}},
                 upsert=True,
             )
-            await send_message(
+            stacked = existing and existing > now
+            # Sent via notification bot so it appears from SemEx Auto X
+            await notify_message(
                 chat_id,
-                "🎉 <b>Payment received — SEMEX Premium activated!</b>\n\n"
-                f"⭐ {stars} Stars · <b>MONTHLY</b> (30 days"
-                + (", stacked on your remaining time" if existing and existing > now else "")
-                + f")\nValid until <b>{new_expiry:%Y-%m-%d}</b>.\n\n"
+                "🎉 <b>SEMEX Premium Activated!</b>\n"
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                f"⭐ <b>{stars} Stars</b>  ·  MONTHLY (30 days"
+                + (", stacked ✅" if stacked else "")
+                + f")\n📅 Valid until <b>{new_expiry:%Y-%m-%d}</b>\n"
+                "━━━━━━━━━━━━━━━━━━━━\n"
                 "Open the extension — premium is live immediately. 🔥",
             )
             fulfilled = True
@@ -312,13 +310,14 @@ async def _fulfill_stars_payment(message: dict) -> None:
         period = "7 days" if product == "group_weekly" else "30 days"
         if link:
             try:
-                await send_message(
+                await notify_message(
                     chat_id,
-                    "🎉 <b>Payment received — welcome to the SEMEX Private Group!</b>\n\n"
-                    f"⭐ {stars} Stars · <b>{period}</b>\n\n"
-                    f"👉 <b>Your invite:</b> {link}\n\n"
-                    "⚠️ <i>Personal invite — do not share. If it stops working, "
-                    "message the owner.</i>",
+                    "🎉 <b>Welcome to the SEMEX Private Group!</b>\n"
+                    "━━━━━━━━━━━━━━━━━━━━\n"
+                    f"⭐ <b>{stars} Stars</b>  ·  {period}\n\n"
+                    f"👉 <b>Your invite:</b> {link}\n"
+                    "━━━━━━━━━━━━━━━━━━━━\n"
+                    "⚠️ <i>Personal link — do not share. Message the owner if it stops working.</i>",
                 )
                 fulfilled = True
             except Exception as e:
@@ -327,22 +326,23 @@ async def _fulfill_stars_payment(message: dict) -> None:
             log.warning("PREMIUM_GROUP_LINK not set — cannot auto-fulfill %s for %s", product, uid)
 
     if not fulfilled:
-        await send_message(
+        await notify_message(
             chat_id,
-            "✅ <b>Payment received!</b> Activation hit a snag on our side — "
-            "the owner has been notified and will complete it shortly. "
-            "Keep this chat as your receipt.",
+            "✅ <b>Payment received!</b>\n\n"
+            "Activation hit a snag on our side — the owner has been notified "
+            "and will complete it shortly. Keep this chat as your receipt.",
         )
 
-    # Owner notification — always, with charge id for refunds (refundStarPayment)
+    # Owner notification via notify bot — always sent with charge id for refunds
     try:
-        await send_message(
+        await notify_message(
             settings.ADMIN_TELEGRAM_ID,
             "⭐ <b>STARS PAYMENT</b>\n"
-            f"👤 User: <code>@{username}</code> (<code>{uid}</code>)\n"
-            f"📦 Product: <b>{item['title']}</b>\n"
-            f"⭐ Amount: <b>{stars}</b> XTR\n"
-            f"🧾 Charge: <code>{charge_id}</code>\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            f"👤 @{username}  (<code>{uid}</code>)\n"
+            f"📦 {item['title']}\n"
+            f"⭐ {stars} XTR\n"
+            f"🧾 <code>{charge_id}</code>\n"
             f"{'✅ Auto-fulfilled' if fulfilled else '⚠️ NEEDS MANUAL FULFILLMENT'}",
         )
     except Exception as e:
@@ -554,41 +554,38 @@ def _owner_support_url() -> str | None:
 
 
 def _main_menu_kb() -> dict:
-    """Inline keyboard shown under the /start welcome. Buttons that have a real
-    URL open it directly; otherwise they fall back to a callback that replies
-    with the relevant info (so nothing is ever a dead button)."""
-    # Row 1 — download the extension (always a callback → sends the .zip document)
-    row1 = [{"text": "🧩 Get Extension", "callback_data": "menu:get"}]
-
-    # Row 2 — premium group + support. The group link is NEVER exposed here:
-    # the button always opens the offer/payment flow; the owner delivers the
-    # invite manually via /sendlink after verifying payment.
-    premium_btn = {"text": "💎 Premium Group", "callback_data": "menu:premium"}
+    """Inline keyboard shown under the /start welcome."""
+    # Row 1 — extension download + premium
+    row1 = [
+        {"text": "🧩 Get Extension", "callback_data": "menu:get"},
+        {"text": "💎 Go Premium", "callback_data": "menu:premium"},
+    ]
+    # Row 2 — status + support
     support_url = _owner_support_url()
-    if support_url:
-        support_btn = {"text": "🛟 Contact Support", "url": support_url}
-    else:
-        support_btn = {"text": "🛟 Contact Support", "callback_data": "menu:support"}
-    row2 = [premium_btn, support_btn]
-
-    # Row 3 — settings (saved BINs, account, etc.)
-    row3 = [{"text": "⚙️ Settings", "callback_data": "menu:settings"}]
-
+    support_btn = (
+        {"text": "🛟 Support", "url": support_url}
+        if support_url
+        else {"text": "🛟 Support", "callback_data": "menu:support"}
+    )
+    row2 = [
+        {"text": "📊 My Status", "callback_data": "menu:settings"},
+        support_btn,
+    ]
+    # Row 3 — redeem code entry prompt
+    row3 = [{"text": "🔑 Redeem Code", "callback_data": "menu:redeem"}]
     return {"inline_keyboard": [row1, row2, row3]}
 
 
 def _welcome_text(name: str, user_id: int | None) -> str:
     return (
-        "⚜️ <b>Welcome to SEMEX</b> ⚜️\n"
-        "─ ─ ─ ─ ─ ─ ─ ─ ─ ─\n"
-        f"👤 <b>User:</b> {name}\n"
-        f"🆔 <b>ID:</b> <code>{user_id if user_id is not None else '—'}</code>\n"
-        "─ ─ ─ ─ ─ ─ ─ ─ ─ ─\n\n"
-        "SEMEX is your premium checkout-automation suite. "
-        "Use the menu below to grab the extension, join the private group, "
-        "reach support, or manage your settings.\n\n"
-        "📝 <i>Note: keep your login OTP private — never share it with anyone.</i>\n\n"
-        "Type /help anytime for the full command list."
+        "⚜️ <b>SEMEX</b> · Checkout Suite\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        f"👤 {name}  ·  <code>{user_id if user_id is not None else '—'}</code>\n"
+        "━━━━━━━━━━━━━━━━━━━━\n\n"
+        "Your premium checkout-automation suite.\n"
+        "Use the menu to grab the extension, go premium, or check your account.\n\n"
+        "🔒 <i>Keep your login OTP private — never share it.</i>\n"
+        "📖 /help — full command list"
     )
 
 
@@ -900,6 +897,15 @@ async def _handle_callback(callback: dict) -> None:
         await _cmd_settings(chat_id, from_user_id)
     elif data == "menu:home":
         await _cmd_start(chat_id, username, from_user_id)
+    elif data == "menu:redeem":
+        await send_message(
+            chat_id,
+            "🔑 <b>Redeem a Code</b>\n"
+            "━━━━━━━━━━━━━━━━━━━━\n\n"
+            "Send your invite/plan code using:\n\n"
+            "<code>/redeem SEMEX-XXXX-XXXX-XXXX</code>\n\n"
+            "<i>Each code is single-use. Contact the owner if you don't have one.</i>",
+        )
     elif data.startswith("stars:"):
         await _send_stars_invoice(chat_id, data.split(":", 1)[1])
     # Unknown callbacks are silently ignored.
@@ -907,24 +913,25 @@ async def _handle_callback(callback: dict) -> None:
 
 async def _cmd_help(chat_id: int) -> None:
     text = (
-        "<b>🛠 SEMEX Bot Commands</b>\n\n"
-        "<b>📊 Your account:</b>\n"
-        "/status – plan, expiry & hit counters\n"
-        "/history – last 5 charged hits\n"
-        "/bins – your saved BINs\n"
-        "/savebin 414720 [label] – save a BIN to your extension list\n\n"
-        "<b>🔑 Access &amp; codes:</b>\n"
-        "/redeem SEMEX-XXXX-XXXX-XXXX – redeem an invite/plan code\n\n"
-        "<b>🚀 Getting started:</b>\n"
-        "/start – onboarding + main menu\n"
-        "/menu – re-open the button menu\n"
-        "/settings – account + saved BINs\n"
-        "/get – download the extension .zip\n"
-        "/buy – premium plans + private group offer + USDT addresses\n"
-        "/paid – submit proof-of-payment screenshot\n"
-        "/cancel – cancel a pending /paid submission\n"
-        "/help – this message\n\n"
-        "Any issues? Message the owner directly."
+        "🛠 <b>SEMEX — Commands</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━\n\n"
+        "<b>📊 Account</b>\n"
+        "/status — plan, expiry &amp; hit counters\n"
+        "/history — last 5 charged hits\n"
+        "/bins — your saved BINs\n"
+        "/savebin &lt;BIN&gt; [label] — save a BIN\n\n"
+        "<b>🔑 Access</b>\n"
+        "/redeem &lt;CODE&gt; — activate an invite/plan code\n\n"
+        "<b>🚀 General</b>\n"
+        "/start · /menu — main menu\n"
+        "/get — download the extension .zip\n"
+        "/buy — premium plans &amp; USDT wallets\n"
+        "/paid — submit payment proof\n"
+        "/cancel — cancel a pending /paid\n"
+        "/settings — account + saved BINs\n"
+        "/help — this list\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        "<i>Issues? Message the owner directly.</i>"
     )
     await send_message(chat_id, text)
 
@@ -1247,34 +1254,34 @@ async def _cmd_status(chat_id: int, from_user_id: int | None) -> None:
     if not user:
         await send_message(
             chat_id,
-            "⚠️ No account found for your Telegram ID.\n"
-            "Open the SEMEX extension and log in first.",
+            "⚠️ <b>No account found.</b>\n\n"
+            "Open the SEMEX extension and log in first, then try again.",
         )
         return
     plan = user.get("plan") or "TRIAL"
     exp = user.get("plan_expires_at")
     if exp:
-        if hasattr(exp, "strftime"):
-            exp_str = exp.strftime("%Y-%m-%d")
-        else:
-            exp_str = str(exp)[:10]
+        exp_str = exp.strftime("%Y-%m-%d") if hasattr(exp, "strftime") else str(exp)[:10]
     else:
         exp_str = "—"
     hits = user.get("hit_count", 0)
     charged = user.get("charged_count", 0)
+    live = user.get("live_count", 0)
     uname = user.get("telegram_username")
-    name_line = f"@{uname}" if uname else str(tid)
+    name_line = f"@{uname}" if uname else f"<code>{tid}</code>"
+    requires_redeem = user.get("requires_redeem", False)
+    access_line = "🔒 <b>Locked</b> — run /redeem &lt;CODE&gt; to unlock" if requires_redeem else "✅ Active"
     lines = [
-        "📋 <b>SEMEX — Account Status</b>",
-        "",
-        f"👤 <b>User:</b> {name_line}",
-        f"🏷 <b>Plan:</b> {plan}",
-        f"📅 <b>Expires:</b> {exp_str}",
-        "",
-        f"🎯 <b>Total Hits:</b> {hits}",
-        f"✅ <b>Charged:</b> {charged}",
-        "",
-        "Use /history to see your last charged hits.",
+        "📊 <b>SEMEX — Account</b>",
+        "━━━━━━━━━━━━━━━━━━━━",
+        f"👤 {name_line}",
+        f"🏷 Plan · <b>{plan}</b>",
+        f"📅 Expires · {exp_str}",
+        f"🔓 Access · {access_line}",
+        "━━━━━━━━━━━━━━━━━━━━",
+        f"🎯 Hits · <b>{hits}</b>   ✅ Charged · <b>{charged}</b>   🔥 Live · <b>{live}</b>",
+        "━━━━━━━━━━━━━━━━━━━━",
+        "<i>/history — view recent charged hits</i>",
     ]
     await send_message(chat_id, "\n".join(lines))
 
@@ -1287,7 +1294,6 @@ async def _cmd_history(chat_id: int, from_user_id: int | None) -> None:
     cursor = (
         db.hits.find(
             {"telegram_id": tid, "status": {"$in": ["charged", "success", "approved", "succeeded", "captured"]}},
-            # Exclude screenshot and full card number from bot output
             {"screenshot_b64": 0},
         )
         .sort("created_at", -1)
@@ -1298,24 +1304,28 @@ async def _cmd_history(chat_id: int, from_user_id: int | None) -> None:
         hits.append(doc)
 
     if not hits:
-        await send_message(chat_id, "📭 No charged hits found yet.")
+        await send_message(
+            chat_id,
+            "📭 <b>No charged hits yet.</b>\n\nStart hitting and your results will appear here.",
+        )
         return
 
-    lines = ["💳 <b>Last Charged Hits</b>\n"]
+    lines = [f"✅ <b>Last Charged Hits</b>  ({len(hits)} shown)\n━━━━━━━━━━━━━━━━━━━━"]
     for i, h in enumerate(hits, 1):
         card = h.get("card_number") or ""
         masked = ("•" * max(0, len(card) - 4) + card[-4:]) if len(card) >= 4 else "•••"
         gw = h.get("gateway") or h.get("hostname") or "—"
         amt = h.get("amount")
-        cur = h.get("currency") or ""
-        amt_str = f"{amt:.2f} {cur}".strip() if amt else "—"
+        cur = (h.get("currency") or "").upper()
+        amt_str = f"{cur} {amt:.2f}".strip() if amt else "—"
         ts = h.get("created_at")
-        date_str = ts.strftime("%Y-%m-%d %H:%M") if ts and hasattr(ts, "strftime") else "—"
+        date_str = ts.strftime("%Y-%m-%d %H:%M UTC") if ts and hasattr(ts, "strftime") else "—"
         lines.append(
-            f"{i}. <code>{masked}</code>\n"
-            f"   💰 {amt_str}  |  🌐 {gw}\n"
+            f"\n<b>{i}.</b> <code>{masked}</code>\n"
+            f"   💰 {amt_str}   🌐 {gw}\n"
             f"   🕐 {date_str}"
         )
+    lines.append("\n━━━━━━━━━━━━━━━━━━━━")
     await send_message(chat_id, "\n".join(lines))
 
 
@@ -1332,31 +1342,30 @@ async def _cmd_bins(chat_id: int, from_user_id: int | None) -> None:
     if not bins:
         await send_message(
             chat_id,
-            "📭 No saved BINs yet.\nOpen the SEMEX dashboard → BINs tab to add some.",
+            "📭 <b>No saved BINs yet.</b>\n\n"
+            "Add one with <code>/savebin 414720 [label]</code> or use the dashboard BINs tab.",
         )
         return
 
-    lines = [f"💳 <b>Your Saved BINs</b> ({len(bins)} shown)\n"]
+    lines = [f"💳 <b>Saved BINs</b>  ({len(bins)} shown)\n━━━━━━━━━━━━━━━━━━━━"]
     for b in bins:
         raw_num = b.get("bin") or "—"
-        # Mask anything beyond an 8-digit BIN prefix — saved values can be up to
-        # 19 digits (full card numbers), so only expose the BIN portion.
-        if len(raw_num) > 8:
-            display_num = raw_num[:6] + "•" * (len(raw_num) - 6)
-        else:
-            display_num = raw_num
+        # Mask anything beyond an 8-digit BIN prefix
+        display_num = raw_num[:6] + "•" * (len(raw_num) - 6) if len(raw_num) > 8 else raw_num
         label = b.get("label") or ""
-        brand = b.get("brand") or ""
-        level = b.get("level") or ""
+        brand = (b.get("brand") or "").upper()
+        level = (b.get("level") or "").upper()
         bank = b.get("bank") or ""
-        meta_parts = [x for x in [brand.upper() if brand else "", level.upper() if level else "", bank] if x]
-        meta_str = " · ".join(meta_parts[:2]) if meta_parts else ""
-        label_str = f" <i>{label}</i>" if label else ""
-        meta_line = f"\n   {meta_str}" if meta_str else ""
-        lines.append(f"• <code>{display_num}</code>{label_str}{meta_line}")
+        meta_parts = [x for x in [brand, level, bank] if x]
+        meta_str = " · ".join(meta_parts[:3])
+        label_str = f"  <i>{label}</i>" if label else ""
+        meta_line = f"\n     <i>{meta_str}</i>" if meta_str else ""
+        lines.append(f"\n• <code>{display_num}</code>{label_str}{meta_line}")
 
     if len(bins) == 20:
-        lines.append("\n<i>Showing 20 most recent. Open the dashboard to see all.</i>")
+        lines.append("\n━━━━━━━━━━━━━━━━━━━━\n<i>20 most recent shown — open the dashboard to see all.</i>")
+    else:
+        lines.append("\n━━━━━━━━━━━━━━━━━━━━")
     await send_message(chat_id, "\n".join(lines))
 
 

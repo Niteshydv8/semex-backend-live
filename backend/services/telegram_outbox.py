@@ -34,7 +34,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 
 from db import get_db
-from services.telegram import send_message, send_photo, pin_message
+from services.telegram import notify_message, notify_photo, pin_message
 
 log = logging.getLogger("semex.outbox")
 
@@ -147,9 +147,9 @@ async def _deliver(doc: dict) -> bool:
         chat = chat_id  # keep as-is if not numeric
     if doc.get("kind") == "photo":
         img = base64.b64decode(doc["screenshot_b64"])
-        res = await send_photo(chat, img, text)
+        res = await notify_photo(chat, img, text)
     else:
-        res = await send_message(chat, text)
+        res = await notify_message(chat, text)
     if not (res and res.get("ok")):
         return False
     if doc.get("pin"):

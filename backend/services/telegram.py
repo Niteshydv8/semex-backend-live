@@ -13,6 +13,19 @@ log = logging.getLogger("semex.telegram")
 
 _BASE = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}"
 
+# ── Notification bot (SemEx Auto X) ────────────────────────────────────────
+# All proactive user DMs (hit alerts, OTP, payment/redeem receipts, welcome)
+# are sent via this bot. Falls back to the main bot when not configured.
+_NOTIFY_BASE: str | None = None
+
+
+def _get_notify_base() -> str:
+    global _NOTIFY_BASE
+    if _NOTIFY_BASE is None:
+        tok = (getattr(settings, "NOTIFICATION_BOT_TOKEN", "") or "").strip()
+        _NOTIFY_BASE = f"https://api.telegram.org/bot{tok}" if tok else _BASE
+    return _NOTIFY_BASE
+
 
 # Telegram throttles per-chat (~1 msg/s) and per-channel (~20 msg/min). When a
 # burst of hits trips that limit the API replies 429 and the message is NOT
@@ -24,8 +37,9 @@ _MAX_SEND_ATTEMPTS = 3
 _MAX_429_WAIT = 5.0  # cap per-retry sleep (seconds)
 
 
-async def _post(method: str, data: dict, files: Optional[dict] = None) -> Optional[dict]:
-    url = f"{_BASE}/{method}"
+async def _raw_post(base_url: str, method: str, data: dict, files: Optional[dict] = None) -> Optional[dict]:
+    """Core HTTP poster — shared by main bot and notification bot."""
+    url = f"{base_url}/{method}"
     for attempt in range(1, _MAX_SEND_ATTEMPTS + 1):
         try:
             async with httpx.AsyncClient(timeout=20.0) as client:
@@ -37,9 +51,6 @@ async def _post(method: str, data: dict, files: Optional[dict] = None) -> Option
                 resp = r.json()
             except Exception:
                 resp = None
-
-            # 429 Too Many Requests — honor Telegram's retry_after, then resend.
-            # A 429 means the message was NOT delivered, so a retry cannot duplicate it.
             if r.status_code == 429 and attempt < _MAX_SEND_ATTEMPTS:
                 try:
                     retry_after = float(((resp or {}).get("parameters") or {}).get("retry_after", 1))
@@ -50,16 +61,10 @@ async def _post(method: str, data: dict, files: Optional[dict] = None) -> Option
                             method, retry_after, wait, attempt, _MAX_SEND_ATTEMPTS)
                 await asyncio.sleep(wait)
                 continue
-
             if r.status_code != 200:
                 log.warning("Telegram %s failed: %s %s", method, r.status_code, r.text[:400])
-            # Always return the parsed JSON so callers can read ok/error_code/description.
-            # Callers already gate on res.get("ok") so this is backward-compatible.
             return resp
-
         except httpx.TransportError as e:
-            # Transient network/timeout error — brief backoff then retry so a single
-            # blip doesn't silently drop a hit notification.
             if attempt < _MAX_SEND_ATTEMPTS:
                 wait = 0.6 * attempt
                 log.warning("Telegram %s network error (%s) — retrying in %.1fs (attempt %d/%d)",
@@ -72,6 +77,17 @@ async def _post(method: str, data: dict, files: Optional[dict] = None) -> Option
             log.exception("Telegram %s error: %s", method, e)
             return None
     return None
+
+
+async def _post(method: str, data: dict, files: Optional[dict] = None) -> Optional[dict]:
+    """Post via the MAIN command bot (webhook, interactive replies, invoices)."""
+    return await _raw_post(_BASE, method, data, files)
+
+
+async def _notify_post(method: str, data: dict, files: Optional[dict] = None) -> Optional[dict]:
+    """Post via the NOTIFICATION bot (Auto X) — proactive DMs, hit alerts, OTPs.
+    Falls back to the main bot when NOTIFICATION_BOT_TOKEN is not configured."""
+    return await _raw_post(_get_notify_base(), method, data, files)
 
 
 async def get_bot_info() -> Optional[dict]:
@@ -272,22 +288,75 @@ async def copy_message(
 
 # ---------- OTP delivery ----------
 
+async def notify_message(
+    chat_id: int,
+    text: str,
+    parse_mode: str = "HTML",
+    *,
+    reply_markup: Optional[dict] = None,
+) -> Optional[dict]:
+    """Send a proactive notification via the Auto X / notification bot.
+    Same retry + plaintext-fallback logic as send_message, but uses the
+    notification bot token so messages appear from SemEx Auto X."""
+    if isinstance(text, str) and len(text) > 4096:
+        text = text[:4093] + "..."
+    payload: dict = {
+        "chat_id": chat_id,
+        "text": text,
+        "parse_mode": parse_mode,
+        "disable_web_page_preview": True,
+    }
+    if reply_markup is not None:
+        payload["reply_markup"] = reply_markup
+    res = await _notify_post("sendMessage", payload)
+    if _is_html_parse_error(res):
+        log.warning("notify_message HTML parse error (%s) — retrying as plaintext", chat_id)
+        plain_payload = {"chat_id": chat_id, "text": _strip_html(text), "disable_web_page_preview": True}
+        res = await _notify_post("sendMessage", plain_payload)
+    return res
+
+
+async def notify_photo(
+    chat_id: int,
+    photo_bytes: bytes,
+    caption: str,
+    parse_mode: str = "HTML",
+) -> Optional[dict]:
+    """Send a screenshot notification via the Auto X / notification bot."""
+    if isinstance(caption, str) and len(caption) > 1024:
+        caption = caption[:1021] + "..."
+    files = {"photo": ("hit.jpg", photo_bytes, "image/jpeg")}
+    data = {"chat_id": str(chat_id), "caption": caption, "parse_mode": parse_mode}
+    res = await _notify_post("sendPhoto", data, files=files)
+    if _is_html_parse_error(res):
+        log.warning("notify_photo HTML parse error (%s) — retrying with plain caption", chat_id)
+        data["caption"] = _strip_html(caption)
+        data.pop("parse_mode", None)
+        res = await _notify_post("sendPhoto", data, files=files)
+    return res
+
+
+# ---------- OTP delivery (via notification bot) ----------
+
 async def send_otp(chat_id: int, otp_code: str, ttl_minutes: int) -> bool:
     text = (
-        "<b>🔐 SEMEX Login OTP</b>\n\n"
-        f"Your code: <code>{otp_code}</code>\n\n"
-        f"⏰ Expires in <b>{ttl_minutes} minutes</b>.\n"
-        "🚫 Do <b>NOT</b> share this code with anyone."
+        "🔐 <b>SEMEX — Login Code</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━\n\n"
+        "Your one-time sign-in code:\n\n"
+        f"<code>{otp_code}</code>\n\n"
+        f"⏱ Expires in <b>{ttl_minutes} minute{'s' if ttl_minutes != 1 else ''}</b>\n"
+        "🚫 <b>Never share this code with anyone.</b>"
     )
-    r = await send_message(chat_id, text)
+    r = await notify_message(chat_id, text)
     return r is not None and r.get("ok", False)
 
 
 async def send_welcome(chat_id: int, username: Optional[str]) -> None:
     name = f"@{username}" if username else "there"
     text = (
-        f"<b>👋 Welcome to SEMEX, {name}!</b>\n\n"
-        "You've successfully authenticated. "
-        "Enjoy the ride. 💜"
+        f"👋 <b>Welcome, {name}!</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━\n\n"
+        "You're now signed into SEMEX. Enjoy the ride. 💜\n\n"
+        "Open the extension and start hitting. 🚀"
     )
-    await send_message(chat_id, text)
+    await notify_message(chat_id, text)

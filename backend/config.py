@@ -24,6 +24,12 @@ class Settings:
     TELEGRAM_BOT_TOKEN: str = _env("TELEGRAM_BOT_TOKEN")
     TELEGRAM_BOT_USERNAME: str = _env("TELEGRAM_BOT_USERNAME")
 
+    # Optional second bot — all proactive user notifications (hit alerts, OTP,
+    # payment/redeem receipts) are sent via this token. Falls back to the main
+    # bot token when not configured so nothing breaks until the secret is set.
+    NOTIFICATION_BOT_TOKEN: str = _env("NOTIFICATION_BOT_TOKEN", "")
+    NOTIFICATION_BOT_USERNAME: str = _env("NOTIFICATION_BOT_USERNAME", "")
+
     ADMIN_TELEGRAM_ID: int = int(_env("ADMIN_TELEGRAM_ID"))
     ADMIN_LOG_CHANNEL_ID: int = int(_env("ADMIN_LOG_CHANNEL_ID"))
     PUBLIC_SHOWCASE_CHANNEL_ID: str = _env("PUBLIC_SHOWCASE_CHANNEL_ID", "")
