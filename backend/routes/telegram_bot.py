@@ -1660,62 +1660,29 @@ async def _dispatch_update(update: dict, wh_secret: str) -> None:
             pass
 
 
-def _verify_webhook_secret(request: Request, expected: str) -> bool:
-    """Return True when the request passes the webhook secret check.
-    Always passes when expected is empty (secret not configured)."""
-    if not expected:
-        return True
-    sent = (request.headers.get("x-telegram-bot-api-secret-token") or "").strip()
-    return sent == expected
-
-
 @router.post("/webhook")
 async def telegram_webhook(request: Request):
-    """Main command bot webhook.
+    """Receives Telegram Bot API updates. Dispatches slash-commands.
 
     Register once:
         POST https://api.telegram.org/bot<TELEGRAM_BOT_TOKEN>/setWebhook
              ?url=https://<host>/api/telegram/webhook
              &secret_token=<TELEGRAM_WEBHOOK_SECRET>
+
+    We always return {"ok": True} so Telegram doesn't retry.
     """
     _wh_secret = (getattr(settings, "TELEGRAM_WEBHOOK_SECRET", "") or "").strip()
-    if not _verify_webhook_secret(request, _wh_secret):
-        log.warning("webhook: rejected — bad or missing secret token")
-        return {"ok": True}
+    if _wh_secret:
+        _sent = (request.headers.get("x-telegram-bot-api-secret-token") or "").strip()
+        if _sent != _wh_secret:
+            log.warning("webhook: rejected — bad or missing secret token")
+            return {"ok": True}
     try:
         update = await request.json()
     except Exception as e:
         log.warning("webhook received non-json body: %s", e)
         return {"ok": True}
     await _dispatch_update(update, _wh_secret)
-    return {"ok": True}
-
-
-@router.post("/webhook/autobot")
-async def autobot_webhook(request: Request):
-    """SemEx Auto X bot webhook — all-rounder: handles login, all commands,
-    AND is the notification sender.  Register once:
-
-        POST https://api.telegram.org/bot<NOTIFICATION_BOT_TOKEN>/setWebhook
-             ?url=https://<host>/api/telegram/webhook/autobot
-             &secret_token=<NOTIFICATION_BOT_WEBHOOK_SECRET>
-
-    Uses NOTIFICATION_BOT_WEBHOOK_SECRET when set; falls back to
-    TELEGRAM_WEBHOOK_SECRET so both bots can share one secret if preferred.
-    """
-    _auto_secret = (
-        (getattr(settings, "NOTIFICATION_BOT_WEBHOOK_SECRET", "") or "").strip()
-        or (getattr(settings, "TELEGRAM_WEBHOOK_SECRET", "") or "").strip()
-    )
-    if not _verify_webhook_secret(request, _auto_secret):
-        log.warning("autobot webhook: rejected — bad or missing secret token")
-        return {"ok": True}
-    try:
-        update = await request.json()
-    except Exception as e:
-        log.warning("autobot webhook received non-json body: %s", e)
-        return {"ok": True}
-    await _dispatch_update(update, _auto_secret)
     return {"ok": True}
 
 

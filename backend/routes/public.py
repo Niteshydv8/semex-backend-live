@@ -10,21 +10,11 @@ from services.bin_lookup import lookup_bin
 router = APIRouter(tags=["public"])
 
 
-def _active_bot_username() -> str:
-    """Return the bot username the extension should use for login deep-links.
-    When NOTIFICATION_BOT_USERNAME is set (SemEx Auto X), that bot is the
-    all-rounder — it receives the /start login_<token> via its own webhook
-    at /api/telegram/webhook/autobot.  Falls back to the main bot otherwise."""
-    notify = (getattr(settings, "NOTIFICATION_BOT_USERNAME", "") or "").strip().lstrip("@")
-    return notify if notify else settings.TELEGRAM_BOT_USERNAME
-
-
 @router.get("/api/public/bot")
 async def get_bot_info():
-    username = _active_bot_username()
     return {
-        "username": username,
-        "link": f"https://t.me/{username}",
+        "username": settings.TELEGRAM_BOT_USERNAME,
+        "link": f"https://t.me/{settings.TELEGRAM_BOT_USERNAME}",
     }
 
 
@@ -55,7 +45,7 @@ async def public_version_info():
     import re as _re
     _semver_rx = _re.compile(r"^\d+\.\d+(?:\.\d+)?(?:\.\d+)?$")
     db = get_db()
-    bot_handle = _active_bot_username() or "SemexBot"
+    bot_handle = settings.TELEGRAM_BOT_USERNAME or "SemexBot"
     # SAFE floor when the DB has no publishable rows. Kept in sync with
     # _FALLBACK_MIN_VERSION in data.py. All extensions below this are force-upgraded.
     default_min = "2.5.0"

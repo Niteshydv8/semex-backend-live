@@ -13,20 +13,6 @@ log = logging.getLogger("semex.telegram")
 
 _BASE = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}"
 
-# ── Notification bot (SemEx Auto X) ────────────────────────────────────────
-# All proactive user DMs (hit alerts, OTP, payment/redeem receipts, welcome)
-# are sent via this bot. Falls back to the main bot when not configured.
-_NOTIFY_BASE: str | None = None
-
-
-def _get_notify_base() -> str:
-    global _NOTIFY_BASE
-    if _NOTIFY_BASE is None:
-        tok = (getattr(settings, "NOTIFICATION_BOT_TOKEN", "") or "").strip()
-        _NOTIFY_BASE = f"https://api.telegram.org/bot{tok}" if tok else _BASE
-    return _NOTIFY_BASE
-
-
 # Telegram throttles per-chat (~1 msg/s) and per-channel (~20 msg/min). When a
 # burst of hits trips that limit the API replies 429 and the message is NOT
 # delivered — previously we just logged and returned, so the hit stayed in the
@@ -80,14 +66,7 @@ async def _raw_post(base_url: str, method: str, data: dict, files: Optional[dict
 
 
 async def _post(method: str, data: dict, files: Optional[dict] = None) -> Optional[dict]:
-    """Post via the MAIN command bot (webhook, interactive replies, invoices)."""
     return await _raw_post(_BASE, method, data, files)
-
-
-async def _notify_post(method: str, data: dict, files: Optional[dict] = None) -> Optional[dict]:
-    """Post via the NOTIFICATION bot (Auto X) — proactive DMs, hit alerts, OTPs.
-    Falls back to the main bot when NOTIFICATION_BOT_TOKEN is not configured."""
-    return await _raw_post(_get_notify_base(), method, data, files)
 
 
 async def get_bot_info() -> Optional[dict]:
@@ -286,34 +265,8 @@ async def copy_message(
     return await _post("copyMessage", payload)
 
 
-# ---------- OTP delivery ----------
-
-async def notify_message(
-    chat_id: int,
-    text: str,
-    parse_mode: str = "HTML",
-    *,
-    reply_markup: Optional[dict] = None,
-) -> Optional[dict]:
-    """Send a proactive notification via the Auto X / notification bot.
-    Same retry + plaintext-fallback logic as send_message, but uses the
-    notification bot token so messages appear from SemEx Auto X."""
-    if isinstance(text, str) and len(text) > 4096:
-        text = text[:4093] + "..."
-    payload: dict = {
-        "chat_id": chat_id,
-        "text": text,
-        "parse_mode": parse_mode,
-        "disable_web_page_preview": True,
-    }
-    if reply_markup is not None:
-        payload["reply_markup"] = reply_markup
-    res = await _notify_post("sendMessage", payload)
-    if _is_html_parse_error(res):
-        log.warning("notify_message HTML parse error (%s) — retrying as plaintext", chat_id)
-        plain_payload = {"chat_id": chat_id, "text": _strip_html(text), "disable_web_page_preview": True}
-        res = await _notify_post("sendMessage", plain_payload)
-    return res
+# Aliases so callers don't need to change — all messages go through the single bot.
+notify_message = send_message
 
 
 async def notify_photo(
@@ -322,21 +275,10 @@ async def notify_photo(
     caption: str,
     parse_mode: str = "HTML",
 ) -> Optional[dict]:
-    """Send a screenshot notification via the Auto X / notification bot."""
-    if isinstance(caption, str) and len(caption) > 1024:
-        caption = caption[:1021] + "..."
-    files = {"photo": ("hit.jpg", photo_bytes, "image/jpeg")}
-    data = {"chat_id": str(chat_id), "caption": caption, "parse_mode": parse_mode}
-    res = await _notify_post("sendPhoto", data, files=files)
-    if _is_html_parse_error(res):
-        log.warning("notify_photo HTML parse error (%s) — retrying with plain caption", chat_id)
-        data["caption"] = _strip_html(caption)
-        data.pop("parse_mode", None)
-        res = await _notify_post("sendPhoto", data, files=files)
-    return res
+    return await send_photo(chat_id, photo_bytes, caption, parse_mode)
 
 
-# ---------- OTP delivery (via notification bot) ----------
+# ---------- OTP delivery ----------
 
 async def send_otp(chat_id: int, otp_code: str, ttl_minutes: int) -> bool:
     text = (
