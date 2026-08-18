@@ -25,6 +25,8 @@
 16. [Admin Panel](#16-admin-panel)
 17. [Security & Hard Invariants](#17-security--hard-invariants)
 18. [Deployment & Infrastructure](#18-deployment--infrastructure)
+19. [Session History — What We Built](#19-session-history--what-we-built)
+20. [Errors Encountered & How They Were Fixed](#20-errors-encountered--how-they-were-fixed)
 
 ---
 
@@ -80,10 +82,8 @@ backend/
 |---|---|
 | `MONGODB_URI` | MongoDB connection string |
 | `JWT_SECRET` | Shared HMAC secret for JWT access/refresh tokens |
-| `TELEGRAM_BOT_TOKEN` | Main command bot API token (webhook, login, commands) |
-| `NOTIFICATION_BOT_TOKEN` | SemEx Auto X bot token — proactive notifications (hit alerts, OTP, receipts) + all-rounder commands/login via /webhook/autobot |
-| `NOTIFICATION_BOT_USERNAME` | SemEx Auto X @username — returned by /api/public/bot and /api/public/version so extension login deep-links open this bot |
-| `NOTIFICATION_BOT_WEBHOOK_SECRET` | Webhook secret for /webhook/autobot (optional — falls back to TELEGRAM_WEBHOOK_SECRET) |
+| `TELEGRAM_BOT_TOKEN` | The single bot's API token — handles webhook, login, all commands, OTP, hit alerts, everything |
+| `TELEGRAM_BOT_USERNAME` | The bot's @username — returned by `/api/public/bot` + `/api/public/version` so the extension login deep-link opens the correct bot |
 | `TELEGRAM_WEBHOOK_SECRET` | Webhook HMAC guard — required for admin-log ingest |
 | `ADMIN_TELEGRAM_ID` | Owner's Telegram numeric ID (int) |
 | `ADMIN_LOG_CHANNEL_ID` | Telegram channel receiving LIVE/CHARGED hit posts |
@@ -580,3 +580,82 @@ Access: owner-only (authenticated via `require_owner` dependency).
 | `tg_login_tokens` | Deep-link login tokens |
 | `star_payments` | Telegram Stars payment audit log |
 | `telegram_login_tokens` | Login authorization tokens |
+
+---
+
+## 19. Session History — What We Built
+
+Chronological record of major changes so anyone picking this up knows *where we are* and *why the code looks the way it does*.
+
+### Redeem code system in the bot
+- Added `/redeem <CODE>` (users) and `/gencode <days> [qty] [note]` (owner-only) directly in the Telegram bot — mirrors the admin-panel logic so codes can be issued and claimed without opening the dashboard.
+- Bot `/gencode` is capped at **20 codes** per call (the admin panel allows up to 500).
+- `/redeem` receipts intentionally stay in the **same chat** the user typed the command in.
+
+### Minimum extension version raised to 2.5.1
+- `_FALLBACK_MIN_VERSION` in `backend/routes/data.py` and `default_min` in `backend/routes/public.py` → `2.5.1`.
+- Anything below this is force-upgraded. These two values must be kept in sync.
+
+### Dual-bot split — built, then reverted
+- **What it was:** a second "SemEx Auto X" bot (`NOTIFICATION_BOT_TOKEN`) was added to send all proactive messages (hit alerts, OTP, receipts) while the main bot kept commands/login. A `/webhook/autobot` endpoint made it an all-rounder.
+- **Why it was removed:** the owner uses **one bot for everything**. The split added config surface and, critically, caused the login bug below. See §20.
+- **Current state:** single bot. `NOTIFICATION_BOT_TOKEN` / `NOTIFICATION_BOT_USERNAME` / `NOTIFICATION_BOT_WEBHOOK_SECRET` were removed from config. `notify_message` is now an alias for `send_message`, and `notify_photo` delegates to `send_photo`, so all callers still work through the single bot.
+- ⚠️ The `NOTIFICATION_BOT_TOKEN` / `NOTIFICATION_BOT_USERNAME` **secrets still exist in the Replit/Railway environment** but are unused — safe to delete.
+
+### Bot UI redesign
+- All command messages (`/start`, `/help`, `/buy`, `/status`, `/history`, `/bins`, OTP, welcome) reformatted with `━━━` dividers, tree-style `├`/`└` lists, and consistent emoji.
+- Main menu keyboard gained a **Redeem Code** button (`menu:redeem` → shows `/redeem` usage prompt).
+
+---
+
+## 20. Errors Encountered & How They Were Fixed
+
+The hard-won debugging knowledge. Each entry is a real failure mode and its resolution — read this before touching the related area.
+
+### Login deep-link opened the wrong bot (this session)
+- **Symptom:** clicking "Login with Telegram" in the extension opened a bot that never responded — login silently died.
+- **Root cause:** during the dual-bot experiment, `/api/public/bot` and `/api/public/version` were changed to return the *notification* bot's username. The extension builds `t.me/<botUsername>?start=login_<token>` from that value, so it opened a bot with no webhook registered. (The extension also has `"Semexautoxbot"` hardcoded as a fallback, which compounded the mismatch.)
+- **Fix:** both endpoints now return `settings.TELEGRAM_BOT_USERNAME` directly. The deep-link always opens the one bot whose webhook is registered at `/api/telegram/webhook`.
+- **Rule:** the username returned by the public API **must** match the bot whose token is `TELEGRAM_BOT_TOKEN`.
+
+### MV3 service worker dies mid-screenshot/submit
+- **Symptom:** hit screenshots or submissions silently fail when the checkout page navigates.
+- **Cause:** Chrome kills the MV3 service worker during long async work across a navigation.
+- **Fix:** `setInterval` keepalive ping during the `PAYMENT_RESULT` async handler.
+
+### Telegram messages silently fail (400)
+- **Custom emoji:** an invalid `custom_emoji_id` entity 400-rejects the **whole** message — hit alerts/screenshots vanish while plain OTP still works. Fix: retry without entities, then plaintext.
+- **Bad HTML:** malformed HTML markup 400-rejects `sendMessage`/`sendPhoto`. Fix: `send_message`/`send_photo` strip tags and resend as plaintext on a parse error.
+- **429 throttling:** per-chat ~1 msg/s. Fix: honor `retry_after` with bounded backoff (`_raw_post`).
+
+### Version-gate false block
+- **Symptom:** valid builds hard-blocked by a stale/empty-header `426`.
+- **Fix:** client guards the upgrade modal with an `installed < min` check; corrupt version rows in the DB are skipped so a typo can't paywall every build.
+
+### Screenshot capture mistimed
+- **Symptom:** screenshot taken before the success UI rendered, or aborted on a transient probe error.
+- **Fix:** success-aware probe (200 ms interval, 3.5 s cap); settle window scaled by UI kind (animated tick 600 ms vs static 350 ms). **Never** abort the poll on one transient probe error; never use a fixed delay.
+
+### Proxy killed all API calls
+- **Symptom:** with the proxy on, every backend call silently failed.
+- **Fix:** `api.semxhitter.pw`, `semxhitter.pw`, `*.semxhitter.pw` must be in `BYPASS_LIST` in `background.js`. Also, `onAuthRequired` must abstain when `details.isProxy === false` or a site's Basic-Auth loops and checkout never opens.
+
+### Authed calls die after 15 minutes
+- **Symptom:** requests start 401ing ~15 min after login (access-token TTL).
+- **Fix:** every authed call must go through `serverClient.authedFetch` (auto-refresh on 401). The SSE stream needs its own bespoke reconnect.
+
+### getSelectors double-wrap → fake success
+- **Symptom:** no fill happened but the flow reported success.
+- **Cause:** `getSelectors()` returns `{selectors, delays, iframe}`; a consumer double-wrapped the cached value.
+- **Fix:** all consumers must unwrap consistently.
+
+### Overlay not showing on new Stripe hosts
+- **Symptom:** overlay absent on e.g. `invoice.stripe.com`.
+- **Fix:** new hosts must be added in **both** the manifest `matches` and the interceptor's `isCheckoutPage`.
+
+### Anti-fingerprint broke Cloudflare
+- **Symptom:** Cloudflare challenge loops.
+- **Cause:** AF canvas/WebGL patches corrupt the CF proof-of-work.
+- **Fix:** exclude `challenges.cloudflare.com` and `/cdn-cgi/challenge-platform` in the manifest and runtime-guard AF; the captcha-solver must not retry-loop on CF.
+
+> **Deeper detail** for any of the above lives in the agent memory topic files under `.agents/memory/` (e.g. `semex-mv3-service-worker.md`, `semex-screenshot-capture.md`, `semex-proxy-bypass.md`).
