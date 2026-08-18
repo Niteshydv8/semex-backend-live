@@ -35,3 +35,4 @@
 - [SEMEX Telegram login flow](semex-telegram-login-flow.md) — v4.1.0 deep-link bot authorize; popup dies on tab open so background SW polls; new accounts redeem-locked; session issuance shared in services/sessions.py.
 - [SEMEX bot switch](semex-bot-switch.md) — one token drives login+/get+hits+admin-log+all cmds; switching = Railway env + manual setWebhook + new bot admin of both channels + users /start; agent can't do it (Railway-side).
 - [SEMEX bot redeem & gencode](semex-bot-redeem-gencode.md) — /redeem CODE and /gencode days [qty] [note] added to bot; mirrors dashboard logic; min version floor now 2.5.1; SESSION.md is the full feature reference.
+- [SEMEX dual-bot split](semex-dual-bot.md) — main bot = commands/login/webhook; Auto X bot (NOTIFICATION_BOT_TOKEN) = hit alerts/OTP/receipts via notify_message()/notify_photo(); outbox + send_otp + send_welcome all use notify; falls back to main bot when secret unset.
