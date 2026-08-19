@@ -427,3 +427,10 @@ uri = "file://extension_releases/RELEASE_NOTES_v4.0.0.md"
 type = "text"
 title = "SEMEX v4.0.0 Release Notes"
 description = "Full release notes: public changelog, internal owner-only changelog, carried-in v2.9.x fixes, and deploy checklist."
+
+[[outputs]]
+id = "OMT-GFG_UoWnUjrg6CXEl"
+uri = "file://semex-v4.1.2-plain.zip"
+type = "unspecified"
+title = "SEMEX Extension v4.1.2"
+description = "Test build with the compact overlay and in-place Hide / Reveal privacy blur."
