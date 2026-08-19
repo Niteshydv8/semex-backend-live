@@ -20,3 +20,6 @@ The backend runs on **Railway**, so these are **Railway env vars**. The agent CA
 **Note:** live `BASE_URL` is empty on Railway (`/api/public/version` returns a RELATIVE downloadUrl), so in-message links are relative; set `BASE_URL=https://api.semxhitter.pw` if clickable links are wanted.
 
 **Optional automation (not done — offer only):** add setWebhook to server.py `lifespan` so a redeploy auto-registers the webhook — but needs a reliable `BASE_URL`/`WEBHOOK_URL` env first.
+
+## Never hardcode a bot handle in message templates
+The public showcase footer (`services/extra_formatters.format_public_showcase`) once hardcoded `@SEMEXHITSBOT`, so every hit posted to the public group advertised the OLD bot even after the owner "switched" bots. **Why:** which bot is live is a Railway-env decision (`TELEGRAM_BOT_TOKEN`/`TELEGRAM_BOT_USERNAME`), and all sends go through the single configured bot (`notify_message = send_message`). **How to apply:** every user-facing handle must derive from `settings.TELEGRAM_BOT_USERNAME` (omit the line if empty) — never bake a literal `@SomeBot` into templates, or it silently leaks a stale bot the code push can't fix.
