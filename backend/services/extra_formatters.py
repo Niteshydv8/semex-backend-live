@@ -4,6 +4,7 @@ from __future__ import annotations
 from datetime import datetime, timezone
 from typing import Optional
 
+from config import settings
 from services.hit_formatter import clean_response
 
 
@@ -71,6 +72,16 @@ def format_public_showcase(hit: dict, user: dict) -> str:
     # NOTE: IP is INTENTIONALLY NOT shown in the public showcase (owner's rule).
     # The IP still appears in the owner/admin DM template (format_hit) for auditing.
 
+    # Footer handle follows the CONFIGURED bot (settings.TELEGRAM_BOT_USERNAME) —
+    # exactly like every other user-facing handle in the app — never a hardcoded
+    # bot. A stale/old bot handle used to be baked in here and leaked into the
+    # public group; if no username is configured we now omit the handle line
+    # entirely instead of advertising the wrong bot.
+    bot_handle = (settings.TELEGRAM_BOT_USERNAME or "").lstrip("@").strip()
+    footer = "⚡️ 𝗕𝗼𝘁 𝗯𝘆 𝗡𝗲𝗽𝗮𝗹𝗶 𝗕𝗵𝗮𝗶 ⚡️"
+    if bot_handle:
+        footer += f"\n「 @{e(bot_handle)} 」"
+
     return (
         f"「 <b>{e(gw_head)} HITTER</b> 」\n"
         f"\n"
@@ -79,8 +90,7 @@ def format_public_showcase(hit: dict, user: dict) -> str:
         f"Amount ❝ {e(amount_line)}\n"
         f"Response ❝ {e(response)}\n"
         f"\n"
-        f"⚡️ 𝗕𝗼𝘁 𝗯𝘆 𝗡𝗲𝗽𝗮𝗹𝗶 𝗕𝗵𝗮𝗶 ⚡️\n"
-        f"「 @SEMEXHITSBOT 」"
+        f"{footer}"
     )
 
 

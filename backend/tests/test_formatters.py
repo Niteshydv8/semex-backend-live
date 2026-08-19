@@ -3,6 +3,7 @@
 - format_hit: OWNER label, plan/banned labels
 - format_public_showcase: FULL username (not masked), clean response
 """
+from config import settings
 from services.hit_formatter import clean_response, format_hit
 from services.extra_formatters import format_public_showcase
 
@@ -92,7 +93,8 @@ class TestPublicShowcase:
         out = format_public_showcase(_hit(), u)
         assert 'href="tg://user?id=999"' in out and "Kobe" in out
 
-    def test_charged_template(self):
+    def test_charged_template(self, monkeypatch):
+        monkeypatch.setattr(settings, "TELEGRAM_BOT_USERNAME", "SemexAutoxBot")
         u = {"telegram_username": "Mugiwara", "telegram_id": 9}
         h = _hit(status="charged", gateway="stripe_checkout", amount=20.0, currency="usd")
         out = format_public_showcase(h, u)
@@ -103,7 +105,19 @@ class TestPublicShowcase:
         assert "Payment successful" in out  # friendly response for charged
         assert "account_settings" not in out
         assert "𝗕𝗼𝘁 𝗯𝘆 𝗡𝗲𝗽𝗮𝗹𝗶 𝗕𝗵𝗮𝗶" in out
-        assert "@SEMEXHITSBOT" in out
+        # Footer handle must follow the CONFIGURED bot, never the old hardcoded one.
+        assert "@SemexAutoxBot" in out
+        assert "@SEMEXHITSBOT" not in out
+
+    def test_footer_handle_omitted_when_no_bot_configured(self, monkeypatch):
+        """No configured username → no handle line (never advertise a wrong bot)."""
+        monkeypatch.setattr(settings, "TELEGRAM_BOT_USERNAME", "")
+        u = {"telegram_username": "Mugiwara", "telegram_id": 9}
+        h = _hit(status="charged", gateway="stripe", amount=10.0, currency="usd")
+        out = format_public_showcase(h, u)
+        assert "𝗕𝗼𝘁 𝗯𝘆 𝗡𝗲𝗽𝗮𝗹𝗶 𝗕𝗵𝗮𝗶" in out  # credit line stays
+        assert "「 @" not in out  # but no bot handle at all
+        assert "@SEMEXHITSBOT" not in out
 
     def test_live_shows_decline_reason(self):
         u = {"telegram_username": "Mugiwara", "telegram_id": 9}
