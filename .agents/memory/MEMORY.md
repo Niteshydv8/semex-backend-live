@@ -37,3 +37,4 @@
 - [SEMEX bot redeem & gencode](semex-bot-redeem-gencode.md) — /redeem CODE and /gencode days [qty] [note] added to bot; mirrors dashboard logic; min version floor now 2.5.1; SESSION.md is the full feature reference.
 - [SEMEX bot wiring = single-bot](semex-dual-bot.md) — 2026-08-19: all Telegram (OTP/hits/public) on ONE bot; notify_message=send_message; NOTIFICATION_BOT_* secrets unused; handles from settings.TELEGRAM_BOT_USERNAME; config is Railway env, not Replit.
 - [SEMEX overlay Hide = blur-in-place](semex-overlay-hide-behavior.md) — Hide frosts info sections in place (never collapse); keep .full-controls sharp so reveal works; position + stats-toggle buttons removed 2026-08-19.
+- [SEMEX security-scan triage](semex-security-scan-findings.md) — telegram.py SSRF flag = FALSE POSITIVE (fixed api.telegram.org base); seed_test_session.py token-print = test-only accepted risk; postcss pinned across many frontend resolutions.
