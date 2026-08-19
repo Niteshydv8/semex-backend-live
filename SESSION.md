@@ -1,6 +1,6 @@
 # SEMEX — Full Session & Feature Reference
 
-> **Last updated:** 2026-08-18  
+> **Last updated:** 2026-08-19  
 > This document is the single authoritative reference for the SEMEX ecosystem: backend architecture, extension capabilities, bot commands, access gating, restrictions, and operational rules. Update this file whenever any of the below changes.
 
 ---
@@ -197,6 +197,15 @@ backend/
 - **Status pill:** `setStatus()` updates the in-overlay status text (NOT the toast notifier).
 - **Toasts:** separate notification system; pill churn (Starting/Processing) is the common "toast complaint".
 - **Mobile:** CSS uses `--blur-glass` variable; animated blur/backdrop-filter removed from desktop too (performance). Ryuk tab styled at `#ryuk-tab .ryuk-root`, no `@media`.
+
+### Testing & regression guards
+
+- **Unit/integration suite:** `cd semex && npm test` runs `success-ui-probe`, `fill-routing`, `fill-selectors-and-cache`, and `fill-pipeline.integration` (**314 assertions, 0 failing**). Pure Node — no browser, Chrome APIs, or network.
+- **Selector snapshots** (`content/fill-selectors-and-cache.test.js` + `content/fixtures/`): jsdom fixtures pin each gateway frame's real element anchors so a rename fails CI instead of silently breaking fills.
+  - Part F — Stripe (habanero `payment-*Input`, hosted-fields `Field-*Input`).
+  - Part G — Adyen (`data-fieldtype` attrs) and Checkout.com (`name` attrs).
+- **Real-browser E2E:** `npm run test:e2e` loads the built extension into headless Chromium and drives a real overlay→background→content→DOM fill against a route-fulfilled Stripe fixture (asserts all fields fill, no reload). `npm run test:e2e:live` is opt-in and needs an `sk_test_` `STRIPE_TEST_SECRET_KEY`.
+- **jsdom** is a `devDependency` in `semex/package.json` (Node ≥20).
 
 ---
 
@@ -430,6 +439,7 @@ LIVE + CHARGED persisted per `telegram_id`. Counters (`hit_count`, `charged_coun
 - On send failure: plaintext retry + debug-last-hit endpoint
 - `_mask_success_url` stays a clickable full link (owner decision, confirmed 2026-08-16)
 - Stripe surface labels come from page hostname + gate, not response URL
+- Public-group showcase footer handle derives from `settings.TELEGRAM_BOT_USERNAME` (never hardcoded; the handle line is omitted when unset) — fixed 2026-08-19 after an old bot handle (`@SEMEXHITSBOT`) leaked into broadcasts
 
 ### Silent failure modes
 
@@ -606,6 +616,19 @@ Chronological record of major changes so anyone picking this up knows *where we 
 - All command messages (`/start`, `/help`, `/buy`, `/status`, `/history`, `/bins`, OTP, welcome) reformatted with `━━━` dividers, tree-style `├`/`└` lists, and consistent emoji.
 - Main menu keyboard gained a **Redeem Code** button (`menu:redeem` → shows `/redeem` usage prompt).
 
+### Public group showed the wrong bot handle — fixed (2026-08-19)
+- The public-group hit showcase (`format_public_showcase` in `backend/services/extra_formatters.py`) hardcoded an **old** bot handle (`@SEMEXHITSBOT`) in its footer, so every broadcast advertised a retired bot that is no longer wired to the extension.
+- Now the footer handle derives from `settings.TELEGRAM_BOT_USERNAME` — the same source every other user-facing handle uses — and the handle line is **omitted entirely** when no username is configured, so a stale bot can never leak into the public group again.
+- Which bot actually sends (and is advertised) is a **server-side Railway decision** (`TELEGRAM_BOT_TOKEN` + `TELEGRAM_BOT_USERNAME`); the code change makes the message text follow that config instead of a literal handle. `backend/tests/test_formatters.py` now asserts the configured handle appears and the old literal does not.
+
+### Fill-pipeline regression guards — selector snapshots + real-browser E2E (2026-08-19)
+- **Selector snapshot tests** (`semex/content/fill-selectors-and-cache.test.js`): jsdom fixtures under `semex/content/fixtures/` pin the real element anchors each gateway frame uses, so a bundler-rename that would silently break fills fails CI instead.
+  - Part F — Stripe (habanero `payment-*Input` + hosted-fields `Field-*Input` IDs).
+  - Part G — **Adyen** (`data-fieldtype="encryptedCardNumber/ExpiryDate/SecurityCode"` + `name="holderName"`) and **Checkout.com** (`name="card-number/card-expiry-date/card-cvv/cardholder-name"`).
+  - Each fixture carries ONLY the primary anchor attribute, so a match can pass **only** via that token — never a class/autocomplete fallback that would mask a real break.
+- **Real-browser E2E** (`semex/tests/fill-e2e.test.js`, `npm run test:e2e`): loads the built extension into headless Chromium, route-fulfills `checkout.stripe.com` with a fixture using current production Stripe IDs, drives the real overlay→background→content→DOM fill via `postMessage SEMEX_FILL_FORM`, and asserts every field fills with **no page reload**. Opt-in live variant (`npm run test:e2e:live`) hits real test-mode Stripe when a `STRIPE_TEST_SECRET_KEY` (`sk_test_` key) is present.
+- Full `semex` suite: **314 assertions, 0 failing**.
+
 ---
 
 ## 20. Errors Encountered & How They Were Fixed
@@ -617,6 +640,12 @@ The hard-won debugging knowledge. Each entry is a real failure mode and its reso
 - **Root cause:** during the dual-bot experiment, `/api/public/bot` and `/api/public/version` were changed to return the *notification* bot's username. The extension builds `t.me/<botUsername>?start=login_<token>` from that value, so it opened a bot with no webhook registered. (The extension also has `"Semexautoxbot"` hardcoded as a fallback, which compounded the mismatch.)
 - **Fix:** both endpoints now return `settings.TELEGRAM_BOT_USERNAME` directly. The deep-link always opens the one bot whose webhook is registered at `/api/telegram/webhook`.
 - **Rule:** the username returned by the public API **must** match the bot whose token is `TELEGRAM_BOT_TOKEN`.
+
+### Public group advertised a retired bot in its footer (2026-08-19)
+- **Symptom:** hit broadcasts in the public group ended with an **old** bot handle (`@SEMEXHITSBOT`) that is separate from the current extension/bot.
+- **Root cause:** the footer string in `format_public_showcase` (`backend/services/extra_formatters.py`) hardcoded that handle instead of reading it from config — so it never followed a bot switch.
+- **Fix:** the footer now uses `settings.TELEGRAM_BOT_USERNAME` (stripped of a leading `@`) and drops the handle line entirely when unset. `backend/tests/test_formatters.py` asserts the configured handle appears and the old literal does not.
+- **Rule:** never bake a literal `@bot` into any message template — user-facing handles come from `settings.TELEGRAM_BOT_USERNAME` (the live bot is a Railway-env decision).
 
 ### MV3 service worker dies mid-screenshot/submit
 - **Symptom:** hit screenshots or submissions silently fail when the checkout page navigates.
