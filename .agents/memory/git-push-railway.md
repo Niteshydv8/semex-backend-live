@@ -1,9 +1,13 @@
 ---
 name: Git push for SEMEX backend
-description: How to push to GitHub (auto-redeploys Railway) — raw git push fails; use the GitHub connector via Git Data API replay.
+description: How to push to GitHub (auto-redeploys Render backend) — credential helper required; backend is hosted on Render, NOT Railway.
 ---
 
-Pushing `main` to origin (github.com/Niteshydv8/semexbackend) auto-redeploys the Railway backend.
+⚠️ The backend is hosted on **Render**, not Railway. Do not say "Railway" in commit messages or responses.
+
+The API is served through a **specific domain** (api.semxhitter.pw). If hosting ever moves to a different provider, the domain stays the same and all extension versions — old and new — continue working without any change. The domain is the stable contract with users, not the hosting platform.
+
+Pushing `main` to origin (github.com/Niteshydv8/semexbackend) auto-redeploys the **Render** backend via its GitHub integration.
 
 **Current working method (Aug 17, 2026):** plain push with a credential helper reading the `GITHUB_TOKEN` env secret — no connector replay needed:
 ```bash

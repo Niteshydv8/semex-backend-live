@@ -1,6 +1,6 @@
 - [SEMEX MV3 service worker keepalive](semex-mv3-service-worker.md) — page navigation kills the worker mid-screenshot/submit; fix is setInterval ping during the PAYMENT_RESULT async handler.
 - [Telegram custom-emoji delivery](telegram-custom-emoji.md) — invalid custom_emoji_id entities 400-reject the WHOLE message; hit notifications/screenshots silently fail while plain OTP works.
-- [Git push for SEMEX backend](git-push-railway.md) — raw `git push` fails auth; use `gitPush({branch:"main"})` callback; push auto-redeploys Railway backend.
+- [Git push for SEMEX backend](git-push-railway.md) — raw `git push` works via GITHUB_TOKEN credential helper; backend is on **Render** (not Railway); pushing to main auto-redeploys via Render's GitHub hook.
 - [SEMEX extension build/packaging](semex-build-process.md) — obfuscation ON by default (--plain skips); node_modules stripped; *.test.js/fixtures/tests/ deleted before zip; semex-build/ GENERATED, never hand-edit.
 - [SEMEX release distribution](semex-release-distribution.md) — no auto-update; owner publishes the zip via admin panel (DB is_latest → Telegram /get + broadcast); building/committing/pushing never reaches users.
 - [SEMEX version-gate false block](semex-version-gate.md) — current builds wrongly hard-blocked by stale/empty-header 426; client must guard modal with installed<min check.
