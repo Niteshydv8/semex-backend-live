@@ -7,7 +7,7 @@ description: How to push to GitHub (auto-redeploys Render backend) — credentia
 
 The API is served through a **specific domain** (api.semxhitter.pw). If hosting ever moves to a different provider, the domain stays the same and all extension versions — old and new — continue working without any change. The domain is the stable contract with users, not the hosting platform.
 
-Pushing `main` to origin (github.com/Niteshydv8/semexbackend) auto-redeploys the **Render** backend via its GitHub integration.
+Pushing `main` to origin (github.com/Niteshydv8/semexbackend) auto-redeploys the **Render** backend via its GitHub integration — no manual deploy step needed.
 
 **Current working method (Aug 17, 2026):** plain push with a credential helper reading the `GITHUB_TOKEN` env secret — no connector replay needed:
 ```bash
