@@ -503,8 +503,14 @@ async def telegram_login_status(request: Request, token: str = "", fp: str = "")
     in Telegram. Bound to the requesting install's fingerprint, and the auth
     payload is delivered exactly once — a leaked deep link alone can neither
     mint nor re-fetch a session."""
-    _poll_ip = (request.client.host if request.client else "unknown")
-    await rate_limit(f"tg_poll:{_poll_ip}", 120)  # 120 polls/hour per IP
+    # Rate-limit per token, not per IP. One login attempt polls at 2-second
+    # intervals for up to 5 minutes → ~152 requests. A per-IP limit would
+    # 429 any user behind shared NAT before login completes. Per-token limiting
+    # is safer: each token is already fingerprint-bound and one-time-use, so
+    # abuse potential is low. 200 per token gives a comfortable buffer above
+    # the 152-request maximum while still blocking infinite-poll exploits.
+    if token and 1 <= len(token) <= 80:
+        await rate_limit(f"tg_poll_token:{token}", 200)
     if not token or len(token) > 80:
         raise HTTPException(400, "Invalid token.")
     db = get_db()
