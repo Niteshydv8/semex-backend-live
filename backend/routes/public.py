@@ -45,7 +45,7 @@ async def public_version_info():
     import re as _re
     _semver_rx = _re.compile(r"^\d+\.\d+(?:\.\d+)?(?:\.\d+)?$")
     db = get_db()
-    bot_handle = settings.TELEGRAM_BOT_USERNAME or "SemexBot"
+    bot_handle = settings.TELEGRAM_BOT_USERNAME
     # SAFE floor when the DB has no publishable rows. Kept in sync with
     # _FALLBACK_MIN_VERSION in data.py. All extensions below this are force-upgraded.
     default_min = "2.5.0"

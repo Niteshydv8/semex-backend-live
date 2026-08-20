@@ -107,7 +107,7 @@ async def _enforce_min_extension_version(request: Request) -> None:
         return
     min_v = await _get_min_extension_version()
     if _parse_version(sent) < _parse_version(min_v):
-        bot_handle = settings.TELEGRAM_BOT_USERNAME or "SemexBot"
+        bot_handle = settings.TELEGRAM_BOT_USERNAME
         raise HTTPException(
             status_code=426,
             detail={

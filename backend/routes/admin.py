@@ -750,7 +750,7 @@ async def publish_extension(
     # non-trivial user base (uploads stayed spinning forever).
     broadcast_queued = 0
     if auto_broadcast:
-        bot_handle = settings.TELEGRAM_BOT_USERNAME or "SemexBot"
+        bot_handle = settings.TELEGRAM_BOT_USERNAME
         base = str(settings.BASE_URL or "").rstrip("/") if getattr(settings, "BASE_URL", None) else ""
         dl_url = f"{base}/api/telegram/download/extension" if base else "/api/telegram/download/extension"
         text = (

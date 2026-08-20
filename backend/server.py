@@ -22,7 +22,7 @@ from routes.user import router as user_router
 from security import decode_token
 from services.expiry_watcher import start_expiry_task, stop_expiry_task
 from services.telegram_outbox import start_outbox_task, stop_outbox_task
-from services.telegram import send_message
+from services.telegram import get_bot_info, send_message
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s: %(message)s")
 
@@ -32,6 +32,29 @@ async def lifespan(app: FastAPI):
     await init_indexes()
     start_expiry_task()
     start_outbox_task()
+    # Auto-resolve bot username from the live token so changing TELEGRAM_BOT_TOKEN
+    # on the server (e.g. after a leak) never leaves the display username pointing
+    # at the old bot in messages, public-group footer, and login deep-links.
+    _log = logging.getLogger("semex.startup")
+    try:
+        bot_info = await get_bot_info()
+        if bot_info and bot_info.get("username"):
+            fetched = bot_info["username"]
+            if fetched != settings.TELEGRAM_BOT_USERNAME:
+                _log.info(
+                    "Bot username resolved from Telegram API: %r (was %r)",
+                    fetched,
+                    settings.TELEGRAM_BOT_USERNAME or "(unset)",
+                )
+            settings.TELEGRAM_BOT_USERNAME = fetched
+        else:
+            _log.warning(
+                "Could not resolve bot username from Telegram API — keeping "
+                "TELEGRAM_BOT_USERNAME env value (%r).",
+                settings.TELEGRAM_BOT_USERNAME or "(unset)",
+            )
+    except Exception as _e:
+        _log.warning("Bot username auto-resolve failed: %s", _e)
     yield
     stop_outbox_task()
     stop_expiry_task()
@@ -120,7 +143,7 @@ async def _dm_outdated_user(telegram_id: int, sent_version: str, min_version: st
     if now - last < _OUTDATED_DM_TTL_SECONDS:
         return
     _OUTDATED_DM_CACHE[telegram_id] = now
-    bot_handle = settings.TELEGRAM_BOT_USERNAME or "SemexBot"
+    bot_handle = settings.TELEGRAM_BOT_USERNAME
     text = (
         "⚠️ <b>SEMEX — Update Required</b>\n\n"
         f"Your extension version <code>{sent_version or 'unknown'}</code> is outdated.\n"
@@ -176,7 +199,7 @@ async def enforce_extension_version_globally(request: Request, call_next):
     # below the safe FALLBACK floor. Protects users during DB corruption
     # (e.g. bogus "3" min-version) from getting spam DMs telling them a
     # current build is outdated.
-    bot_handle = settings.TELEGRAM_BOT_USERNAME or "SemexBot"
+    bot_handle = settings.TELEGRAM_BOT_USERNAME
     base = str(settings.BASE_URL or "").rstrip("/") if getattr(settings, "BASE_URL", None) else ""
     from routes.data import _FALLBACK_MIN_VERSION
     if sent and _parse_version(sent) >= _parse_version(_FALLBACK_MIN_VERSION):

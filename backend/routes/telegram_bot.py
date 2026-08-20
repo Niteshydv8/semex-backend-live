@@ -98,7 +98,7 @@ def _find_extension_zip() -> Path | None:
 
 async def _cmd_buy(chat_id: int, username: str | None) -> None:
     """Show premium plans + private-group offer + USDT wallets (BEP20/TRC20/TON)."""
-    owner_handle = (settings.OWNER_HANDLE or settings.TELEGRAM_BOT_USERNAME or "SemexBot").replace("@", "")
+    owner_handle = (settings.OWNER_HANDLE or settings.TELEGRAM_BOT_USERNAME or "").replace("@", "")
     price_monthly = getattr(settings, "PLAN_PRICE_MONTHLY", None) or "$100"
     price_yearly = (getattr(settings, "PLAN_PRICE_YEARLY", "") or "").strip()
     price_lifetime = (getattr(settings, "PLAN_PRICE_LIFETIME", "") or "").strip()
