@@ -36,25 +36,42 @@ async def lifespan(app: FastAPI):
     # on the server (e.g. after a leak) never leaves the display username pointing
     # at the old bot in messages, public-group footer, and login deep-links.
     _log = logging.getLogger("semex.startup")
-    try:
-        bot_info = await get_bot_info()
-        if bot_info and bot_info.get("username"):
-            fetched = bot_info["username"]
-            if fetched != settings.TELEGRAM_BOT_USERNAME:
-                _log.info(
-                    "Bot username resolved from Telegram API: %r (was %r)",
-                    fetched,
+
+    async def _resolve_bot_username() -> None:
+        """Best-effort background task: resolves bot username from Telegram API.
+
+        Uses a strict 3-second timeout with a single HTTP attempt so a Telegram
+        outage or DNS failure never delays application readiness or causes
+        health-check failures on Render / other platforms.
+        """
+        try:
+            bot_info = await asyncio.wait_for(get_bot_info(), timeout=3.0)
+            if bot_info and bot_info.get("username"):
+                fetched = bot_info["username"]
+                if fetched != settings.TELEGRAM_BOT_USERNAME:
+                    _log.info(
+                        "Bot username resolved from Telegram API: %r (was %r)",
+                        fetched,
+                        settings.TELEGRAM_BOT_USERNAME or "(unset)",
+                    )
+                settings.TELEGRAM_BOT_USERNAME = fetched
+            else:
+                _log.warning(
+                    "Could not resolve bot username from Telegram API — keeping "
+                    "TELEGRAM_BOT_USERNAME env value (%r).",
                     settings.TELEGRAM_BOT_USERNAME or "(unset)",
                 )
-            settings.TELEGRAM_BOT_USERNAME = fetched
-        else:
+        except asyncio.TimeoutError:
             _log.warning(
-                "Could not resolve bot username from Telegram API — keeping "
+                "Bot username auto-resolve timed out (3 s) — keeping "
                 "TELEGRAM_BOT_USERNAME env value (%r).",
                 settings.TELEGRAM_BOT_USERNAME or "(unset)",
             )
-    except Exception as _e:
-        _log.warning("Bot username auto-resolve failed: %s", _e)
+        except Exception as _e:
+            _log.warning("Bot username auto-resolve failed: %s", _e)
+
+    # Fire-and-forget: startup must not block on Telegram availability.
+    asyncio.create_task(_resolve_bot_username())
     yield
     stop_outbox_task()
     stop_expiry_task()
