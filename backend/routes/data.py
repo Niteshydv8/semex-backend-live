@@ -14,7 +14,7 @@ from pydantic import BaseModel, Field, field_validator
 
 from config import settings
 from db import get_db
-from deps import get_current_user, get_current_user_allow_expired
+from deps import get_current_user, get_current_user_allow_expired, rate_limit
 from deps import get_current_user_unlocked  # redeem-gate for locked Telegram signups
 from models import Hit, User
 from services.bin_lookup import lookup_bin
@@ -288,6 +288,7 @@ async def submit_status(
     request: Request,
     user: User = Depends(get_current_user_unlocked),
 ):
+    await rate_limit(f"hit_submit:{user.telegram_id}", 200)  # 200 hits/hour per user
     db = get_db()
     # v2.3.7 HONEYPOT: middleware may have flagged this request as coming from
     # an outdated extension (paywall bypassed via DOM/DevTools tampering). We
@@ -603,6 +604,7 @@ async def submit_screenshot(body: ScreenshotBody, user: User = Depends(get_curre
     Telegram notification is never delayed by screenshot capture. Here we
     attach the shot to the hit row and enqueue the photo follow-ups (user DM +
     admin log) through the durable outbox."""
+    await rate_limit(f"screenshot:{user.telegram_id}", 60)  # 60 screenshots/hour per user
     if not body.screenshot:
         raise HTTPException(400, "Missing screenshot")
 

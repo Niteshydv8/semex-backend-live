@@ -70,13 +70,23 @@ app = FastAPI(
 )
 
 origins = settings.CORS_ORIGINS.split(",") if settings.CORS_ORIGINS != "*" else ["*"]
+# allow_credentials=True is incompatible with a wildcard origin — browsers
+# refuse the combination and Starlette/CORS spec bars it. Only enable
+# credentials when CORS_ORIGINS is set to an explicit allowlist via the env var.
+_allow_credentials = origins != ["*"]
 
 app.add_middleware(
     CORSMiddleware,
     allow_origins=origins,
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_credentials=_allow_credentials,
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allow_headers=[
+        "Authorization",
+        "Content-Type",
+        "X-Fingerprint",
+        "X-Extension-Version",
+        "X-Requested-With",
+    ],
 )
 
 

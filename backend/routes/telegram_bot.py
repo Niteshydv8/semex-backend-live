@@ -1672,11 +1672,28 @@ async def telegram_webhook(request: Request):
     We always return {"ok": True} so Telegram doesn't retry.
     """
     _wh_secret = (getattr(settings, "TELEGRAM_WEBHOOK_SECRET", "") or "").strip()
+    _sent = (request.headers.get("x-telegram-bot-api-secret-token") or "").strip()
     if _wh_secret:
-        _sent = (request.headers.get("x-telegram-bot-api-secret-token") or "").strip()
+        # Secret is configured — enforce it strictly. Reject anything that
+        # doesn't match (wrong value, missing header, replay attempt).
         if _sent != _wh_secret:
             log.warning("webhook: rejected — bad or missing secret token")
             return {"ok": True}
+    elif _sent:
+        # No secret configured but caller sent a token — likely a forged/replay
+        # attempt probing this endpoint. Silently ignore without processing.
+        log.warning(
+            "webhook: rejected — caller sent a secret token but TELEGRAM_WEBHOOK_SECRET "
+            "is not configured; set it and re-run setWebhook with secret_token."
+        )
+        return {"ok": True}
+    else:
+        # No secret configured AND no token in the request — log a per-request
+        # warning so the operator sees the exposure in deployment logs.
+        log.warning(
+            "webhook: processing unauthenticated request — "
+            "set TELEGRAM_WEBHOOK_SECRET and re-run setWebhook to harden this endpoint."
+        )
     try:
         update = await request.json()
     except Exception as e:

@@ -498,11 +498,13 @@ async def telegram_login_start(body: TelegramLoginStartBody, request: Request):
 
 
 @router.get("/telegram-login/status")
-async def telegram_login_status(token: str = "", fp: str = ""):
+async def telegram_login_status(request: Request, token: str = "", fp: str = ""):
     """Polled by the extension's background worker while the user authorizes
     in Telegram. Bound to the requesting install's fingerprint, and the auth
     payload is delivered exactly once — a leaked deep link alone can neither
     mint nor re-fetch a session."""
+    _poll_ip = (request.client.host if request.client else "unknown")
+    await rate_limit(f"tg_poll:{_poll_ip}", 120)  # 120 polls/hour per IP
     if not token or len(token) > 80:
         raise HTTPException(400, "Invalid token.")
     db = get_db()
