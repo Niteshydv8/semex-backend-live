@@ -8,6 +8,14 @@ verify the behaviour when the variable is absent from the environment
 from __future__ import annotations
 
 import os
+import sys
+from pathlib import Path
+
+# Add the backend root to sys.path so `import server`, `import config`, etc. work
+# whether tests are invoked via `python -m pytest` or bare `pytest unit/`.
+_BACKEND_DIR = Path(__file__).resolve().parents[1]
+if str(_BACKEND_DIR) not in sys.path:
+    sys.path.insert(0, str(_BACKEND_DIR))
 
 # Must be set before any backend module is imported.
 # TELEGRAM_BOT_USERNAME is deliberately omitted — config.py defaults it to "".
