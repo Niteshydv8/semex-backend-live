@@ -456,12 +456,13 @@ async def _send_binance_pay_instructions(chat_id: int, from_user_id: int | None,
         )
         return
 
-    # Supersede any existing unfulfilled Binance Pay pending for this user+product
+    # Supersede any existing unfulfilled pending for this user+product (all methods),
+    # so switching from TRC20/BEP20 to Binance Pay doesn't leave a stale on-chain
+    # pending that could intercept unrelated TxID submissions.
     try:
         from db import get_db as _gdb
         await _gdb().pending_payments.update_many(
-            {"telegram_id": from_user_id, "product": product,
-             "payment_method": "binance_pay", "fulfilled": False},
+            {"telegram_id": from_user_id, "product": product, "fulfilled": False},
             {"$set": {"fulfilled": True, "txid": "superseded"}},
         )
     except Exception:
@@ -567,6 +568,38 @@ async def _send_wallet_instructions(
         "👉 <b>Paste your TxID / transaction hash here</b> in this chat.\n"
         "   We verify it on-chain automatically — no screenshot needed.\n\n"
         "⏰ <i>You have 24 hours to complete this payment.</i>",
+    )
+
+
+async def _send_ton_instructions(chat_id: int, from_user_id: int | None, product: str) -> None:
+    """Show TON wallet address and manual /paid instructions."""
+    if not from_user_id:
+        return
+    cat = _stars_catalog()
+    item = cat.get(product)
+    if not item or not product.startswith("group_"):
+        await send_message(chat_id, "⚠️ Unknown product.")
+        return
+
+    addr = (getattr(settings, "PAYMENT_USDT_TON", "") or "").strip()
+    if not addr:
+        await send_message(
+            chat_id,
+            "⚠️ TON address not configured yet.\n\nTry Binance Pay or a wallet option instead.",
+        )
+        return
+
+    await send_message(
+        chat_id,
+        "⚪ <b>TON — Manual Payment</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        f"💵 Send exactly: <b>{item['usd']} USDT</b>  (USDT-TON)\n\n"
+        f"📋 To this address:\n<code>{addr}</code>\n\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        "After sending:\n"
+        "👉 Run <b>/paid</b> and send a screenshot of the completed transaction.\n"
+        "   The owner will verify and send your invite link manually.\n\n"
+        "⏰ <i>Include the transaction ID in the screenshot if possible.</i>",
     )
 
 
@@ -1478,6 +1511,8 @@ async def _handle_callback(callback: dict) -> None:
         await _send_wallet_instructions(chat_id, from_user_id, data.split(":", 1)[1], "trc20")
     elif data.startswith("bep20:"):
         await _send_wallet_instructions(chat_id, from_user_id, data.split(":", 1)[1], "bep20")
+    elif data.startswith("ton:"):
+        await _send_ton_instructions(chat_id, from_user_id, data.split(":", 1)[1])
     elif data.startswith("cryptobot:"):
         await _send_cryptobot_invoice(chat_id, from_user_id, data.split(":", 1)[1])
     # Unknown callbacks are silently ignored.
