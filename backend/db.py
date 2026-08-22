@@ -64,8 +64,3 @@ async def init_indexes() -> None:
     await db.pending_payments.create_index([("telegram_id", 1), ("fulfilled", 1)])
     await db.pending_payments.create_index("expires_at", expireAfterSeconds=0)
 
-    # pending_txid_verifications: temporary store for raw TxIDs pasted before the
-    # user has selected a product (Flow B in _handle_txid_submission).
-    # One record per user, expires after 15 min via MongoDB TTL.
-    await db.pending_txid_verifications.create_index("telegram_id", unique=True)
-    await db.pending_txid_verifications.create_index("expires_at", expireAfterSeconds=0)
