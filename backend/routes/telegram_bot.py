@@ -188,19 +188,24 @@ def _stars_catalog() -> dict:
 
 
 def _buy_stars_kb() -> dict:
-    """Inline keyboard — Stars button + USDT auto-detect button for every group plan."""
+    """Inline keyboard — Stars button + USDT (Binance Pay direct) button for every group plan.
+
+    The 💵 USDT button routes straight to _send_binance_pay_instructions (binpay:) because
+    the /buy message already shows all wallet addresses inline — users who want TRC20/BEP20
+    copy the address there and paste their TxID in chat for auto-verification.
+    """
     cat = _stars_catalog()
     rows = [
         # Premium plan — Stars only (no USDT button for Premium)
         [{"text": f"⭐ Premium Monthly — {cat['plan_monthly']['stars']} ⭐ ({cat['plan_monthly']['usd']})", "callback_data": "stars:plan_monthly"}],
     ]
-    # Group plans: side-by-side Stars + USDT buttons
+    # Group plans: side-by-side Stars + USDT (Binance Pay) buttons
     for key in ("group_weekly", "group_2week", "group_monthly"):
         item = cat[key]
         short = item["title"].replace("Private Group — ", "Group ")
         rows.append([
             {"text": f"⭐ {short} — {item['stars']} ⭐", "callback_data": f"stars:{key}"},
-            {"text": f"💵 USDT {item['usd']}", "callback_data": f"usdt:{key}"},
+            {"text": f"💵 USDT {item['usd']}", "callback_data": f"binpay:{key}"},
         ])
     return {"inline_keyboard": rows}
 
@@ -604,22 +609,131 @@ async def _send_ton_instructions(chat_id: int, from_user_id: int | None, product
 
 
 async def _handle_txid_submission(chat_id: int, from_user_id: int, txid: str) -> bool:
-    """If the user sent a transaction hash and has a pending on-chain payment,
-    verify and fulfill it.  Returns True if the message was consumed."""
+    """If the user sent a transaction hash, verify and fulfill their pending payment.
+
+    Flow A — pending already exists (user tapped TRC20/BEP20 button previously):
+        verify immediately.
+
+    Flow B — no pending (user copied wallet address from /buy message and sent directly):
+        detect chain, store TxID in DB, show product-picker keyboard so the user
+        can tell us which plan they paid for before we verify.
+
+    Returns True if the message was consumed (either flow), False to let the
+    dispatcher treat the text as an unrecognised message.
+    """
     from services.pending_payments import find_latest_pending_onchain, mark_fulfilled
-    from services.txid_verifier import verify_txid
+    from services.txid_verifier import verify_txid, detect_chain
 
     pending = await find_latest_pending_onchain(from_user_id)
-    if not pending:
-        return False   # no pending on-chain payment for this user — ignore
+
+    # ── Flow A: existing pending ───────────────────────────────────────────
+    if pending:
+        await send_message(chat_id, "🔍 <i>Verifying your transaction on-chain… (~5s)</i>")
+        ok, chain = await verify_txid(txid, pending["product"])
+        if ok:
+            await mark_fulfilled(pending["code"], txid=txid)
+            await _fulfill_verified_txid(pending, txid=txid, chain=chain, chat_id=chat_id)
+        else:
+            await send_message(
+                chat_id,
+                "⚠️ <b>Transaction not verified.</b>\n\n"
+                "<b>Common reasons:</b>\n"
+                "• Not confirmed yet — wait 1-2 min and paste the TxID again\n"
+                "• Wrong network (use TRC20 for 🔴, BEP20 for 🔵)\n"
+                "• Amount doesn't match the plan price exactly\n"
+                "• Sent to wrong address\n\n"
+                "Double-check and try again, or use /paid to submit a screenshot for manual review.",
+            )
+        return True
+
+    # ── Flow B: no pending — ask which product the payment is for ─────────
+    chain = detect_chain(txid)
+    if not chain:
+        return False  # not a recognisable TxID format — don't consume
+
+    # Persist TxID so we can retrieve it when the user taps the product button
+    try:
+        from db import get_db as _gdb_txid
+        import datetime as _dt
+        await _gdb_txid().pending_txid_verifications.replace_one(
+            {"telegram_id": from_user_id},
+            {
+                "telegram_id": from_user_id,
+                "txid": txid,
+                "chain": chain,
+                "expires_at": _dt.datetime.utcnow() + _dt.timedelta(minutes=15),
+            },
+            upsert=True,
+        )
+    except Exception as _e:
+        log.warning("pending_txid_verifications store failed: %s", _e)
+        return False
+
+    cat = _stars_catalog()
+    chain_emoji = "🔴" if chain == "TRC20" else "🔵"
+    rows = []
+    for key in ("group_weekly", "group_2week", "group_monthly"):
+        item = cat[key]
+        short = item["title"].replace("Private Group — ", "Group ")
+        rows.append([{"text": f"{short} — {item['usd']}", "callback_data": f"txid_product:{key}"}])
+
+    await send_message(
+        chat_id,
+        f"{chain_emoji} <b>{chain} TxID detected</b> — which plan did you pay for?\n\n"
+        f"<code>{txid[:24]}…</code>\n\n"
+        "Tap your plan and we'll verify on-chain instantly 👇",
+        reply_markup={"inline_keyboard": rows},
+    )
+    return True
+
+
+async def _handle_txid_product_pick(chat_id: int, from_user_id: int | None, product: str) -> None:
+    """Called when the user taps a product button after pasting a raw TxID (Flow B).
+
+    Retrieves the stored TxID, creates a pending payment, verifies on-chain,
+    then fulfills if successful.
+    """
+    if not from_user_id:
+        return
+    from services.txid_verifier import verify_txid
+    from services.pending_payments import create_pending, mark_fulfilled
+
+    cat = _stars_catalog()
+    item = cat.get(product)
+    if not item or not product.startswith("group_"):
+        await send_message(chat_id, "⚠️ Unknown product. Use /buy and try again.")
+        return
+
+    # Retrieve the stored TxID
+    try:
+        from db import get_db as _gdb_r
+        doc = await _gdb_r().pending_txid_verifications.find_one({"telegram_id": from_user_id})
+    except Exception as _e:
+        log.warning("pending_txid_verifications retrieve failed: %s", _e)
+        await send_message(chat_id, "⚠️ Session expired — please paste your TxID again.")
+        return
+
+    if not doc:
+        await send_message(
+            chat_id,
+            "⚠️ No pending TxID found — it may have expired (15 min limit).\n\nPaste your TxID again and tap the plan.",
+        )
+        return
+
+    txid  = doc["txid"]
+    chain = doc["chain"]
+
+    # Clean up the temporary record immediately (idempotent if already gone)
+    try:
+        from db import get_db as _gdb_del
+        await _gdb_del().pending_txid_verifications.delete_one({"telegram_id": from_user_id})
+    except Exception:
+        pass
 
     await send_message(chat_id, "🔍 <i>Verifying your transaction on-chain… (~5s)</i>")
-    ok, chain = await verify_txid(txid, pending["product"])
+    ok, verified_chain = await verify_txid(txid, product)
 
-    if ok:
-        await mark_fulfilled(pending["code"], txid=txid)
-        await _fulfill_verified_txid(pending, txid=txid, chain=chain, chat_id=chat_id)
-    else:
+    if not ok:
         await send_message(
             chat_id,
             "⚠️ <b>Transaction not verified.</b>\n\n"
@@ -628,9 +742,28 @@ async def _handle_txid_submission(chat_id: int, from_user_id: int, txid: str) ->
             "• Wrong network (use TRC20 for 🔴, BEP20 for 🔵)\n"
             "• Amount doesn't match the plan price exactly\n"
             "• Sent to wrong address\n\n"
-            "Double-check and try again, or use /paid to submit a screenshot for manual review.",
+            "Paste the TxID again to retry, or use /paid for manual review.",
         )
-    return True
+        return
+
+    # Create a fulfilled pending so the history and admin log are consistent
+    username = None
+    try:
+        from db import get_db as _gdb5
+        user_doc = await _gdb5().users.find_one({"telegram_id": from_user_id})
+        username = (user_doc or {}).get("telegram_username")
+    except Exception:
+        pass
+
+    pending = await create_pending(
+        telegram_id=from_user_id,
+        username=username,
+        product=product,
+        payment_method=verified_chain.lower(),
+        amount_usdt=item["usd"].lstrip("$"),
+    )
+    await mark_fulfilled(pending["code"], txid=txid)
+    await _fulfill_verified_txid(pending, txid=txid, chain=verified_chain, chat_id=chat_id)
 
 
 async def _fulfill_verified_txid(pending: dict, txid: str, chain: str, chat_id: int) -> None:
@@ -1503,6 +1636,8 @@ async def _handle_callback(callback: dict) -> None:
         )
     elif data.startswith("stars:"):
         await _send_stars_invoice(chat_id, data.split(":", 1)[1])
+    elif data.startswith("txid_product:"):
+        await _handle_txid_product_pick(chat_id, from_user_id, data.split(":", 1)[1])
     elif data.startswith("usdt:"):
         await _send_usdt_method_selector(chat_id, from_user_id, data.split(":", 1)[1])
     elif data.startswith("binpay:"):
