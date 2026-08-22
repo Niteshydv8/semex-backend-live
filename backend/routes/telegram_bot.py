@@ -137,28 +137,19 @@ async def _cmd_buy(chat_id: int, username: str | None) -> None:
         "<i>Fresh CCs · mix lines · unchecked lines · charged BINs &amp; sites · non-VBV BINs · tips &amp; more.</i>",
         "",
         "━━━━━━━━━━━━━━━━━━━━",
-        "💵 <b>Pay with USDT</b>"
-        + (" — <i>tap a button below for instant CryptoBot payment, or send manually:</i>" if has_crypto else ""),
+        "💵 <b>Pay with USDT</b> — tap a <b>💵 USDT</b> button below for auto-confirmation",
+        "<i>Binance Pay → code in memo → detected in ~90s  |  Wallet → send → paste TxID here → instant</i>",
         "",
         "🔵 <b>BEP20</b>  (BNB Smart Chain — lowest fee)",
-        f"<code>{usdt_bep20}</code>",
+        f"<code>{usdt_bep20}</code>" if usdt_bep20 else "<i>—</i>",
         "",
         "🔴 <b>TRC20</b>  (Tron)",
-        f"<code>{usdt_trc20}</code>",
+        f"<code>{usdt_trc20}</code>" if usdt_trc20 else "<i>—</i>",
         "",
-        "⚪ <b>TON</b>  (The Open Network)",
-        f"<code>{usdt_ton}</code>",
+        "⚪ <b>TON</b>  (manual — screenshot via /paid)",
+        f"<code>{usdt_ton}</code>" if usdt_ton else "<i>—</i>",
         "",
-        "━━━━━━━━━━━━━━━━━━━━",
-        "📋 <b>How to buy:</b>",
-        "1️⃣  Send USDT to any address above",
-        "2️⃣  Screenshot the tx — must show <b>amount &amp; tx hash</b>",
-        "3️⃣  Run /paid and send the screenshot",
-        f"4️⃣  @{owner_handle} verifies → activates your plan in minutes",
-        "",
-        "<i>Hold any address on mobile to copy. Refund available for issues.</i>",
-        "",
-        "⭐ <b>Prefer Telegram Stars?</b>  Tap a button below — instant, no crypto.",
+        "⭐ <b>Prefer Telegram Stars?</b>  Tap a ⭐ button below — instant, no crypto.",
     ]
     await send_message(chat_id, "\n".join(lines), reply_markup=_buy_stars_kb())
 
@@ -197,22 +188,20 @@ def _stars_catalog() -> dict:
 
 
 def _buy_stars_kb() -> dict:
-    """Inline keyboard — Stars buttons for every product; CryptoBot USDT column
-    for group plans when CRYPTO_BOT_TOKEN is configured."""
+    """Inline keyboard — Stars button + USDT auto-detect button for every group plan."""
     cat = _stars_catalog()
-    has_crypto = bool((getattr(settings, "CRYPTO_BOT_TOKEN", "") or "").strip())
     rows = [
-        # Premium plan — Stars only
+        # Premium plan — Stars only (no USDT button for Premium)
         [{"text": f"⭐ Premium Monthly — {cat['plan_monthly']['stars']} ⭐ ({cat['plan_monthly']['usd']})", "callback_data": "stars:plan_monthly"}],
     ]
-    # Group plans: Stars + optional instant USDT column via CryptoBot
+    # Group plans: side-by-side Stars + USDT buttons
     for key in ("group_weekly", "group_2week", "group_monthly"):
         item = cat[key]
         short = item["title"].replace("Private Group — ", "Group ")
-        row = [{"text": f"⭐ {short} — {item['stars']} ⭐", "callback_data": f"stars:{key}"}]
-        if has_crypto:
-            row.append({"text": f"💵 USDT {item['usd']}", "callback_data": f"cryptobot:{key}"})
-        rows.append(row)
+        rows.append([
+            {"text": f"⭐ {short} — {item['stars']} ⭐", "callback_data": f"stars:{key}"},
+            {"text": f"💵 USDT {item['usd']}", "callback_data": f"usdt:{key}"},
+        ])
     return {"inline_keyboard": rows}
 
 
@@ -410,6 +399,308 @@ async def _fulfill_stars_payment(message: dict) -> None:
 
 
 # ─── CryptoBot (automated USDT) payment fulfillment ────────────────────────
+
+async def _send_usdt_method_selector(chat_id: int, from_user_id: int | None, product: str) -> None:
+    """Show payment-method choice keyboard for a USDT group subscription."""
+    cat = _stars_catalog()
+    item = cat.get(product)
+    if not item or not product.startswith("group_"):
+        await send_message(chat_id, "⚠️ Unknown product. Use /buy and try again.")
+        return
+
+    has_binance = bool((getattr(settings, "BINANCE_PAY_ID", "") or "").strip())
+    has_trc20   = bool((getattr(settings, "PAYMENT_USDT_TRC20", "") or "").strip())
+    has_bep20   = bool((getattr(settings, "PAYMENT_USDT_BEP20", "") or "").strip())
+    has_ton     = bool((getattr(settings, "PAYMENT_USDT_TON",   "") or "").strip())
+
+    rows = []
+    if has_binance:
+        rows.append([{"text": "🏦 Binance Pay — auto-confirm (~90s)", "callback_data": f"binpay:{product}"}])
+    if has_trc20:
+        rows.append([{"text": "🔴 TRC20 Wallet — verify by TxID", "callback_data": f"trc20:{product}"}])
+    if has_bep20:
+        rows.append([{"text": "🔵 BEP20 Wallet — verify by TxID", "callback_data": f"bep20:{product}"}])
+    if has_ton:
+        rows.append([{"text": "⚪ TON — manual (/paid screenshot)", "callback_data": f"ton:{product}"}])
+
+    if not rows:
+        await send_message(chat_id, "⚠️ No USDT payment methods are configured yet. Contact the owner.")
+        return
+
+    await send_message(
+        chat_id,
+        f"💵 <b>{item['title']}</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        f"Amount: <b>{item['usd']} USDT</b>\n\n"
+        "Choose your payment method 👇",
+        reply_markup={"inline_keyboard": rows},
+    )
+
+
+async def _send_binance_pay_instructions(chat_id: int, from_user_id: int | None, product: str) -> None:
+    """Generate a unique reference code and send Binance Pay payment instructions."""
+    if not from_user_id:
+        return
+    cat = _stars_catalog()
+    item = cat.get(product)
+    if not item or not product.startswith("group_"):
+        await send_message(chat_id, "⚠️ Unknown product.")
+        return
+
+    pay_id = (getattr(settings, "BINANCE_PAY_ID", "") or "").strip()
+    if not pay_id:
+        await send_message(
+            chat_id,
+            "⚠️ Binance Pay is not configured yet.\n\n"
+            "Use a wallet option instead, or contact the owner.",
+        )
+        return
+
+    # Supersede any existing unfulfilled Binance Pay pending for this user+product
+    try:
+        from db import get_db as _gdb
+        await _gdb().pending_payments.update_many(
+            {"telegram_id": from_user_id, "product": product,
+             "payment_method": "binance_pay", "fulfilled": False},
+            {"$set": {"fulfilled": True, "txid": "superseded"}},
+        )
+    except Exception:
+        pass
+
+    username = None
+    try:
+        from db import get_db as _gdb2
+        user_doc = await _gdb2().users.find_one({"telegram_id": from_user_id})
+        username = (user_doc or {}).get("telegram_username")
+    except Exception:
+        pass
+
+    from services.pending_payments import create_pending
+    pending = await create_pending(
+        telegram_id=from_user_id,
+        username=username,
+        product=product,
+        payment_method="binance_pay",
+        amount_usdt=item["usd"].lstrip("$"),
+    )
+    code = pending["code"]
+    usd  = item["usd"]
+
+    await send_message(
+        chat_id,
+        "🏦 <b>Binance Pay — Auto-Detection</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        f"💵 Amount: <b>{usd} USDT</b>\n"
+        f"📋 Binance Pay ID: <code>{pay_id}</code>\n\n"
+        "📝 <b>YOU MUST include this code in the Note/Memo:</b>\n"
+        f"<code>{code}</code>\n\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        "<b>Steps:</b>\n"
+        "1️⃣  Binance app → Pay → Send\n"
+        f"2️⃣  Enter Pay ID: <code>{pay_id}</code>\n"
+        f"3️⃣  Amount: <b>{usd} USDT</b>\n"
+        f"4️⃣  Tap <i>Note</i> → paste exactly: <code>{code}</code>\n"
+        "5️⃣  Confirm payment\n\n"
+        "✅ <i>Your invite is sent automatically within ~90 seconds after we detect it.</i>\n"
+        "⏰ <i>This code expires in 24 hours.</i>",
+    )
+
+
+async def _send_wallet_instructions(
+    chat_id: int, from_user_id: int | None, product: str, chain: str
+) -> None:
+    """Show wallet address and ask user to paste TxID after sending."""
+    if not from_user_id:
+        return
+    cat = _stars_catalog()
+    item = cat.get(product)
+    if not item or not product.startswith("group_"):
+        await send_message(chat_id, "⚠️ Unknown product.")
+        return
+
+    _chain_cfg = {
+        "trc20": ("PAYMENT_USDT_TRC20", "🔴 TRC20 (TRON network)", "USDT-TRC20"),
+        "bep20": ("PAYMENT_USDT_BEP20", "🔵 BEP20 (BNB Smart Chain)", "USDT-BEP20"),
+    }
+    cfg = _chain_cfg.get(chain)
+    if not cfg:
+        await send_message(chat_id, "⚠️ Unknown chain.")
+        return
+    setting_key, chain_label, token_label = cfg
+
+    addr = (getattr(settings, setting_key, "") or "").strip()
+    if not addr:
+        await send_message(
+            chat_id,
+            f"⚠️ {chain_label} address not configured yet.\n\nTry Binance Pay or contact the owner.",
+        )
+        return
+
+    # Cancel any existing unfulfilled on-chain pending for this user+product
+    from services.pending_payments import create_pending, cancel_pending_onchain
+    await cancel_pending_onchain(from_user_id, product)
+
+    username = None
+    try:
+        from db import get_db as _gdb3
+        user_doc = await _gdb3().users.find_one({"telegram_id": from_user_id})
+        username = (user_doc or {}).get("telegram_username")
+    except Exception:
+        pass
+
+    await create_pending(
+        telegram_id=from_user_id,
+        username=username,
+        product=product,
+        payment_method=chain,
+        amount_usdt=item["usd"].lstrip("$"),
+    )
+
+    await send_message(
+        chat_id,
+        f"{chain_label}\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        f"💵 Send exactly: <b>{item['usd']} USDT</b>  ({token_label})\n\n"
+        f"📋 To this address:\n<code>{addr}</code>\n\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        "After sending:\n"
+        "👉 <b>Paste your TxID / transaction hash here</b> in this chat.\n"
+        "   We verify it on-chain automatically — no screenshot needed.\n\n"
+        "⏰ <i>You have 24 hours to complete this payment.</i>",
+    )
+
+
+async def _handle_txid_submission(chat_id: int, from_user_id: int, txid: str) -> bool:
+    """If the user sent a transaction hash and has a pending on-chain payment,
+    verify and fulfill it.  Returns True if the message was consumed."""
+    from services.pending_payments import find_latest_pending_onchain, mark_fulfilled
+    from services.txid_verifier import verify_txid
+
+    pending = await find_latest_pending_onchain(from_user_id)
+    if not pending:
+        return False   # no pending on-chain payment for this user — ignore
+
+    await send_message(chat_id, "🔍 <i>Verifying your transaction on-chain… (~5s)</i>")
+    ok, chain = await verify_txid(txid, pending["product"])
+
+    if ok:
+        await mark_fulfilled(pending["code"], txid=txid)
+        await _fulfill_verified_txid(pending, txid=txid, chain=chain, chat_id=chat_id)
+    else:
+        await send_message(
+            chat_id,
+            "⚠️ <b>Transaction not verified.</b>\n\n"
+            "<b>Common reasons:</b>\n"
+            "• Not confirmed yet — wait 1-2 min and paste the TxID again\n"
+            "• Wrong network (use TRC20 for 🔴, BEP20 for 🔵)\n"
+            "• Amount doesn't match the plan price exactly\n"
+            "• Sent to wrong address\n\n"
+            "Double-check and try again, or use /paid to submit a screenshot for manual review.",
+        )
+    return True
+
+
+async def _fulfill_verified_txid(pending: dict, txid: str, chain: str, chat_id: int) -> None:
+    """Fulfill a group subscription after on-chain TxID verification."""
+    from services.group_manager import upsert_group_membership, create_one_time_invite_link
+    from db import get_db as _gdb4
+
+    tid      = pending["telegram_id"]
+    product  = pending["product"]
+    amount   = pending["amount_usdt"]
+    username = pending.get("username", "-")
+
+    _period_map = {"group_weekly": "7 days", "group_2week": "14 days", "group_monthly": "30 days"}
+    _plan_map   = {"group_weekly": "7d",      "group_2week": "14d",      "group_monthly": "30d"}
+    period   = _period_map.get(product, "7 days")
+    plan_key = _plan_map.get(product, "7d")
+    group_id = int(getattr(settings, "PREMIUM_GROUP_ID", 0) or 0)
+
+    try:
+        membership, action = await upsert_group_membership(
+            telegram_id=tid,
+            username=username,
+            group_id=group_id,
+            plan=plan_key,
+            payment_method=f"usdt_{chain.lower()}",
+            payment_ref=txid,
+        )
+        exp_at  = membership.get("expires_at")
+        exp_str = exp_at.strftime("%Y-%m-%d") if exp_at else "?"
+
+        chain_emoji = "🔴" if chain.upper() == "TRC20" else "🔵"
+
+        if action == "renewed":
+            await send_message(
+                chat_id,
+                f"{chain_emoji} <b>{chain} Verified — Group Renewed!</b>\n"
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                f"💵 <b>${amount} USDT</b>  ·  {period}\n"
+                f"📅 Valid until <b>{exp_str}</b>\n"
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "✅ Access extended — enjoy the group! 🔥",
+            )
+        else:
+            link: str | None = await create_one_time_invite_link(group_id) if group_id else None
+            if not link:
+                link = (getattr(settings, "PREMIUM_GROUP_LINK", "") or "").strip() or None
+            if link:
+                await _gdb4().group_memberships.update_one(
+                    {"telegram_id": tid, "kicked": False},
+                    {"$set": {"invite_link": link}},
+                )
+                await send_message(
+                    chat_id,
+                    f"{chain_emoji} <b>{chain} Payment Verified!</b>\n"
+                    "━━━━━━━━━━━━━━━━━━━━\n"
+                    f"💵 <b>${amount} USDT</b>  ·  {period}\n"
+                    f"📅 Valid until <b>{exp_str}</b>\n\n"
+                    f"👉 <b>Your invite:</b> {link}\n"
+                    "━━━━━━━━━━━━━━━━━━━━\n"
+                    "⚠️ <i>One-time link — use it once to join.</i>",
+                )
+            else:
+                await send_message(
+                    chat_id,
+                    f"✅ <b>{chain} Payment Verified!</b>\n\n"
+                    f"Plan: <b>{period}</b>  ·  <b>${amount} USDT</b>\n\n"
+                    "Invite link is being prepared — you'll receive it shortly.",
+                )
+
+        # Notify owner
+        try:
+            await notify_message(
+                settings.ADMIN_TELEGRAM_ID,
+                f"💵 <b>{chain} TXID VERIFIED</b>\n"
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                f"👤 @{username}  (<code>{tid}</code>)\n"
+                f"📦 {product}  ·  ${amount} USDT\n"
+                f"🔗 <code>{txid[:48]}…</code>\n"
+                "✅ Auto-fulfilled",
+            )
+        except Exception:
+            pass
+
+    except Exception as e:
+        log.exception("txid_fulfill failed for %s: %s", tid, e)
+        await send_message(
+            chat_id,
+            "✅ Payment verified but something went wrong setting up your access.\n"
+            "The owner has been notified and will activate it manually.",
+        )
+        try:
+            await notify_message(
+                settings.ADMIN_TELEGRAM_ID,
+                f"⚠️ <b>TXID FULFILL FAILED</b>\n"
+                f"User: <code>{tid}</code>  product: {product}\n"
+                f"TxID: <code>{txid[:48]}</code>\n"
+                f"Error: {e}",
+            )
+        except Exception:
+            pass
+
+
+# ─── CryptoBot (automated USDT) payment fulfillment ─────────────────────────
 
 async def _fulfill_cryptobot_payment(telegram_id: int, product: str, invoice_id: str) -> None:
     """Fulfill a confirmed CryptoBot USDT payment for a group subscription.
@@ -721,7 +1012,14 @@ async def _cmd_groupstatus(chat_id: int, from_user_id: int | None) -> None:
     hours = int((remaining.total_seconds() % 86400) // 3600)
     plan_labels = {"7d": "Weekly (7 days)", "14d": "Bi-Weekly (14 days)", "30d": "Monthly (30 days)"}
     plan_label = plan_labels.get(membership.get("plan", ""), membership.get("plan", "?"))
-    method_labels = {"stars": "⭐ Telegram Stars", "usdt_crypto": "💵 USDT (CryptoBot)", "manual": "💵 USDT (Manual)"}
+    method_labels = {
+        "stars":               "⭐ Telegram Stars",
+        "usdt_crypto":         "💵 USDT (CryptoBot)",
+        "usdt_binance_pay":    "💵 USDT (Binance Pay — auto)",
+        "usdt_trc20":          "💵 USDT (TRC20 wallet — auto)",
+        "usdt_bep20":          "💵 USDT (BEP20 wallet — auto)",
+        "manual":              "💵 USDT (Manual)",
+    }
     method = method_labels.get(membership.get("payment_method", ""), membership.get("payment_method", "?"))
 
     await send_message(
@@ -1172,6 +1470,14 @@ async def _handle_callback(callback: dict) -> None:
         )
     elif data.startswith("stars:"):
         await _send_stars_invoice(chat_id, data.split(":", 1)[1])
+    elif data.startswith("usdt:"):
+        await _send_usdt_method_selector(chat_id, from_user_id, data.split(":", 1)[1])
+    elif data.startswith("binpay:"):
+        await _send_binance_pay_instructions(chat_id, from_user_id, data.split(":", 1)[1])
+    elif data.startswith("trc20:"):
+        await _send_wallet_instructions(chat_id, from_user_id, data.split(":", 1)[1], "trc20")
+    elif data.startswith("bep20:"):
+        await _send_wallet_instructions(chat_id, from_user_id, data.split(":", 1)[1], "bep20")
     elif data.startswith("cryptobot:"):
         await _send_cryptobot_invoice(chat_id, from_user_id, data.split(":", 1)[1])
     # Unknown callbacks are silently ignored.
@@ -1882,6 +2188,17 @@ async def _dispatch_update(update: dict, wh_secret: str) -> None:
     command = first_token.split("@", 1)[0].lower()
     username = (message.get("from") or {}).get("username")
     from_user_id = (message.get("from") or {}).get("id")
+
+    # Non-command text: auto-detect on-chain TxID for pending wallet payments
+    if not command.startswith("/") and from_user_id:
+        try:
+            from services.txid_verifier import looks_like_txid as _ltxid
+            if _ltxid(text.strip()):
+                _consumed = await _handle_txid_submission(chat_id, from_user_id, text.strip())
+                if _consumed:
+                    return
+        except Exception as _txe:
+            log.exception("txid auto-detect: %s", _txe)
 
     try:
         if command == "/start":

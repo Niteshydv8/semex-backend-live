@@ -22,6 +22,7 @@ from routes.user import router as user_router
 from security import decode_token
 from services.expiry_watcher import start_expiry_task, stop_expiry_task
 from services.group_scheduler import start_group_scheduler, stop_group_scheduler
+from services.gmail_watcher import start_gmail_watcher, stop_gmail_watcher
 from services.telegram_outbox import start_outbox_task, stop_outbox_task
 from services.telegram import get_bot_info, send_message
 
@@ -34,6 +35,7 @@ async def lifespan(app: FastAPI):
     start_expiry_task()
     start_outbox_task()
     start_group_scheduler()
+    start_gmail_watcher()
     # Auto-resolve bot username from the live token so changing TELEGRAM_BOT_TOKEN
     # on the server (e.g. after a leak) never leaves the display username pointing
     # at the old bot in messages, public-group footer, and login deep-links.
@@ -97,6 +99,7 @@ async def lifespan(app: FastAPI):
     stop_outbox_task()
     stop_expiry_task()
     stop_group_scheduler()
+    stop_gmail_watcher()
 
 
 app = FastAPI(

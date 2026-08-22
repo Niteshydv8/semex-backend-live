@@ -93,6 +93,12 @@ class Settings:
     # Get a token: start @CryptoBot → Apps → Create App → copy token.
     CRYPTO_BOT_TOKEN: str = _env("CRYPTO_BOT_TOKEN", "")
 
+    # ── Binance / Gmail auto-detect USDT payment system ──────────────────────
+    BINANCE_PAY_ID: str = _env("BINANCE_PAY_ID", "")
+    GMAIL_ADDRESS: str = _env("GMAIL_ADDRESS", "")
+    GMAIL_APP_PASSWORD: str = _env("GMAIL_APP_PASSWORD", "")   # App Password, NOT account password
+    BSCSCAN_API_KEY: str = _env("BSCSCAN_API_KEY", "")         # Free key from bscscan.com (optional)
+
     # Optional Telegram webhook secret — set this value when registering the webhook:
     #   POST https://api.telegram.org/bot<TOKEN>/setWebhook?url=...&secret_token=<THIS>
     # Telegram will then send X-Telegram-Bot-Api-Secret-Token on every update.

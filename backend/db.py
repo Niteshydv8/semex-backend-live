@@ -57,3 +57,9 @@ async def init_indexes() -> None:
     await db.group_memberships.create_index("telegram_id")
     await db.group_memberships.create_index([("telegram_id", 1), ("kicked", 1)])
     await db.group_memberships.create_index("expires_at")
+
+    # pending_payments: USDT payments awaiting confirmation (Binance Pay / wallet)
+    await db.pending_payments.create_index("code", unique=True)
+    await db.pending_payments.create_index("telegram_id")
+    await db.pending_payments.create_index([("telegram_id", 1), ("fulfilled", 1)])
+    await db.pending_payments.create_index("expires_at", expireAfterSeconds=0)
