@@ -51,3 +51,9 @@ async def init_indexes() -> None:
     # Replaces the in-memory _PROOF_STATE dict so state survives server restarts.
     await db.tg_proof_state.create_index("chat_id", unique=True)
     await db.tg_proof_state.create_index("expires_at", expireAfterSeconds=0)
+    # Group membership tracking — one record per subscription cycle.
+    # Compound index on (telegram_id, kicked) drives the scheduler's "active
+    # non-kicked" query efficiently.  expires_at index powers expiry lookups.
+    await db.group_memberships.create_index("telegram_id")
+    await db.group_memberships.create_index([("telegram_id", 1), ("kicked", 1)])
+    await db.group_memberships.create_index("expires_at")

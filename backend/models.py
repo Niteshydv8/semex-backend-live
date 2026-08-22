@@ -212,3 +212,28 @@ class NewsPost(BaseDocument):
     author_id: int
     important: bool = False
     created_at: datetime = Field(default_factory=utcnow)
+
+
+class GroupMembership(BaseDocument):
+    """Tracks a user's subscription to the private premium Telegram group.
+
+    One record per active subscription cycle. Expired/kicked records are kept
+    for history; the scheduler sets kicked=True and inserts a new record when
+    they re-subscribe after being removed.
+    """
+    telegram_id: int
+    telegram_username: Optional[str] = None
+    group_id: int                                # Telegram chat_id of the group
+    plan: str                                    # "7d" | "14d" | "30d"
+    started_at: datetime = Field(default_factory=utcnow)
+    expires_at: datetime
+    invite_link: Optional[str] = None            # one-time link that was sent
+    payment_method: str                          # "stars" | "usdt_crypto" | "manual"
+    payment_ref: Optional[str] = None            # Stars charge_id or CryptoBot invoice_id
+    kicked: bool = False
+    kicked_at: Optional[datetime] = None
+    # Reminder flags — reset to False on each renewal so reminders re-fire
+    reminded_3d: bool = False
+    reminded_2d: bool = False
+    reminded_1d: bool = False
+    reminded_expired: bool = False

@@ -21,6 +21,7 @@ from routes.telegram_bot import router as telegram_bot_router
 from routes.user import router as user_router
 from security import decode_token
 from services.expiry_watcher import start_expiry_task, stop_expiry_task
+from services.group_scheduler import start_group_scheduler, stop_group_scheduler
 from services.telegram_outbox import start_outbox_task, stop_outbox_task
 from services.telegram import get_bot_info, send_message
 
@@ -32,6 +33,7 @@ async def lifespan(app: FastAPI):
     await init_indexes()
     start_expiry_task()
     start_outbox_task()
+    start_group_scheduler()
     # Auto-resolve bot username from the live token so changing TELEGRAM_BOT_TOKEN
     # on the server (e.g. after a leak) never leaves the display username pointing
     # at the old bot in messages, public-group footer, and login deep-links.
@@ -72,9 +74,29 @@ async def lifespan(app: FastAPI):
 
     # Fire-and-forget: startup must not block on Telegram availability.
     asyncio.create_task(_resolve_bot_username())
+
+    async def _register_cryptobot_webhook() -> None:
+        """Best-effort: register the CryptoBot webhook URL once on startup."""
+        from config import settings as _s
+        token = (getattr(_s, "CRYPTO_BOT_TOKEN", "") or "").strip()
+        if not token:
+            return
+        base = str(getattr(_s, "BASE_URL", "") or "").rstrip("/")
+        if not base:
+            _log.warning("CRYPTO_BOT_TOKEN set but BASE_URL is empty — cannot auto-register CryptoBot webhook")
+            return
+        url = f"{base}/api/telegram/cryptobot_webhook"
+        from services.cryptobot import register_webhook as _cb_reg
+        try:
+            await asyncio.wait_for(_cb_reg(url), timeout=10.0)
+        except Exception as _e:
+            _log.warning("CryptoBot webhook registration failed: %s", _e)
+
+    asyncio.create_task(_register_cryptobot_webhook())
     yield
     stop_outbox_task()
     stop_expiry_task()
+    stop_group_scheduler()
 
 
 app = FastAPI(

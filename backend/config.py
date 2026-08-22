@@ -68,18 +68,30 @@ class Settings:
 
     # Private group (CC drop + methods) pricing — manual subscription.
     GROUP_PRICE_WEEKLY: str = _env("GROUP_PRICE_WEEKLY", "$25")
+    GROUP_PRICE_2WEEK: str = _env("GROUP_PRICE_2WEEK", "$38")   # 14-day plan
     GROUP_PRICE_MONTHLY: str = _env("GROUP_PRICE_MONTHLY", "$50")
 
     # ─── Telegram Stars pricing (whole Stars, ~50 ⭐ per $1) ────────────────
     # Users pay in-app with Stars; fulfillment is automatic on successful_payment.
+    # Stars prices are set ~$3 higher than USDT to incentivise the cheaper
+    # direct-USDT route while keeping Stars instant for convenience.
     PLAN_STARS_MONTHLY: int = int(_env("PLAN_STARS_MONTHLY", "5000"))
-    GROUP_STARS_WEEKLY: int = int(_env("GROUP_STARS_WEEKLY", "1250"))
-    GROUP_STARS_MONTHLY: int = int(_env("GROUP_STARS_MONTHLY", "2500"))
+    GROUP_STARS_WEEKLY: int = int(_env("GROUP_STARS_WEEKLY", "1400"))    # ~$28 vs $25 USDT
+    GROUP_STARS_2WEEK: int = int(_env("GROUP_STARS_2WEEK", "1900"))      # ~$38 vs $38 USDT (new tier)
+    GROUP_STARS_MONTHLY: int = int(_env("GROUP_STARS_MONTHLY", "2700"))  # ~$54 vs $50 USDT
 
-    # Invite link to the subscription-only premium private group. NEVER shown
-    # publicly — the owner sends it to a verified buyer via /sendlink after
-    # payment. The "Premium Group" bot button always shows the offer + wallets.
+    # Telegram chat_id of the premium private group.  The bot MUST be an admin
+    # with "Invite Users" and "Ban Members" rights for auto-invite/kick to work.
+    PREMIUM_GROUP_ID: int = int(_env("PREMIUM_GROUP_ID", "-1003996198567"))
+
+    # Fallback static invite link (used when dynamic link generation fails).
+    # NEVER shown publicly — delivered only after verified payment.
     PREMIUM_GROUP_LINK: str = _env("PREMIUM_GROUP_LINK", "")
+
+    # ─── CryptoBot (Crypto Pay API) ─────────────────────────────────────────
+    # Set this to enable automated USDT payment via @CryptoBot.
+    # Get a token: start @CryptoBot → Apps → Create App → copy token.
+    CRYPTO_BOT_TOKEN: str = _env("CRYPTO_BOT_TOKEN", "")
 
     # Optional Telegram webhook secret — set this value when registering the webhook:
     #   POST https://api.telegram.org/bot<TOKEN>/setWebhook?url=...&secret_token=<THIS>

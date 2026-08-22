@@ -103,7 +103,9 @@ async def _cmd_buy(chat_id: int, username: str | None) -> None:
     price_yearly = (getattr(settings, "PLAN_PRICE_YEARLY", "") or "").strip()
     price_lifetime = (getattr(settings, "PLAN_PRICE_LIFETIME", "") or "").strip()
     group_weekly = getattr(settings, "GROUP_PRICE_WEEKLY", None) or "$25"
+    group_2week = getattr(settings, "GROUP_PRICE_2WEEK", None) or "$38"
     group_monthly = getattr(settings, "GROUP_PRICE_MONTHLY", None) or "$50"
+    has_crypto = bool((getattr(settings, "CRYPTO_BOT_TOKEN", "") or "").strip())
     usdt_bep20 = getattr(settings, "PAYMENT_USDT_BEP20", "")
     usdt_trc20 = getattr(settings, "PAYMENT_USDT_TRC20", "")
     usdt_ton = getattr(settings, "PAYMENT_USDT_TON", "")
@@ -128,13 +130,15 @@ async def _cmd_buy(chat_id: int, username: str | None) -> None:
         "<i>Includes: 3DS Bypass · full-quality screenshots · extended history · priority support</i>",
         "",
         "🔥 <b>PRIVATE GROUP — CC Drop + Methods</b>",
-        f"├ <b>WEEKLY</b>  ·  {group_weekly}",
-        f"└ <b>MONTHLY</b> ·  {group_monthly}",
+        f"├ <b>WEEKLY</b>     (7d)   ·  {group_weekly}",
+        f"├ <b>BI-WEEKLY</b>  (14d)  ·  {group_2week}",
+        f"└ <b>MONTHLY</b>   (30d)  ·  {group_monthly}",
         "",
         "<i>Fresh CCs · mix lines · unchecked lines · charged BINs &amp; sites · non-VBV BINs · tips &amp; more.</i>",
         "",
         "━━━━━━━━━━━━━━━━━━━━",
-        "💵 <b>Pay with USDT</b>",
+        "💵 <b>Pay with USDT</b>"
+        + (" — <i>tap a button below for instant CryptoBot payment, or send manually:</i>" if has_crypto else ""),
         "",
         "🔵 <b>BEP20</b>  (BNB Smart Chain — lowest fee)",
         f"<code>{usdt_bep20}</code>",
@@ -174,26 +178,41 @@ def _stars_catalog() -> dict:
         "group_weekly": {
             "title": "Private Group — Weekly",
             "desc": "7 days of the SEMEX private group (CC drop + methods).",
-            "stars": getattr(settings, "GROUP_STARS_WEEKLY", 1250),
+            "stars": getattr(settings, "GROUP_STARS_WEEKLY", 1400),
             "usd": getattr(settings, "GROUP_PRICE_WEEKLY", "$25"),
+        },
+        "group_2week": {
+            "title": "Private Group — Bi-Weekly",
+            "desc": "14 days of the SEMEX private group (CC drop + methods).",
+            "stars": getattr(settings, "GROUP_STARS_2WEEK", 1900),
+            "usd": getattr(settings, "GROUP_PRICE_2WEEK", "$38"),
         },
         "group_monthly": {
             "title": "Private Group — Monthly",
             "desc": "30 days of the SEMEX private group (CC drop + methods).",
-            "stars": getattr(settings, "GROUP_STARS_MONTHLY", 2500),
+            "stars": getattr(settings, "GROUP_STARS_MONTHLY", 2700),
             "usd": getattr(settings, "GROUP_PRICE_MONTHLY", "$50"),
         },
     }
 
 
 def _buy_stars_kb() -> dict:
-    """Inline keyboard under /buy offering Stars payment per product."""
+    """Inline keyboard — Stars buttons for every product; CryptoBot USDT column
+    for group plans when CRYPTO_BOT_TOKEN is configured."""
     cat = _stars_catalog()
+    has_crypto = bool((getattr(settings, "CRYPTO_BOT_TOKEN", "") or "").strip())
     rows = [
+        # Premium plan — Stars only
         [{"text": f"⭐ Premium Monthly — {cat['plan_monthly']['stars']} ⭐ ({cat['plan_monthly']['usd']})", "callback_data": "stars:plan_monthly"}],
-        [{"text": f"⭐ Group Weekly — {cat['group_weekly']['stars']} ⭐ ({cat['group_weekly']['usd']})", "callback_data": "stars:group_weekly"}],
-        [{"text": f"⭐ Group Monthly — {cat['group_monthly']['stars']} ⭐ ({cat['group_monthly']['usd']})", "callback_data": "stars:group_monthly"}],
     ]
+    # Group plans: Stars + optional instant USDT column via CryptoBot
+    for key in ("group_weekly", "group_2week", "group_monthly"):
+        item = cat[key]
+        short = item["title"].replace("Private Group — ", "Group ")
+        row = [{"text": f"⭐ {short} — {item['stars']} ⭐", "callback_data": f"stars:{key}"}]
+        if has_crypto:
+            row.append({"text": f"💵 USDT {item['usd']}", "callback_data": f"cryptobot:{key}"})
+        rows.append(row)
     return {"inline_keyboard": rows}
 
 
@@ -305,25 +324,66 @@ async def _fulfill_stars_payment(message: dict) -> None:
             fulfilled = True
         except Exception as e:
             log.exception("stars plan fulfillment failed for %s: %s", uid, e)
-    else:  # group_weekly / group_monthly
-        link = (getattr(settings, "PREMIUM_GROUP_LINK", "") or "").strip()
-        period = "7 days" if product == "group_weekly" else "30 days"
-        if link:
-            try:
+    else:  # group_weekly / group_2week / group_monthly
+        _period_map = {"group_weekly": "7 days", "group_2week": "14 days", "group_monthly": "30 days"}
+        _plan_map   = {"group_weekly": "7d",      "group_2week": "14d",      "group_monthly": "30d"}
+        period   = _period_map.get(product, "7 days")
+        plan_key = _plan_map.get(product, "7d")
+        group_id = int(getattr(settings, "PREMIUM_GROUP_ID", 0) or 0)
+        try:
+            from services.group_manager import upsert_group_membership, create_one_time_invite_link as _mk_link
+            membership, action = await upsert_group_membership(
+                telegram_id=uid,
+                username=username,
+                group_id=group_id,
+                plan=plan_key,
+                payment_method="stars",
+                payment_ref=charge_id,
+            )
+            exp_at = membership.get("expires_at")
+            exp_str = exp_at.strftime("%Y-%m-%d") if exp_at else "?"
+            if action == "renewed":
+                # Still in group — just extend, no new invite needed
                 await notify_message(
                     chat_id,
-                    "🎉 <b>Welcome to the SEMEX Private Group!</b>\n"
+                    "🎉 <b>SEMEX Private Group — Renewed!</b>\n"
                     "━━━━━━━━━━━━━━━━━━━━\n"
-                    f"⭐ <b>{stars} Stars</b>  ·  {period}\n\n"
-                    f"👉 <b>Your invite:</b> {link}\n"
+                    f"⭐ <b>{stars} Stars</b>  ·  {period}\n"
+                    f"📅 Valid until <b>{exp_str}</b>\n"
                     "━━━━━━━━━━━━━━━━━━━━\n"
-                    "⚠️ <i>Personal link — do not share. Message the owner if it stops working.</i>",
+                    "✅ Access extended — enjoy the group! 🔥",
                 )
                 fulfilled = True
-            except Exception as e:
-                log.exception("stars group invite failed for %s: %s", uid, e)
-        else:
-            log.warning("PREMIUM_GROUP_LINK not set — cannot auto-fulfill %s for %s", product, uid)
+            else:
+                # New member or re-joining after expiry — send a fresh one-time invite
+                link: str | None = await _mk_link(group_id) if group_id else None
+                if not link:
+                    link = (getattr(settings, "PREMIUM_GROUP_LINK", "") or "").strip() or None
+                if link:
+                    try:
+                        from db import get_db as _gdb
+                        await _gdb().group_memberships.update_one(
+                            {"telegram_id": uid, "kicked": False},
+                            {"$set": {"invite_link": link}},
+                        )
+                    except Exception:
+                        pass
+                    await notify_message(
+                        chat_id,
+                        "🎉 <b>Welcome to the SEMEX Private Group!</b>\n"
+                        "━━━━━━━━━━━━━━━━━━━━\n"
+                        f"⭐ <b>{stars} Stars</b>  ·  {period}\n"
+                        f"📅 Valid until <b>{exp_str}</b>\n\n"
+                        f"👉 <b>Your invite:</b> {link}\n"
+                        "━━━━━━━━━━━━━━━━━━━━\n"
+                        "⚠️ <i>One-time link — use it once to join. "
+                        "Message the owner if it stops working.</i>",
+                    )
+                    fulfilled = True
+                else:
+                    log.warning("No invite link available for %s (group_id=%s)", uid, group_id)
+        except Exception as e:
+            log.exception("stars group membership failed for %s: %s", uid, e)
 
     if not fulfilled:
         await notify_message(
@@ -347,6 +407,146 @@ async def _fulfill_stars_payment(message: dict) -> None:
         )
     except Exception as e:
         log.warning("owner stars notification failed: %s", e)
+
+
+# ─── CryptoBot (automated USDT) payment fulfillment ────────────────────────
+
+async def _fulfill_cryptobot_payment(telegram_id: int, product: str, invoice_id: str) -> None:
+    """Fulfill a confirmed CryptoBot USDT payment for a group subscription.
+
+    Called from the CryptoBot webhook handler after signature verification.
+    Mirrors the Stars group fulfillment logic: creates/extends membership,
+    generates a one-time invite for new members, notifies the user and owner.
+    """
+    _period_map = {"group_weekly": "7 days", "group_2week": "14 days", "group_monthly": "30 days"}
+    _plan_map   = {"group_weekly": "7d",      "group_2week": "14d",      "group_monthly": "30d"}
+    _usd_map    = {"group_weekly": "$25",     "group_2week": "$38",      "group_monthly": "$50"}
+    period   = _period_map.get(product, "7 days")
+    plan_key = _plan_map.get(product, "7d")
+    usd      = _usd_map.get(product, "")
+    group_id = int(getattr(settings, "PREMIUM_GROUP_ID", 0) or 0)
+    try:
+        user_doc = None
+        try:
+            from db import get_db as _gdb3
+            user_doc = await _gdb3().users.find_one({"telegram_id": telegram_id})
+        except Exception:
+            pass
+        username = (user_doc or {}).get("telegram_username") or "-"
+
+        from services.group_manager import upsert_group_membership, create_one_time_invite_link as _mk_link2
+        membership, action = await upsert_group_membership(
+            telegram_id=telegram_id,
+            username=username,
+            group_id=group_id,
+            plan=plan_key,
+            payment_method="usdt_crypto",
+            payment_ref=invoice_id,
+        )
+        exp_at = membership.get("expires_at")
+        exp_str = exp_at.strftime("%Y-%m-%d") if exp_at else "?"
+
+        if action == "renewed":
+            await notify_message(
+                telegram_id,
+                "🎉 <b>SEMEX Private Group — Renewed!</b>\n"
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                f"💵 <b>{usd} USDT</b>  ·  {period}\n"
+                f"📅 Valid until <b>{exp_str}</b>\n"
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "✅ Access extended — enjoy the group! 🔥",
+            )
+        else:
+            link: str | None = await _mk_link2(group_id) if group_id else None
+            if not link:
+                link = (getattr(settings, "PREMIUM_GROUP_LINK", "") or "").strip() or None
+            if link:
+                try:
+                    from db import get_db as _gdb4
+                    await _gdb4().group_memberships.update_one(
+                        {"telegram_id": telegram_id, "kicked": False},
+                        {"$set": {"invite_link": link}},
+                    )
+                except Exception:
+                    pass
+                await notify_message(
+                    telegram_id,
+                    "🎉 <b>Welcome to the SEMEX Private Group!</b>\n"
+                    "━━━━━━━━━━━━━━━━━━━━\n"
+                    f"💵 <b>{usd} USDT</b>  ·  {period}\n"
+                    f"📅 Valid until <b>{exp_str}</b>\n\n"
+                    f"👉 <b>Your invite:</b> {link}\n"
+                    "━━━━━━━━━━━━━━━━━━━━\n"
+                    "⚠️ <i>One-time link — use it once to join.</i>",
+                )
+            else:
+                await notify_message(
+                    telegram_id,
+                    "✅ <b>USDT Payment confirmed!</b>\n\n"
+                    f"Plan: <b>{period}</b>  ·  <b>{usd}</b>\n\n"
+                    "The invite link is being prepared — the owner will DM you shortly.",
+                )
+        # Always notify the owner
+        try:
+            await notify_message(
+                settings.ADMIN_TELEGRAM_ID,
+                "💵 <b>CRYPTOBOT USDT PAYMENT</b>\n"
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                f"👤 @{username}  (<code>{telegram_id}</code>)\n"
+                f"📦 {product}  ·  {usd}\n"
+                f"🧾 <code>{invoice_id}</code>\n"
+                f"✅ Auto-fulfilled",
+            )
+        except Exception:
+            pass
+    except Exception as e:
+        log.exception("cryptobot fulfillment failed for %s product=%s: %s", telegram_id, product, e)
+
+
+async def _send_cryptobot_invoice(chat_id: int, from_user_id: int | None, product: str) -> None:
+    """Create a CryptoBot invoice and DM the payment link to the user."""
+    if not from_user_id:
+        return
+    cat = _stars_catalog()
+    item = cat.get(product)
+    if not item or not product.startswith("group_"):
+        await send_message(chat_id, "⚠️ Unknown product. Please use /buy and try again.")
+        return
+    token = (getattr(settings, "CRYPTO_BOT_TOKEN", "") or "").strip()
+    if not token:
+        await send_message(
+            chat_id,
+            "⚠️ Instant USDT payment is not configured yet.\n\n"
+            "Please pay manually using the wallet addresses in /buy, "
+            "then run /paid to submit your proof.",
+        )
+        return
+    from services.cryptobot import create_invoice as _cb_invoice
+    amount_str = item["usd"].lstrip("$")
+    pay_url = await _cb_invoice(
+        product=product,
+        telegram_id=from_user_id,
+        amount_usdt=amount_str,
+        description=item["desc"],
+        bot_username=settings.TELEGRAM_BOT_USERNAME or "",
+    )
+    if pay_url:
+        await send_message(
+            chat_id,
+            f"💵 <b>{item['title']}</b>\n"
+            "━━━━━━━━━━━━━━━━━━━━\n"
+            f"Amount: <b>{item['usd']} USDT</b>\n\n"
+            f"👉 <b><a href='{pay_url}'>Pay via CryptoBot</a></b>\n\n"
+            "⏰ <i>Link expires in 1 hour. "
+            "You'll receive your group invite automatically after payment.</i>",
+        )
+    else:
+        await send_message(
+            chat_id,
+            "⚠️ Couldn't create the USDT invoice right now.\n\n"
+            "Please pay manually using the wallet addresses in /buy, "
+            "then run /paid to submit your proof.",
+        )
 
 
 # ─── /paid proof-of-payment flow ───────────────────────────────────────────
@@ -471,6 +671,70 @@ async def _cmd_sendlink(chat_id: int, from_user_id: int | None, args: list[str])
             f"⚠️ Couldn't DM <code>{target_id}</code> — the user must have started "
             "the bot at least once (blocked bots / no prior /start will fail).",
         )
+
+
+async def _cmd_groupstatus(chat_id: int, from_user_id: int | None) -> None:
+    """Show the user's current private-group subscription status."""
+    if not from_user_id:
+        return
+    from datetime import timedelta
+    from services.group_manager import get_active_membership
+    membership = await get_active_membership(from_user_id)
+    if not membership:
+        # Also check for a recent expired/kicked membership so we can advise renewal
+        try:
+            from db import get_db as _gdb5
+            last = await _gdb5().group_memberships.find_one(
+                {"telegram_id": from_user_id},
+                sort=[("started_at", -1)],
+            )
+        except Exception:
+            last = None
+        if last:
+            exp = last.get("expires_at")
+            exp_str = exp.strftime("%Y-%m-%d") if exp else "?"
+            await send_message(
+                chat_id,
+                "📋 <b>Group Subscription</b>\n"
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                f"❌ Expired — last plan ended <b>{exp_str}</b>\n\n"
+                "Use /buy to subscribe and rejoin the group. 🔄",
+            )
+        else:
+            await send_message(
+                chat_id,
+                "📋 <b>Group Subscription</b>\n"
+                "━━━━━━━━━━━━━━━━━━━━\n"
+                "❌ No group subscription found.\n\n"
+                "Use /buy to access the SEMEX private group. 🔑",
+            )
+        return
+
+    expires_at = membership.get("expires_at")
+    if expires_at and expires_at.tzinfo is None:
+        from datetime import timezone as _tz
+        expires_at = expires_at.replace(tzinfo=_tz.utc)
+    from datetime import datetime as _dt, timezone as _tz2
+    now = _dt.now(_tz2.utc)
+    remaining = (expires_at - now) if expires_at else timedelta(0)
+    days = int(remaining.total_seconds() // 86400)
+    hours = int((remaining.total_seconds() % 86400) // 3600)
+    plan_labels = {"7d": "Weekly (7 days)", "14d": "Bi-Weekly (14 days)", "30d": "Monthly (30 days)"}
+    plan_label = plan_labels.get(membership.get("plan", ""), membership.get("plan", "?"))
+    method_labels = {"stars": "⭐ Telegram Stars", "usdt_crypto": "💵 USDT (CryptoBot)", "manual": "💵 USDT (Manual)"}
+    method = method_labels.get(membership.get("payment_method", ""), membership.get("payment_method", "?"))
+
+    await send_message(
+        chat_id,
+        "📋 <b>Group Subscription</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        f"📦 Plan: <b>{plan_label}</b>\n"
+        f"💳 Paid via: {method}\n"
+        f"📅 Expires: <b>{expires_at:%Y-%m-%d %H:%M} UTC</b>\n"
+        f"⏰ Remaining: <b>{days}d {hours}h</b>\n"
+        "━━━━━━━━━━━━━━━━━━━━\n"
+        "Use /buy to renew before access ends. 🔄",
+    )
 
 
 async def _forward_proof_to_owner(
@@ -908,6 +1172,8 @@ async def _handle_callback(callback: dict) -> None:
         )
     elif data.startswith("stars:"):
         await _send_stars_invoice(chat_id, data.split(":", 1)[1])
+    elif data.startswith("cryptobot:"):
+        await _send_cryptobot_invoice(chat_id, from_user_id, data.split(":", 1)[1])
     # Unknown callbacks are silently ignored.
 
 
@@ -917,6 +1183,7 @@ async def _cmd_help(chat_id: int) -> None:
         "━━━━━━━━━━━━━━━━━━━━\n\n"
         "<b>📊 Account</b>\n"
         "/status — plan, expiry &amp; hit counters\n"
+        "/groupstatus — private group subscription status\n"
         "/history — last 5 charged hits\n"
         "/bins — your saved BINs\n"
         "/savebin &lt;BIN&gt; [label] — save a BIN\n\n"
@@ -1641,6 +1908,8 @@ async def _dispatch_update(update: dict, wh_secret: str) -> None:
             await _cmd_sendlink(chat_id, from_user_id, text.split()[1:])
         elif command in ("/status", "/stats", "/me", "/plan"):
             await _cmd_status(chat_id, from_user_id)
+        elif command in ("/groupstatus", "/gstatus", "/groupsub"):
+            await _cmd_groupstatus(chat_id, from_user_id)
         elif command == "/history":
             await _cmd_history(chat_id, from_user_id)
         elif command in ("/bins", "/bin", "/mybins"):
@@ -1700,6 +1969,43 @@ async def telegram_webhook(request: Request):
         log.warning("webhook received non-json body: %s", e)
         return {"ok": True}
     await _dispatch_update(update, _wh_secret)
+    return {"ok": True}
+
+
+@router.post("/cryptobot_webhook")
+async def cryptobot_webhook(request: Request):
+    """Receives payment confirmation webhooks from @CryptoBot (Crypto Pay API).
+
+    Register with:
+      POST https://pay.crypt.bot/api/setWebhook
+      Header: Crypto-Pay-API-Token: <CRYPTO_BOT_TOKEN>
+      Body: {"url": "https://<host>/api/telegram/cryptobot_webhook"}
+
+    This happens automatically on server startup when CRYPTO_BOT_TOKEN is set.
+    """
+    import asyncio as _asyncio
+    from services.cryptobot import verify_signature as _cb_verify
+    body = await request.body()
+    sig = request.headers.get("crypto-pay-api-signature", "")
+    if not _cb_verify(body, sig):
+        log.warning("cryptobot_webhook: invalid signature — ignoring")
+        return {"ok": True}   # always 200 so CryptoBot doesn't retry
+    try:
+        data = await request.json()
+    except Exception:
+        return {"ok": True}
+
+    if data.get("update_type") == "invoice_paid":
+        invoice = (data.get("payload") or {})
+        our_payload = invoice.get("payload", "")
+        try:
+            product, tid_str = our_payload.rsplit(":", 1)
+            telegram_id = int(tid_str)
+        except (ValueError, AttributeError):
+            log.warning("cryptobot_webhook: unrecognised payload %r", our_payload)
+            return {"ok": True}
+        invoice_id = str(invoice.get("invoice_id", ""))
+        _asyncio.create_task(_fulfill_cryptobot_payment(telegram_id, product, invoice_id))
     return {"ok": True}
 
 
