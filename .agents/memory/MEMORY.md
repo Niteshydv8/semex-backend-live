@@ -42,3 +42,4 @@
 - [SEMEX overlay Hide = blur-in-place](semex-overlay-hide-behavior.md) — Hide frosts info sections in place (never collapse); keep .full-controls sharp so reveal works; position + stats-toggle buttons removed 2026-08-19.
 - [SEMEX security-scan triage](semex-security-scan-findings.md) — telegram.py SSRF flag = FALSE POSITIVE (fixed api.telegram.org base); seed_test_session.py token-print = test-only accepted risk; postcss pinned across many frontend resolutions.
 - [SEMEX MV3 MAIN vs ISOLATED world isolation](semex-main-isolated-world.md) — MAIN-world interceptor.js and ISOLATED-world content.js cannot share window properties; use window.postMessage to cross the boundary.
+- [SEMEX setFormValue InputEvent fix](semex-setformvalue-inputevent.md) — generic Event('input') lets Stripe's React card-number handler reset the field post-reconciliation; must use InputEvent(insertFromPaste) with data=value.
