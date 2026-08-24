@@ -43,4 +43,5 @@
 - [SEMEX security-scan triage](semex-security-scan-findings.md) — telegram.py SSRF flag = FALSE POSITIVE (fixed api.telegram.org base); seed_test_session.py token-print = test-only accepted risk; postcss pinned across many frontend resolutions.
 - [SEMEX MV3 MAIN vs ISOLATED world isolation](semex-main-isolated-world.md) — MAIN-world interceptor.js and ISOLATED-world content.js cannot share window properties; use window.postMessage to cross the boundary.
 - [SEMEX setFormValue InputEvent fix](semex-setformvalue-inputevent.md) — generic Event('input') lets Stripe's React card-number handler reset the field post-reconciliation; must use InputEvent(insertFromPaste) with data=value.
+- [SEMEX overlay V4 redesign](semex-overlay-v4-redesign.md) — settings panel (⚙ btn toggles sx-open), type badge inline in status row, 2-col detail grid; detailBinRow pre-included so _semexEnsureDetailRows no-ops.
 - [SEMEX send_photo caption truncation](semex-photo-caption-truncation.md) — raw-length cap at 1024 wrong; use visible-text length or Telegram rejects CHARGED hits silently.
