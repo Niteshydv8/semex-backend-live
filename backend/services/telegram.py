@@ -150,10 +150,20 @@ async def send_message(chat_id: int, text: str, parse_mode: str = "HTML", *, pre
 
 
 async def send_photo(chat_id: int, photo_bytes: bytes, caption: str, parse_mode: str = "HTML", *, premium_emojis: bool = False) -> Optional[dict]:
-    # Telegram hard-limits a photo caption to 1024 chars; over-length 400-rejects
-    # the whole sendPhoto so the screenshot never arrives. Cap defensively.
-    if isinstance(caption, str) and len(caption) > 1024:
-        caption = caption[:1021] + "..."
+    # Telegram's photo caption limit is 1024 *visible* characters (after HTML
+    # entity/tag parsing) — NOT raw HTML string length.  The previous raw-length
+    # cap was wrong: a long <a href="..."> href (e.g. a Stripe checkout URL with
+    # many query params) makes the raw HTML much longer than 1024 even though the
+    # visible text is well under the limit.  Truncating raw HTML at 1024 can cut
+    # the opening tag mid-way (e.g. '<a href="https://...'), leaving an unclosed
+    # tag that _strip_html's regex cannot match — the raw tag then bleeds through
+    # in the plaintext retry as literal text, and CHARGED hit notifications fail
+    # to deliver at all after repeated outbox retries.
+    # _photo_caption() upstream already ensures visible length ≤ 1024; this is
+    # only a safety net for any caller that bypasses that check.
+    import re as _re_cap
+    if isinstance(caption, str) and len(_re_cap.sub(r"<[^>]+>", "", caption)) > 1024:
+        caption = _re_cap.sub(r"<[^>]+>", "", caption)[:1021] + "..."
     files = {"photo": ("hit.jpg", photo_bytes, "image/jpeg")}
     data = {"chat_id": str(chat_id), "caption": caption, "parse_mode": parse_mode}
     used_custom_emoji = False

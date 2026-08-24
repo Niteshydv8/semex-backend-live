@@ -114,7 +114,16 @@ def _mask_success_url(url: Optional[str]) -> str:
         short = f"{p.netloc}{p.path}"
         if len(short) > 40:
             short = short[:37] + "..."
-        return f'<a href="{url}">{short}</a>'
+        # Escape & → &amp; in the href. Raw ampersands are valid in a URL but
+        # illegal inside an HTML attribute value — Telegram's HTML parser rejects
+        # the entire message when they are present, causing the plaintext retry
+        # to fire. If the raw HTML string also exceeds send_photo's 1024-char
+        # cap (due to the long href), the retry can't strip an unclosed tag and
+        # the raw <a href="..."> bleeds through as literal text. Escaping & here
+        # keeps the HTML valid so neither the parse error nor the truncation issue
+        # occurs. The escaped href is still a perfectly functional clickable link.
+        href = url.replace("&", "&amp;")
+        return f'<a href="{href}">{short}</a>'
     except Exception:
         return url
 
