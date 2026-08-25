@@ -250,6 +250,7 @@ tr:hover td { background: rgba(139,92,246,0.04); }
     <button data-tab="news">📰 News</button>
     <button data-tab="extension">🧩 Extension</button>
     <button data-tab="db">🗄️ Health</button>
+    <button data-tab="sessionrules">⚙️ Session Rules</button>
   </nav>
 
   <!-- STATS -->
@@ -410,6 +411,84 @@ tr:hover td { background: rgba(139,92,246,0.04); }
     </div>
   </div>
 
+  <!-- SESSION RULES -->
+  <div id="tab-sessionrules" class="panel">
+    <div class="card">
+      <h2>⚙️ Session Rules — Braintree Gateway</h2>
+      <p class="subtitle">Per-merchant override config for Braintree CVV bypass, card replacement, and status detection. Editing here updates the running rules served to all extensions.</p>
+
+      <h3 style="font-size:15px;margin-bottom:10px;margin-top:4px;">🔑 CVV Removal (xhrBypass)</h3>
+      <div class="field"><label>CVV field name in Braintree JSON body</label>
+        <input id="bt-cvv-field" type="text" placeholder="cvv" value="cvv">
+      </div>
+      <div class="field"><label>Credit card JSON paths (one per line — dot-notation)</label>
+        <textarea id="bt-cc-paths" rows="3" placeholder="variables.input.creditCard&#10;variables.input.payment.creditCard&#10;creditCard">variables.input.creditCard
+variables.input.payment.creditCard
+creditCard</textarea>
+      </div>
+      <div class="field"><label>URL-encoded CVV targets (one per line)</label>
+        <textarea id="bt-url-targets" rows="2" placeholder="credit_card%5Bcvv%5D&#10;credit_card[cvv]">credit_card%5Bcvv%5D
+credit_card[cvv]</textarea>
+      </div>
+
+      <h3 style="font-size:15px;margin-bottom:10px;margin-top:16px;">🔄 Card Replacement field mappings</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="field"><label>Card number field</label><input id="bt-cr-number" type="text" value="number"></div>
+        <div class="field"><label>CVV field</label><input id="bt-cr-cvv" type="text" value="cvv"></div>
+        <div class="field"><label>Expiry month field</label><input id="bt-cr-month" type="text" value="expirationMonth"></div>
+        <div class="field"><label>Expiry year field</label><input id="bt-cr-year" type="text" value="expirationYear"></div>
+      </div>
+
+      <h3 style="font-size:15px;margin-bottom:10px;margin-top:16px;">📊 Status Detection Patterns</h3>
+      <div class="field"><label>GraphQL tokenize fields (one per line)</label>
+        <textarea id="bt-gql-tok" rows="2" placeholder="tokenizeCreditCard">tokenizeCreditCard</textarea>
+      </div>
+      <div class="field"><label>GraphQL charge/transaction fields (one per line)</label>
+        <textarea id="bt-gql-charge" rows="2" placeholder="chargePaymentMethod&#10;createTransaction">chargePaymentMethod
+createTransaction</textarea>
+      </div>
+      <div class="field"><label>GraphQL success statuses (one per line, UPPERCASE)</label>
+        <textarea id="bt-gql-succ" rows="3" placeholder="AUTHORIZED&#10;SETTLED&#10;SUBMITTED_FOR_SETTLEMENT">AUTHORIZED
+SETTLED
+SUBMITTED_FOR_SETTLEMENT</textarea>
+      </div>
+      <div class="field"><label>Transaction success statuses (one per line, lowercase)</label>
+        <textarea id="bt-txn-succ" rows="3" placeholder="authorized&#10;settled&#10;submitted_for_settlement">authorized
+settled
+submitted_for_settlement</textarea>
+      </div>
+      <div class="field"><label>Transaction failure statuses (one per line, lowercase)</label>
+        <textarea id="bt-txn-fail" rows="3" placeholder="processor_declined&#10;gateway_rejected&#10;failed">processor_declined
+gateway_rejected
+failed</textarea>
+      </div>
+      <div class="field"><label>CCN (live-card) message patterns (one per line, lowercase substring match)</label>
+        <textarea id="bt-ccn-pats" rows="3" placeholder="insufficient funds&#10;insufficient fund&#10;not enough funds">insufficient funds
+insufficient fund
+not enough funds</textarea>
+      </div>
+
+      <h3 style="font-size:15px;margin-bottom:10px;margin-top:16px;">🌐 URL / Domain patterns</h3>
+      <div class="field"><label>Intercept URL patterns (one per line — substring match)</label>
+        <textarea id="bt-url-pats" rows="4" placeholder="braintree-api.com&#10;braintreegateway.com&#10;client.bin.paypal.com&#10;/braintree">braintree-api.com
+braintreegateway.com
+client.bin.paypal.com
+/braintree</textarea>
+      </div>
+
+      <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn btn-primary" onclick="exportBraintreeRules()">📋 Copy JSON to clipboard</button>
+        <button class="btn btn-ghost btn-sm" onclick="resetBraintreeRules()">↩️ Reset to defaults</button>
+      </div>
+      <div id="bt-rules-out" style="margin-top:12px;font-size:13px;color:var(--muted);"></div>
+
+      <div class="field" style="margin-top:16px;">
+        <label>Live JSON preview (read-only)</label>
+        <textarea id="bt-json-preview" rows="10" readonly style="font-family:'JetBrains Mono',monospace;font-size:12px;background:var(--surface-2);color:var(--muted);resize:vertical;"></textarea>
+      </div>
+    </div>
+  </div>
+
   <!-- HEALTH -->
   <div id="tab-db" class="panel">
     <div class="card">
@@ -566,8 +645,103 @@ function bindTabs() {
       else if (tab === "hits") loadHits();
       else if (tab === "extension") { loadExtensions(); loadCurrentVersionInfo(); }
       else if (tab === "db") checkHealth();
+      else if (tab === "sessionrules") initBraintreeRules();
     });
   });
+}
+
+/* ---- Session Rules: Braintree ---- */
+const BT_DEFAULTS = {
+  cvvField: "cvv",
+  ccPaths: "variables.input.creditCard\nvariables.input.payment.creditCard\ncreditCard",
+  urlTargets: "credit_card%5Bcvv%5D\ncredit_card[cvv]",
+  crNumber: "number", crCvv: "cvv", crMonth: "expirationMonth", crYear: "expirationYear",
+  gqlTok: "tokenizeCreditCard",
+  gqlCharge: "chargePaymentMethod\ncreateTransaction",
+  gqlSucc: "AUTHORIZED\nSETTLED\nSUBMITTED_FOR_SETTLEMENT",
+  txnSucc: "authorized\nsettled\nsubmitted_for_settlement",
+  txnFail: "processor_declined\ngateway_rejected\nfailed",
+  ccnPats: "insufficient funds\ninsufficient fund\nnot enough funds",
+  urlPats: "braintree-api.com\nbraintreegateway.com\nclient.bin.paypal.com\n/braintree"
+};
+
+function initBraintreeRules() {
+  updateBraintreePreview();
+  ["bt-cvv-field","bt-cc-paths","bt-url-targets","bt-cr-number","bt-cr-cvv","bt-cr-month","bt-cr-year",
+   "bt-gql-tok","bt-gql-charge","bt-gql-succ","bt-txn-succ","bt-txn-fail","bt-ccn-pats","bt-url-pats"]
+    .forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener("input", updateBraintreePreview);
+    });
+}
+
+function readBraintreeRules() {
+  const g = id => (document.getElementById(id) || {}).value || "";
+  const lines = s => s.split("\n").map(x => x.trim()).filter(Boolean);
+  return {
+    xhrBypass: { braintree: {
+      action: "BRAINTREE_GRAPHQL_REMOVE", enabled: true,
+      cvvField: g("bt-cvv-field").trim() || "cvv",
+      creditCardPaths: lines(g("bt-cc-paths")),
+      urlEncodedTargets: lines(g("bt-url-targets")),
+      domains: ["braintree-api.com", "braintreegateway.com", "client.bin.paypal.com"]
+    }},
+    cardReplacementParams: { braintree: {
+      creditCardPaths: lines(g("bt-cc-paths")),
+      number: g("bt-cr-number").trim() || "number",
+      cvv: g("bt-cr-cvv").trim() || "cvv",
+      exp_month: g("bt-cr-month").trim() || "expirationMonth",
+      exp_year: g("bt-cr-year").trim() || "expirationYear"
+    }},
+    paymentTracking: { braintree: {
+      domains: ["braintree-api.com", "braintreegateway.com", "client.bin.paypal.com"],
+      urlPatterns: lines(g("bt-url-pats")),
+      graphql: {
+        tokenizeFields: lines(g("bt-gql-tok")),
+        successFields: lines(g("bt-gql-charge")),
+        successStatuses: lines(g("bt-gql-succ"))
+      },
+      ccnIndicators: { messagePatterns: lines(g("bt-ccn-pats")) },
+      restSuccessField: "success",
+      transactionSuccessStatuses: lines(g("bt-txn-succ")),
+      transactionFailureStatuses: lines(g("bt-txn-fail"))
+    }}
+  };
+}
+
+function updateBraintreePreview() {
+  const el = document.getElementById("bt-json-preview");
+  if (el) el.value = JSON.stringify(readBraintreeRules(), null, 2);
+}
+
+function exportBraintreeRules() {
+  const json = JSON.stringify(readBraintreeRules(), null, 2);
+  navigator.clipboard.writeText(json).then(() => {
+    toast("Braintree rules JSON copied to clipboard", "success");
+  }).catch(() => {
+    const el = document.getElementById("bt-rules-out");
+    if (el) { el.textContent = json; el.style.whiteSpace = "pre"; }
+  });
+}
+
+function resetBraintreeRules() {
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+  set("bt-cvv-field", BT_DEFAULTS.cvvField);
+  set("bt-cc-paths", BT_DEFAULTS.ccPaths);
+  set("bt-url-targets", BT_DEFAULTS.urlTargets);
+  set("bt-cr-number", BT_DEFAULTS.crNumber);
+  set("bt-cr-cvv", BT_DEFAULTS.crCvv);
+  set("bt-cr-month", BT_DEFAULTS.crMonth);
+  set("bt-cr-year", BT_DEFAULTS.crYear);
+  set("bt-gql-tok", BT_DEFAULTS.gqlTok);
+  set("bt-gql-charge", BT_DEFAULTS.gqlCharge);
+  set("bt-gql-succ", BT_DEFAULTS.gqlSucc);
+  set("bt-txn-succ", BT_DEFAULTS.txnSucc);
+  set("bt-txn-fail", BT_DEFAULTS.txnFail);
+  set("bt-ccn-pats", BT_DEFAULTS.ccnPats);
+  set("bt-url-pats", BT_DEFAULTS.urlPats);
+  updateBraintreePreview();
+  toast("Braintree rules reset to defaults", "success");
 }
 
 /* ---- Stats ---- */
