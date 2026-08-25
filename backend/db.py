@@ -45,8 +45,12 @@ async def init_indexes() -> None:
     await db.rate_limits.create_index([("key", 1), ("window", 1)])
     # Durable Telegram outbox: unique dedup_key gives idempotent enqueue; the
     # (status, next_attempt_at) index drives the worker's "next due" query.
+    # submit_id (sparse) is set on text-only hit notifications so the /screenshot
+    # endpoint can upgrade them to photos when the screenshot arrives later —
+    # eliminating the text+photo duplicate that looks like two hits in Telegram.
     await db.telegram_outbox.create_index("dedup_key", unique=True)
     await db.telegram_outbox.create_index([("status", 1), ("next_attempt_at", 1)])
+    await db.telegram_outbox.create_index("submit_id", sparse=True)
     # Proof-of-payment state: keyed by chat_id, TTL enforced by MongoDB (30 min).
     # Replaces the in-memory _PROOF_STATE dict so state survives server restarts.
     await db.tg_proof_state.create_index("chat_id", unique=True)

