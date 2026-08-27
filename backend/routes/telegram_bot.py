@@ -1263,12 +1263,16 @@ async def _cmd_login_start(chat_id: int, from_user: dict, token: str) -> None:
                 await send_message(chat_id, "⚠️ This login link is already bound to a different Telegram account.")
                 return
 
-    user = await db.users.find_one({"telegram_id": tg_id})
+    # Parallelize: user ban-check and geo lookup are independent — run together
+    # instead of sequentially (geo lookup alone can take 0-3s via ipapi.co).
+    import asyncio as _asyncio_login
+    user, geo = await _asyncio_login.gather(
+        db.users.find_one({"telegram_id": tg_id}),
+        _geo_for_ip(doc.get("ip")),
+    )
     if user and user.get("is_banned"):
         await send_message(chat_id, f"🚫 This account is banned: {_html.escape(user.get('banned_reason') or 'no reason')}")
         return
-
-    geo = await _geo_for_ip(doc.get("ip"))
     dev = doc.get("device_info") or {}
     device = _html.escape(str(dev.get("platform") or "Unknown device"))
     lang = _html.escape(str(dev.get("language") or ""))
@@ -1364,7 +1368,10 @@ async def _handle_login_callback(callback: dict, action: str, token: str) -> Non
         await db.users.insert_one(new_user.to_mongo())
         user_doc = await db.users.find_one({"telegram_id": tg_id})
     else:
-        await db.users.update_one(
+        # find_one_and_update(return_document=AFTER) saves one DB round trip vs
+        # separate update_one + find_one.
+        from pymongo import ReturnDocument
+        user_doc = await db.users.find_one_and_update(
             {"telegram_id": tg_id},
             {"$set": {
                 "telegram_username": from_user.get("username"),
@@ -1373,8 +1380,8 @@ async def _handle_login_callback(callback: dict, action: str, token: str) -> Non
                 "telegram_photo_url": photo_proxy,
                 "last_seen_at": now,
             }},
+            return_document=ReturnDocument.AFTER,
         )
-        user_doc = await db.users.find_one({"telegram_id": tg_id})
 
     user = User.from_mongo(user_doc)
     issued = await issue_session(

@@ -22,17 +22,32 @@ _BASE = f"https://api.telegram.org/bot{settings.TELEGRAM_BOT_TOKEN}"
 _MAX_SEND_ATTEMPTS = 3
 _MAX_429_WAIT = 5.0  # cap per-retry sleep (seconds)
 
+# Persistent HTTP client — reuses TCP+TLS connections to api.telegram.org instead
+# of paying a full handshake on every send_message/send_photo/sendDocument call.
+# The client is lazily created on first use and shared for the process lifetime.
+_tg_http: httpx.AsyncClient | None = None
+
+
+def _get_http() -> httpx.AsyncClient:
+    global _tg_http
+    if _tg_http is None or _tg_http.is_closed:
+        _tg_http = httpx.AsyncClient(
+            timeout=20.0,
+            limits=httpx.Limits(max_connections=20, max_keepalive_connections=10),
+        )
+    return _tg_http
+
 
 async def _raw_post(base_url: str, method: str, data: dict, files: Optional[dict] = None) -> Optional[dict]:
     """Core HTTP poster — shared by main bot and notification bot."""
     url = f"{base_url}/{method}"
+    client = _get_http()
     for attempt in range(1, _MAX_SEND_ATTEMPTS + 1):
         try:
-            async with httpx.AsyncClient(timeout=20.0) as client:
-                if files:
-                    r = await client.post(url, data=data, files=files)
-                else:
-                    r = await client.post(url, json=data)
+            if files:
+                r = await client.post(url, data=data, files=files)
+            else:
+                r = await client.post(url, json=data)
             try:
                 resp = r.json()
             except Exception:

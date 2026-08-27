@@ -39,7 +39,7 @@ from services.telegram import notify_message, notify_photo, pin_message
 log = logging.getLogger("semex.outbox")
 
 # How often the worker polls for due work.
-POLL_INTERVAL_SECONDS = 3.0
+POLL_INTERVAL_SECONDS = 1.0   # reduced from 3s — hit notifications arrive faster
 # Seconds to hold back a text-only hit notification so an arriving screenshot
 # can upgrade it to a photo in-place — eliminating the "text + photo = two hits"
 # duplicate that users see when the initial capture fails.
