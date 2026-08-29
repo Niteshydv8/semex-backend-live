@@ -73,6 +73,12 @@ agenthub/agents/youtube/db
 *.deb
 *.dylib
 
+# Generated extension build (rebuild with build.sh)
+semex-build/
+
+# Conversation screenshot uploads (not part of the project)
+attached_assets/
+
 # Build caches
 .cache/
 
