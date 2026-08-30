@@ -346,7 +346,12 @@ async def submit_status(
             log.warning("dropping forwardable %s with empty/short card: len=%s last4=%s",
                         status_norm, len(number or ""), (number or "")[-4:])
             return {"success": False, "hitId": None, "forwarded": False, "dropped": "no_card"}
-        if is_charged and _amt_num <= 0:
+        # v5.0.1: only drop when amount is EXPLICITLY zero/negative — not when it
+        # is missing (None).  When the extension can't extract the amount (some
+        # embedded-checkout flows, unrecognised currency symbols), the hit should
+        # still reach Telegram rather than being silently discarded. A truly
+        # free/zero order has amount=0.0, not amount=null.
+        if is_charged and _amt is not None and _amt_num <= 0:
             log.warning("dropping CHARGED with zero/negative amount: amount=%r", _amt)
             return {"success": False, "hitId": None, "forwarded": False, "dropped": "zero_amount"}
 
