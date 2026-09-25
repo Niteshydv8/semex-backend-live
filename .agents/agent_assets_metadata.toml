@@ -819,3 +819,17 @@ mtime_ms = 1790351659150
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:a15e5fa0-089d-49e2-816c-bf038725ad77/d88412fd-3910-4f96-af67-9d6ca87748ce/dd2cb4c3-630a-4de7-8bee-7c7634e01346"
 storage_version_token = "1790351693920496"
 content_type = "image/jpeg"
+
+[[outputs]]
+id = "oZLxpwyZdU6S7rQyQGCbw"
+uri = "file://previews/final-admin-v2.jpg"
+type = "image"
+title = "Admin panel — ice theme (fixed render)"
+description = "Fully populated admin panel: stats overview, user management, redeem codes, charged hits feed, releases, danger zone — original neomorph UI in ice cyan + electric blue."
+logical_id = "10acc315-136a-4d4c-87dd-9056d340dbc6"
+content_hash = "sha256:f980850d9efe6f6a9f24abd66ef96229e626c3666989c08cc5afc1d774d389ae"
+size = 7464
+mtime_ms = 1790351989814
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:a15e5fa0-089d-49e2-816c-bf038725ad77/10acc315-136a-4d4c-87dd-9056d340dbc6/66d7585c-38b8-4cc4-831e-82130271fb67"
+storage_version_token = "1790352006216529"
+content_type = "image/jpeg"
