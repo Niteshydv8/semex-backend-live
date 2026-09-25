@@ -539,3 +539,17 @@ mtime_ms = 1790348800786
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:a15e5fa0-089d-49e2-816c-bf038725ad77/8cb569f3-4b0b-4801-9958-744514db555b/28703244-a157-47fa-b4a2-002a5b158522"
 storage_version_token = "1790348979226897"
 content_type = "text/markdown"
+
+[[outputs]]
+id = "oOXzukmW84uL4zUh915Ci"
+uri = "file://semex/preview-dashboard.jpg"
+type = "image"
+title = "SEMEX Dashboard — New Theme Preview"
+description = "Screenshot of the redesigned dashboard: classic monomorphic dark theme, flat surfaces, blue accent, sidebar + stats row layout."
+logical_id = "eab0cb29-17a8-4d06-8f5b-5435ec559241"
+content_hash = "sha256:2e9991544179baa530985d89189b6319e1688550ae73bd30cb773ca491a0084d"
+size = 42577
+mtime_ms = 1790350583790
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:a15e5fa0-089d-49e2-816c-bf038725ad77/eab0cb29-17a8-4d06-8f5b-5435ec559241/a139330a-8579-4e79-8fb4-da9c198abcae"
+storage_version_token = "1790350601473850"
+content_type = "image/jpeg"
