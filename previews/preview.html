@@ -23,6 +23,8 @@
     const el = document.getElementById(id);
     if (el) { el.classList.remove("active"); el.style.display = "none"; }
   });
+  // #welcome shows the login/welcome overlay instead of a tab
+  const _showWelcome = (location.hash || "") === "#welcome";
 
   // Activate tab from hash
   const tabName = (location.hash || "#bypass").slice(1);
@@ -38,6 +40,10 @@
     if (nav) nav.classList.remove("hidden");
     const dz = document.getElementById("admin-danger-zone");
     if (dz) dz.classList.remove("hidden");
+  }
+  if (_showWelcome) {
+    const am = document.getElementById("auth-modal");
+    if (am) { am.style.display = ""; am.classList.add("active"); }
   }
 
   // ---- Mock data ----

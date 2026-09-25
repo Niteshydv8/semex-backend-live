@@ -707,3 +707,115 @@ mtime_ms = 1790351478194
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:a15e5fa0-089d-49e2-816c-bf038725ad77/707be561-30e8-4b94-b9a8-b7056b705e26/538ab8cf-cdc4-4bba-ba3f-8a86c9b70f6c"
 storage_version_token = "1790351494733579"
 content_type = "image/jpeg"
+
+[[outputs]]
+id = "EckehtV4Jm9Q7VafmiIM4"
+uri = "file://previews/final-welcome.jpg"
+type = "image"
+title = "1. Welcome screen"
+description = "ADDED: 'Login in one click — or use without logging in.' + Continue without login link."
+logical_id = "094d0da4-8761-403b-8322-be9c36370195"
+content_hash = "sha256:9886aaed13f607678c21332b178e2c07692e22f62129f777613a305ad25c73ea"
+size = 20998
+mtime_ms = 1790351649662
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:a15e5fa0-089d-49e2-816c-bf038725ad77/094d0da4-8761-403b-8322-be9c36370195/9d492e72-8758-443f-8dfb-37d7c71a4ca2"
+storage_version_token = "1790351685132670"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "xUEeAzvWj7qerbjhRPO8K"
+uri = "file://previews/final-bypass.jpg"
+type = "image"
+title = "2. Bypass tab"
+description = "Original neomorph UI recolored ice cyan + electric blue. BIN/CC card, toggles, more options."
+logical_id = "a83d0c20-3df8-41e1-ae08-280a7a250b99"
+content_hash = "sha256:87c6e43d4d08eaa76ab0aeac5623583290ea0b56df953be1b84f9885cbae6f07"
+size = 7612
+mtime_ms = 1790351650870
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:a15e5fa0-089d-49e2-816c-bf038725ad77/a83d0c20-3df8-41e1-ae08-280a7a250b99/b6e6c4ef-cebc-4743-ae64-067153d925e0"
+storage_version_token = "1790351686409614"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "zStcG1mtL71RShwRzaMK4"
+uri = "file://previews/final-history.jpg"
+type = "image"
+title = "3. History tab"
+description = "Recolored. Filter pills + hit rows with mock data."
+logical_id = "392f94b6-527d-4c4e-8961-ab4aedb0b728"
+content_hash = "sha256:5306523be394061fcd301c5a7a3d13d41d72e0c06efabf4b4d38d52f4239c78a"
+size = 7670
+mtime_ms = 1790351652030
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:a15e5fa0-089d-49e2-816c-bf038725ad77/392f94b6-527d-4c4e-8961-ab4aedb0b728/eb76f22f-6ad8-491e-8a04-062ff954efc1"
+storage_version_token = "1790351687640316"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "hhcpyQ7qyOyjtkP6PMhad"
+uri = "file://previews/final-bins.jpg"
+type = "image"
+title = "4. BINs tab"
+description = "Recolored. Saved BINs with cloud/local badges."
+logical_id = "f1cec9f6-e6ba-47fb-b48a-809a31b36cff"
+content_hash = "sha256:0f9456cf2f89d2d6eda7f0c0178b80b97b44165c2275a24a088d691f76259d13"
+size = 7672
+mtime_ms = 1790351653246
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:a15e5fa0-089d-49e2-816c-bf038725ad77/f1cec9f6-e6ba-47fb-b48a-809a31b36cff/af121baa-b10f-4342-ab81-6de347bf976c"
+storage_version_token = "1790351688931953"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "fiTiQacpzHp5I-oxwApEt"
+uri = "file://previews/final-captcha.jpg"
+type = "image"
+title = "5. Captcha tab"
+description = "Recolored. Provider config + hCaptcha/reCAPTCHA options."
+logical_id = "42019df6-a040-4221-bd1a-0a770f5e2278"
+content_hash = "sha256:b043682e22e0a537faec58569b9a46f48d20119676b538794f6e6c03fca14224"
+size = 7623
+mtime_ms = 1790351654438
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:a15e5fa0-089d-49e2-816c-bf038725ad77/42019df6-a040-4221-bd1a-0a770f5e2278/2eb44171-809e-489d-ace7-731ead31506e"
+storage_version_token = "1790351690158379"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "LSQVFj41N1nBtEjaNg3kA"
+uri = "file://previews/final-proxy.jpg"
+type = "image"
+title = "6. Proxy Station"
+description = "Recolored. Connect card + one-click saved proxy list."
+logical_id = "93991b91-bf3c-4e8d-919a-638ce2bb8eab"
+content_hash = "sha256:26831353662d3055007e9dacf465dbb82e386a689152e4bc056ff934dc0b4ff9"
+size = 7667
+mtime_ms = 1790351655682
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:a15e5fa0-089d-49e2-816c-bf038725ad77/93991b91-bf3c-4e8d-919a-638ce2bb8eab/731eec56-e276-4d76-bc63-cb58b9ca39a4"
+storage_version_token = "1790351691389350"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "8y9fHihVK9W_0dIw6u1lz"
+uri = "file://previews/final-settings.jpg"
+type = "image"
+title = "7. Settings tab"
+description = "Recolored. All setting groups intact."
+logical_id = "896eb135-f204-40e5-9500-c2dd7cfadb8d"
+content_hash = "sha256:64d411829633793715c8498091ae4d7bfaf5afa85b4ab78969b9ed5b49450330"
+size = 7519
+mtime_ms = 1790351656866
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:a15e5fa0-089d-49e2-816c-bf038725ad77/896eb135-f204-40e5-9500-c2dd7cfadb8d/a2a327e3-1154-46c5-a006-b2b494db1398"
+storage_version_token = "1790351692687531"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "-o6udSOUCeGDcKvYGrQqH"
+uri = "file://previews/final-admin.jpg"
+type = "image"
+title = "8. Admin panel"
+description = "Recolored. Stats, users, codes, hits feed, releases, danger zone."
+logical_id = "d88412fd-3910-4f96-af67-9d6ca87748ce"
+content_hash = "sha256:f980850d9efe6f6a9f24abd66ef96229e626c3666989c08cc5afc1d774d389ae"
+size = 7464
+mtime_ms = 1790351659150
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:a15e5fa0-089d-49e2-816c-bf038725ad77/d88412fd-3910-4f96-af67-9d6ca87748ce/dd2cb4c3-630a-4de7-8bee-7c7634e01346"
+storage_version_token = "1790351693920496"
+content_type = "image/jpeg"
