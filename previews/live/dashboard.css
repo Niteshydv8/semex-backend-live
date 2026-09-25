@@ -1278,3 +1278,138 @@ h1, h2, h3, button, input, select, textarea, label { letter-spacing: -0.01em; }
 
 /* Sidebar section-label look for footer/meta */
 .brand-tag, .version-text { letter-spacing: 0.12em; }
+
+/* ============================================================
+   DOTGATE FAITHFUL PORT — PixelZero's actual panel UI, 1:1
+   Widget surfaces, controls, badges, toggles and tab mechanics
+   copied from script/dotgate-ui.js and mapped onto SEMEX classes.
+   ============================================================ */
+
+/* Widget shell — their gradient panel + white-alpha border */
+.section, .section-card, .settings-section, .bins-section, .proxy-section, .panel {
+  background: linear-gradient(180deg, #171A21 0%, #0D0F14 100%);
+  border: 1px solid rgba(255,255,255,0.08); border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.4);
+}
+.section-header { border-bottom: 1px solid rgba(255,255,255,0.06); padding: 14px 18px; }
+.section-header h2 {
+  font-family: var(--font-head); font-size: 0.85rem; font-weight: 700;
+  color: #F1F5F9; letter-spacing: 0.03em;
+}
+.header-stack .mono-dim { font-size: 0.66rem; color: #64748B; letter-spacing: 0.06em; }
+
+/* Inset areas — dg-card: #0a0c10 well, 10px radius */
+.subsection, .ip-check-result, .gen-result, .proxy-status-card,
+.stat, .admin-stat-card {
+  background: #0A0C10; border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 10px; box-shadow: none;
+}
+/* flatten the tinted stat tiles into their mono chip look */
+.stat[data-stat] { background: #0A0C10; border-color: rgba(255,255,255,0.10); }
+.stat-val { font-family: var(--font-mono); letter-spacing: 0.02em; }
+.stat[data-stat="total"]   .stat-val, .stat[data-stat="total"]   .stat-label { color: #F1F5F9; }
+.stat[data-stat="charged"] .stat-val, .stat[data-stat="charged"] .stat-label { color: #4ADE80; }
+.stat[data-stat="live"]    .stat-val, .stat[data-stat="live"]    .stat-label { color: #FACC15; }
+.stat[data-stat="dead"]    .stat-val, .stat[data-stat="dead"]    .stat-label { color: #F87171; }
+
+/* Inputs — dg-input: dark well, 9px radius, indigo focus */
+.section-content input[type="text"], .section-content input[type="email"],
+.section-content input[type="number"], .section-content input[type="password"],
+.section-content input[type="url"], .section-content select,
+.section-content textarea,
+.form-input, .telegram-id-input, .otp-input, .redeem-input {
+  background: #0A0C10; border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 9px; color: #F1F5F9; padding: 9px 10px;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.section-content input:focus, .section-content select:focus,
+.section-content textarea:focus, .form-input:focus, .redeem-input:focus {
+  border-color: #6366F1; box-shadow: 0 0 0 3px rgba(99,102,241,0.15);
+}
+.section-content input::placeholder, .section-content textarea::placeholder { color: #475569; }
+
+/* Primary — dg-primary: violet gradient, bold, halo */
+.btn-primary, .tg-login-btn, .modal-btn-primary, .auth-btn,
+#activate-proxy-btn, .btn-mini-gradient {
+  background: linear-gradient(135deg, #8B5CF6, #7C3AED);
+  border: none; border-radius: 9px; color: #fff; font-weight: 700;
+  box-shadow: 0 4px 14px rgba(124,58,237,0.35);
+  transition: filter 0.2s, transform 0.2s;
+}
+.btn-primary:hover, .tg-login-btn:hover, .modal-btn-primary:hover,
+.auth-btn:hover, #activate-proxy-btn:hover, .btn-mini-gradient:hover {
+  filter: brightness(1.1); transform: translateY(-1px);
+  background: linear-gradient(135deg, #8B5CF6, #7C3AED);
+  box-shadow: 0 4px 14px rgba(124,58,237,0.35);
+}
+
+/* Secondary — dg-mini: quiet ghost buttons */
+.btn-action, .small-button, .btn-copy, .btn-export, .btn-blur,
+.news-refresh-btn, .proxy-action-btn, .saved-bin-btn, .admin-btn,
+.hit-copy-btn, .tx-copy-btn,
+.proxy-controls-row .small-button, .ip-check-row .small-button,
+.subsection-content > .small-button, .redeem-banner .small-button {
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 8px; color: #CBD5E1; font-weight: 600; box-shadow: none;
+  transition: background 0.2s, border-color 0.2s;
+}
+.btn-action:hover, .small-button:hover, .btn-copy:hover, .btn-export:hover,
+.btn-blur:hover, .news-refresh-btn:hover, .proxy-action-btn:hover,
+.saved-bin-btn:hover, .admin-btn:hover, .hit-copy-btn:hover, .tx-copy-btn:hover,
+.proxy-controls-row .small-button:hover, .ip-check-row .small-button:hover,
+.subsection-content > .small-button:hover, .redeem-banner .small-button:hover {
+  background: rgba(255,255,255,0.10); border-color: rgba(255,255,255,0.10);
+  color: #F1F5F9; filter: none; transform: none;
+}
+
+/* Danger stays red-outline */
+.btn-danger, .btn-full-danger, #disable-proxy-btn {
+  background: rgba(248,113,113,0.08); border: 1px solid rgba(248,113,113,0.30);
+  color: #F87171; border-radius: 9px;
+}
+.btn-danger:hover, .btn-full-danger:hover, #disable-proxy-btn:hover {
+  background: rgba(248,113,113,0.14); border-color: rgba(248,113,113,0.5);
+}
+
+/* Toggles — their switch: slate off, GREEN on */
+.toggle-slider { background: #334155; }
+.toggle-slider::before { background: #E2E8F0; }
+.toggle input:checked + .toggle-slider { background: #22C55E; }
+
+/* List rows — dg-vault-item: mono ghost rows, indigo hover */
+.saved-bin-row, .hit-row, .proxy-row, .saved-proxy-item, .proxy-item,
+.admin-user-row, .code-row, .tx-card {
+  background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 8px; transition: border-color 0.15s, background 0.15s;
+}
+.saved-bin-row:hover, .hit-row:hover, .proxy-row:hover,
+.saved-proxy-item:hover, .proxy-item:hover {
+  border-color: #6366F1; background: rgba(99,102,241,0.10);
+}
+
+/* Badges — their status pills */
+.hit-badge-charged { color: #4ADE80; }
+.hit-badge-live, .hit-badge-ccn_live { color: #FACC15; }
+.hit-badge-dead { color: #F87171; }
+
+/* BIN / CC segmented control — their underline tabs */
+.mode-toggle button, .mode-toggle .tab, .mode-toggle .mode-btn {
+  background: transparent; border: none; border-bottom: 2px solid transparent;
+  border-radius: 0; color: #64748B; font-size: 0.72rem; font-weight: 700;
+  padding: 7px 4px; transition: color 0.2s;
+}
+.mode-toggle button:hover, .mode-toggle .mode-btn:hover { color: #CBD5E1; }
+.mode-toggle button.active, .mode-toggle .mode-btn.active {
+  color: #F1F5F9; border-bottom-color: #3B82F6; background: transparent;
+}
+
+/* Sidebar active — their blue active accent */
+.tab.active {
+  background: rgba(59,130,246,0.14); color: #F1F5F9;
+  box-shadow: inset 0 0 0 1px rgba(59,130,246,0.35);
+}
+.tab.active .nav-ico { stroke: #3B82F6; }
+
+/* Accent text -> their indigo-300 */
+.accent-pink, .accent { color: #A5B4FC; }
+a { color: #A5B4FC; }
