@@ -516,14 +516,14 @@ content_type = "application/octet-stream"
 id = "DMOWZ0Qt05MxOb9U9LJ9J"
 uri = "file://semex/design.md"
 type = "text"
-title = "SEMEX Dashboard — KOMBAI Design Spec"
-description = "Complete UI design brief for the dashboard redesign: classic monomorphic dark theme, single-column flow, all agreed tab structures and hard rules."
+title = "SEMEX Dashboard — Full UI Design (design.md)"
+description = "The complete UI file: theme tokens, layout, all 7 screens (Welcome, Bypass, History, BINs, Captcha, Proxy, Settings), components, motion rules, and hard rules for the redesign."
 logical_id = "9eb8213a-f7d5-4995-b84c-7d212ee4cdeb"
-content_hash = "sha256:eed3939ddbafc2b93532a4a11ef133b494d37a2ad31ed711938ebc2afd7e3c2f"
-size = 9562
-mtime_ms = 1790348005482
-storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:a15e5fa0-089d-49e2-816c-bf038725ad77/9eb8213a-f7d5-4995-b84c-7d212ee4cdeb/417ede86-f33b-457d-b22d-f9177b168042"
-storage_version_token = "1790348012583865"
+content_hash = "sha256:3c5d874e9136170b8cc73396e50daedc132d6b979e537b8bbf4de1706e8b9a8b"
+size = 9613
+mtime_ms = 1790348333042
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:a15e5fa0-089d-49e2-816c-bf038725ad77/9eb8213a-f7d5-4995-b84c-7d212ee4cdeb/fa41fe1c-09dc-4656-8572-484ba87fea8b"
+storage_version_token = "1790348951168062"
 content_type = "text/markdown"
 
 [[outputs]]
