@@ -833,3 +833,115 @@ mtime_ms = 1790351989814
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:a15e5fa0-089d-49e2-816c-bf038725ad77/10acc315-136a-4d4c-87dd-9056d340dbc6/66d7585c-38b8-4cc4-831e-82130271fb67"
 storage_version_token = "1790352006216529"
 content_type = "image/jpeg"
+
+[[outputs]]
+id = "0azvXrxOe5dH-vKS_6OBH"
+uri = "file://previews/v2-welcome.jpg"
+type = "image"
+title = "1. Welcome screen"
+description = "Original neomorph UI, ice cyan + blue. 'Login in one click — or use without logging in.'"
+logical_id = "129234d8-f297-43af-b475-f0f74a6ebdf7"
+content_hash = "sha256:65d419019a86cce760c1fc8e8064bdbcfa1c8b2f00c7716bb691a635288239c1"
+size = 20969
+mtime_ms = 1790352426342
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:a15e5fa0-089d-49e2-816c-bf038725ad77/129234d8-f297-43af-b475-f0f74a6ebdf7/e0742eba-b2c9-4d39-baf5-63b431e6e87b"
+storage_version_token = "1790352457042976"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "3QO5eBjsAhtZegJ0pyPBZ"
+uri = "file://previews/v2-bypass.jpg"
+type = "image"
+title = "2. Bypass tab"
+description = "BIN/CC card, toggles, more options — ice theme."
+logical_id = "3b5caa78-a618-4dec-9f9a-cee2da934497"
+content_hash = "sha256:87c6e43d4d08eaa76ab0aeac5623583290ea0b56df953be1b84f9885cbae6f07"
+size = 7612
+mtime_ms = 1790352427590
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:a15e5fa0-089d-49e2-816c-bf038725ad77/3b5caa78-a618-4dec-9f9a-cee2da934497/e16d9823-20b1-4a24-8ace-99d7350165c2"
+storage_version_token = "1790352458300961"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "bzRKY9U67PTG6NnXEyxI0"
+uri = "file://previews/v2-history.jpg"
+type = "image"
+title = "3. History tab"
+description = "Hit rows with first row expanded — ice theme."
+logical_id = "9df84301-8300-42e1-aeef-4b25fd49a23b"
+content_hash = "sha256:5306523be394061fcd301c5a7a3d13d41d72e0c06efabf4b4d38d52f4239c78a"
+size = 7670
+mtime_ms = 1790352428758
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:a15e5fa0-089d-49e2-816c-bf038725ad77/9df84301-8300-42e1-aeef-4b25fd49a23b/0f138bd4-667f-48d9-a621-802e0d37c0de"
+storage_version_token = "1790352459547122"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "itVfGWGJW0L6vd4T7e_kx"
+uri = "file://previews/v2-bins.jpg"
+type = "image"
+title = "4. BINs tab"
+description = "Saved BINs with cloud/local badges — ice theme."
+logical_id = "ad6e8873-6a95-449f-9544-34021d65d596"
+content_hash = "sha256:0f9456cf2f89d2d6eda7f0c0178b80b97b44165c2275a24a088d691f76259d13"
+size = 7672
+mtime_ms = 1790352429922
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:a15e5fa0-089d-49e2-816c-bf038725ad77/ad6e8873-6a95-449f-9544-34021d65d596/d78e829c-5680-49d6-942c-a11fbbbfb3e5"
+storage_version_token = "1790352460834858"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "loG5J3IkuzdasKMu0Wo6C"
+uri = "file://previews/v2-captcha.jpg"
+type = "image"
+title = "5. Captcha tab"
+description = "Provider config + solver options — ice theme."
+logical_id = "242a2038-d313-4e1a-b0d9-cc36853092db"
+content_hash = "sha256:b043682e22e0a537faec58569b9a46f48d20119676b538794f6e6c03fca14224"
+size = 7623
+mtime_ms = 1790352431150
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:a15e5fa0-089d-49e2-816c-bf038725ad77/242a2038-d313-4e1a-b0d9-cc36853092db/dff50246-d0f5-4de8-8e56-9ff86ddc44d2"
+storage_version_token = "1790352462175480"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "blbObn5NR8yGgYJAigcLX"
+uri = "file://previews/v2-proxy.jpg"
+type = "image"
+title = "6. Proxy Station"
+description = "Connected state + saved proxy list — ice theme."
+logical_id = "b8636123-063f-4dad-ad1d-a5272d5a5969"
+content_hash = "sha256:ff7e717fa1b9e1ae28c9bb17ee453e4e76cf580d029f86a46e4492b8bca9a1d2"
+size = 7701
+mtime_ms = 1790352432386
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:a15e5fa0-089d-49e2-816c-bf038725ad77/b8636123-063f-4dad-ad1d-a5272d5a5969/648d9087-2109-4576-82aa-a764ba7a20da"
+storage_version_token = "1790352463400401"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "om9yQmMZEyfRi1gIt6jVQ"
+uri = "file://previews/v2-settings.jpg"
+type = "image"
+title = "7. Settings tab"
+description = "All setting groups — ice theme."
+logical_id = "3f8d8735-c4b6-4a2b-989b-b279c8392f59"
+content_hash = "sha256:64d411829633793715c8498091ae4d7bfaf5afa85b4ab78969b9ed5b49450330"
+size = 7519
+mtime_ms = 1790352433998
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:a15e5fa0-089d-49e2-816c-bf038725ad77/3f8d8735-c4b6-4a2b-989b-b279c8392f59/2709b1c2-86fc-4410-a060-c7243d4f30fb"
+storage_version_token = "1790352464654736"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "WTFam8HfbqYjWLvYmbATA"
+uri = "file://previews/v2-admin.jpg"
+type = "image"
+title = "8. Admin panel"
+description = "Stats, users, codes, hits feed, releases, danger zone — ice theme."
+logical_id = "09b3e3f3-542c-41f4-a6db-32044b47231f"
+content_hash = "sha256:f980850d9efe6f6a9f24abd66ef96229e626c3666989c08cc5afc1d774d389ae"
+size = 7464
+mtime_ms = 1790352435170
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:a15e5fa0-089d-49e2-816c-bf038725ad77/09b3e3f3-542c-41f4-a6db-32044b47231f/5be98fd2-c8e9-4d57-a5e0-215f963989f9"
+storage_version_token = "1790352465904628"
+content_type = "image/jpeg"
