@@ -460,10 +460,11 @@ logical_id = "d39d005c-06c4-495d-8848-8c4d72afd880"
 [[outputs]]
 id = "_1YpoQwgVmH3P6t0F6dbV"
 uri = "file://artifacts/mockup-sandbox/public/semex-preview/toasts.html"
-type = "text"
+type = "html"
 title = "Toaster demo page — toasts.html"
 description = "Standalone demo page that loads the toaster and fires example toasts. Useful for previewing a redesign without the extension. Note: it references a copy of the JS with the anti-debug header stripped."
 logical_id = "e70497bf-6514-43a9-b32a-88fce868d859"
+content_type = "text/html"
 
 [[outputs]]
 id = "dcJA-Khrnuznxe_m_kQ1o"
@@ -510,3 +511,17 @@ mtime_ms = 1787396898115
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:c17a2be3-6a0a-4a63-ad1e-b37336733036/8241e883-b519-477e-b4b8-0d5ff9c12a2a/82bd8aac-6b74-4152-b731-6423dd931050"
 storage_version_token = "1787396916403786"
 content_type = "application/octet-stream"
+
+[[outputs]]
+id = "DMOWZ0Qt05MxOb9U9LJ9J"
+uri = "file://semex/design.md"
+type = "text"
+title = "SEMEX Dashboard — KOMBAI Design Spec"
+description = "Complete UI design brief for the dashboard redesign: classic monomorphic dark theme, single-column flow, all agreed tab structures and hard rules."
+logical_id = "9eb8213a-f7d5-4995-b84c-7d212ee4cdeb"
+content_hash = "sha256:eed3939ddbafc2b93532a4a11ef133b494d37a2ad31ed711938ebc2afd7e3c2f"
+size = 9562
+mtime_ms = 1790348005482
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:a15e5fa0-089d-49e2-816c-bf038725ad77/9eb8213a-f7d5-4995-b84c-7d212ee4cdeb/417ede86-f33b-457d-b22d-f9177b168042"
+storage_version_token = "1790348012583865"
+content_type = "text/markdown"
