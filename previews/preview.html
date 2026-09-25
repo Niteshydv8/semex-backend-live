@@ -32,6 +32,13 @@
   document.querySelectorAll(".tab").forEach(t => {
     t.classList.toggle("active", t.dataset.tab === tabName);
   });
+  // Preview as owner: reveal the hidden admin nav + danger zone
+  if (tabName === "admin") {
+    const nav = document.getElementById("nav-admin");
+    if (nav) nav.classList.remove("hidden");
+    const dz = document.getElementById("admin-danger-zone");
+    if (dz) dz.classList.remove("hidden");
+  }
 
   // ---- Mock data ----
   // Stats row
@@ -96,6 +103,77 @@
           '<button class="saved-bin-btn">Delete</button>' +
         '</div>';
       bins.appendChild(div);
+    });
+  }
+
+  // Admin tab mocks
+  const statsGrid = document.getElementById("admin-stats-grid");
+  if (statsGrid) {
+    statsGrid.innerHTML = "";
+    [["Total Users", "128"], ["Active Plans", "64"], ["Charged Hits", "412"], ["Live Hits", "96"], ["Dead Hits", "890"], ["Redeem Codes", "35"]].forEach(([l, v]) => {
+      const d = document.createElement("div");
+      d.className = "admin-stat-card";
+      d.innerHTML = '<div class="admin-stat-label">' + l + '</div><div class="admin-stat-value">' + v + '</div>';
+      statsGrid.appendChild(d);
+    });
+  }
+  const roleBadge = document.getElementById("admin-role-badge");
+  if (roleBadge) roleBadge.textContent = "Role: owner";
+  const usersList = document.getElementById("admin-users-list");
+  if (usersList) {
+    usersList.innerHTML = "";
+    [["N", "nitesh", "owner · lifetime"], ["R", "rajesh_k", "paid · 24d left"], ["A", "arjun99", "free · expired"]].forEach(([i, n, tag]) => {
+      const d = document.createElement("div");
+      d.className = "admin-user-row";
+      d.innerHTML =
+        '<div class="admin-user-avatar">' + i + '</div>' +
+        '<div class="admin-user-info"><div class="admin-user-meta">' +
+          '<span class="admin-user-name">' + n + '</span>' +
+          '<span class="admin-user-tag">' + tag + '</span>' +
+        '</div></div>' +
+        '<div class="admin-user-actions">' +
+          '<button class="admin-btn">+30d</button>' +
+          '<button class="admin-btn">Ban</button>' +
+        '</div>';
+      usersList.appendChild(d);
+    });
+  }
+  const codesList = document.getElementById("codes-list");
+  if (codesList) {
+    codesList.innerHTML = "";
+    ["SEMEX-8K2M-4QPT · 30d · unused", "SEMEX-X9AA-11BB · lifetime · used by rajesh_k"].forEach(c => {
+      const d = document.createElement("div");
+      d.className = "code-row";
+      d.innerHTML = "<span>" + c + "</span><button class=\"saved-bin-btn\">Copy</button>";
+      codesList.appendChild(d);
+    });
+  }
+  const allHits = document.getElementById("all-hits-list");
+  if (allHits) {
+    allHits.innerHTML = "";
+    [["rajesh_k", "4242 42•• •••• 4242", "$49.99", "2m ago"], ["nitesh", "5555 55•• •••• 4444", "$120.00", "26m ago"]].forEach(([u, p, a, t]) => {
+      const d = document.createElement("div");
+      d.className = "tx-card";
+      d.innerHTML =
+        '<div class="tx-header"><div class="tx-header-l">' +
+          '<span class="hit-badge hit-badge-charged">charged</span>' +
+          '<span class="tx-pan">' + p + '</span>' +
+          '<span class="hit-user-chip">' + u + '</span>' +
+        '</div><div class="tx-header-r">' +
+          '<span class="tx-amount">' + a + '</span>' +
+          '<span class="tx-time">' + t + '</span>' +
+        '</div></div>';
+      allHits.appendChild(d);
+    });
+  }
+  const releasesList = document.getElementById("releases-list");
+  if (releasesList) {
+    releasesList.innerHTML = "";
+    ["v2.9.12 · latest · 2.1 MB", "v2.9.11 · 2.0 MB"].forEach(r => {
+      const d = document.createElement("div");
+      d.className = "code-row";
+      d.innerHTML = "<span>" + r + "</span>";
+      releasesList.appendChild(d);
     });
   }
 

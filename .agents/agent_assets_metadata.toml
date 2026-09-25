@@ -637,3 +637,17 @@ mtime_ms = 1790350815879
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:a15e5fa0-089d-49e2-816c-bf038725ad77/5df188ec-4162-4c01-abdf-10f031ada4a1/3a2a3d2b-b941-49e8-99f3-ef865d6cd2ce"
 storage_version_token = "1790350861880791"
 content_type = "image/jpeg"
+
+[[outputs]]
+id = "VENJ0klMkbwLxv6nB9uKi"
+uri = "file://previews/preview-admin.jpg"
+type = "image"
+title = "Admin Panel — Enhanced UI"
+description = "Owner admin tab in the new theme: stats overview grid, user management rows, redeem codes, charged hits feed, releases, danger zone."
+logical_id = "279b9b64-ef91-4116-be57-1089bac27224"
+content_hash = "sha256:a48a9a09ea967984ad4e92b94be9609bb67325eaad13115878d29e44a858015f"
+size = 45340
+mtime_ms = 1790351074634
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:a15e5fa0-089d-49e2-816c-bf038725ad77/279b9b64-ef91-4116-be57-1089bac27224/7e4ad4af-2051-498c-a5c2-0c61abce90e3"
+storage_version_token = "1790351094684729"
+content_type = "image/jpeg"
