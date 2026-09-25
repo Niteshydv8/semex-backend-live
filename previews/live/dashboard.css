@@ -1,16 +1,16 @@
 /* ============================================================
    SEMEX — Operator Console v6.0
    Theme: Classic monomorphic dark (design.md spec)
-   One typeface (Inter) · one accent (#8B6FF0) · flat surfaces ·
+   One typeface (Inter) · one accent (#A855F7, ender.black) · flat surfaces ·
    1px hairline borders · no gradients/glow/neomorphism.
    Every selector preserved from v5 so popup.js keeps working.
    ============================================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;700&display=swap');
 
 :root {
   /* ---- New token system (design.md) — purple accent, deep-dark variant ---- */
-  --bg:          #08090C;
+  --bg:          #0A0A0C;
   --surface:     #0F1014;
   --surface-2:   #16171C;
   --border:      #23252B;
@@ -18,15 +18,15 @@
   --text:        #E6E7E9;
   --text-dim:    #8A8D93;
   --text-faint:  #5C5F66;
-  --accent:      #8B6FF0;
-  --accent-hi:   #A088F5;
-  --accent-deep: #5A3FB8;
+  --accent:      #A855F7;
+  --accent-hi:   #C084FC;
+  --accent-deep: #7E22CE;
   --success:     #34C07C;
   --warn:        #E0A63E;
   --danger:      #E05252;
   --radius-card: 8px;
   --radius-ctl:  6px;
-  --font-body:   'Inter', -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-body:   'Geist', 'Inter', -apple-system, 'Segoe UI', Roboto, sans-serif;
   --font-mono:   'JetBrains Mono', 'SF Mono', Consolas, monospace;
 
   /* ---- Legacy aliases (kept so inline styles / JS-built markup resolve) ---- */
@@ -44,10 +44,10 @@
   --accent-purple:       var(--accent);
   --accent-purple-mid:   var(--accent-hi);
   --accent-purple-deep:  var(--accent-deep);
-  --accent-purple-glow:  rgba(139,111,240,0.25);
+  --accent-purple-glow:  rgba(168,85,247,0.25);
   --accent-pink:         var(--accent);
   --accent-pink-deep:    var(--accent-deep);
-  --accent-pink-glow:    rgba(139,111,240,0.25);
+  --accent-pink-glow:    rgba(168,85,247,0.25);
   --accent-gradient:     var(--accent);
   --accent-gradient-rev: var(--accent);
   --status-charged:  var(--success);
@@ -93,8 +93,8 @@ body { overflow-x: hidden; }
 /* Ambient bloom layer — soft blue glows behind the app frame. */
 .ambient-glows { position: fixed; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; }
 .glow { position: absolute; border-radius: 50%; filter: blur(70px); }
-.glow-purple { width: 480px; height: 320px; background: rgba(139,111,240,0.10); top: -180px; left: 160px; }
-.glow-pink   { width: 380px; height: 300px; background: rgba(139,111,240,0.06); bottom: -160px; right: 40px; }
+.glow-purple { width: 480px; height: 320px; background: rgba(168,85,247,0.10); top: -180px; left: 160px; }
+.glow-pink   { width: 380px; height: 300px; background: rgba(168,85,247,0.06); bottom: -160px; right: 40px; }
 .glow-deep   { width: 400px; height: 200px; background: rgba(27,95,168,0.14); top: 55%; left: 36%; }
 
 /* ---------- App frame ---------- */
@@ -145,13 +145,13 @@ body { overflow-x: hidden; }
 .tab:hover { background: var(--surface-2); color: var(--text); }
 .tab.active {
   background: var(--surface-2); color: var(--text);
-  box-shadow: 0 0 16px rgba(139,111,240,0.14), inset 0 0 0 1px rgba(139,111,240,0.22);
+  box-shadow: 0 0 16px rgba(168,85,247,0.14), inset 0 0 0 1px rgba(168,85,247,0.22);
 }
-.tab.active .nav-ico { stroke: var(--accent); filter: drop-shadow(0 0 4px rgba(139,111,240,0.6)); }
+.tab.active .nav-ico { stroke: var(--accent); filter: drop-shadow(0 0 4px rgba(168,85,247,0.6)); }
 .tab.active::before {
   content: ""; position: absolute; left: -12px; top: 6px; bottom: 6px;
   width: 2px; border-radius: 2px; background: var(--accent);
-  box-shadow: 0 0 8px rgba(139,111,240,0.8);
+  box-shadow: 0 0 8px rgba(168,85,247,0.8);
 }
 
 .sidebar-footer {
@@ -205,7 +205,7 @@ body { overflow-x: hidden; }
   border-radius: var(--radius-ctl); cursor: pointer;
   transition: border-color 0.15s;
 }
-.notif-bell:hover { border-color: var(--border-hi); box-shadow: 0 0 12px rgba(139,111,240,0.15); }
+.notif-bell:hover { border-color: var(--border-hi); box-shadow: 0 0 12px rgba(168,85,247,0.15); }
 .notif-bell svg { width: 16px; height: 16px; fill: var(--text-dim); }
 .notif-badge {
   position: absolute; top: -5px; right: -5px; min-width: 15px; height: 15px;
@@ -272,7 +272,7 @@ body { overflow-x: hidden; }
   border-bottom: 1px solid var(--border); transition: background 0.12s;
 }
 .notif-item:last-child { border-bottom: none; }
-.notif-item.unread { background: rgba(139,111,240,0.05); }
+.notif-item.unread { background: rgba(168,85,247,0.05); }
 .notif-item.clickable { cursor: pointer; }
 .notif-item:hover { background: var(--surface-2); }
 .notif-icon { flex-shrink: 0; width: 16px; height: 16px; margin-top: 1px; }
@@ -289,7 +289,7 @@ body { overflow-x: hidden; }
 }
 .stat:hover {
   border-color: var(--border-hi);
-  box-shadow: 0 0 18px rgba(139,111,240,0.08);
+  box-shadow: 0 0 18px rgba(168,85,247,0.08);
 }
 .stat-label {
   font-size: 0.6rem; font-weight: 600; text-transform: uppercase;
@@ -353,7 +353,7 @@ body { overflow-x: hidden; }
 }
 .form-input:focus, .telegram-id-input:focus, .otp-input:focus, .redeem-input:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(139,111,240,0.16);
+  box-shadow: 0 0 0 3px rgba(168,85,247,0.16);
 }
 .form-input::placeholder { color: var(--text-faint); }
 textarea.form-input { resize: vertical; min-height: 90px; font-family: var(--font-mono); font-size: 0.76rem; line-height: 1.6; }
@@ -429,7 +429,7 @@ input[type="range"] { accent-color: var(--accent); width: 100%; }
 }
 .toggle input:checked + .toggle-slider {
   background: var(--accent);
-  box-shadow: 0 0 10px rgba(139,111,240,0.55);
+  box-shadow: 0 0 10px rgba(168,85,247,0.55);
 }
 .toggle input:checked + .toggle-slider::before { transform: translateX(14px); }
 
@@ -487,7 +487,7 @@ input[type="range"] { accent-color: var(--accent); width: 100%; }
 .bin-brand-badge {
   font-family: var(--font-mono); font-size: 0.6rem; font-weight: 700;
   text-transform: uppercase; color: var(--accent);
-  border: 1px solid rgba(139,111,240,0.35); border-radius: 4px; padding: 1px 6px;
+  border: 1px solid rgba(168,85,247,0.35); border-radius: 4px; padding: 1px 6px;
 }
 .bin-info-meta { color: var(--text-dim); }
 .bin-info-chip {
@@ -557,7 +557,7 @@ input[type="range"] { accent-color: var(--accent); width: 100%; }
 }
 .hit-row:hover, .hit-row-card:hover, .tx-card:hover {
   border-color: var(--border-hi);
-  box-shadow: 0 0 16px rgba(139,111,240,0.07);
+  box-shadow: 0 0 16px rgba(168,85,247,0.07);
 }
 .hit-row-top, .tx-header {
   display: flex; align-items: center; gap: 10px; padding: 10px 14px; cursor: pointer;
@@ -637,7 +637,7 @@ input[type="range"] { accent-color: var(--accent); width: 100%; }
 .news-date { font-family: var(--font-mono); font-size: 0.64rem; color: var(--text-faint); margin-left: auto; }
 .news-type-badge {
   font-size: 0.56rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.08em;
-  color: var(--accent); border: 1px solid rgba(139,111,240,0.35);
+  color: var(--accent); border: 1px solid rgba(168,85,247,0.35);
   border-radius: 4px; padding: 1px 6px;
 }
 .news-content { font-size: 0.76rem; color: var(--text-dim); line-height: 1.55; }
@@ -662,7 +662,7 @@ input[type="range"] { accent-color: var(--accent); width: 100%; }
   text-transform: uppercase; letter-spacing: 0.06em; color: var(--text-faint);
   border: 1px solid var(--border); border-radius: 4px; padding: 1px 5px;
 }
-.saved-bin-badge { color: var(--accent); border-color: rgba(139,111,240,0.35); }
+.saved-bin-badge { color: var(--accent); border-color: rgba(168,85,247,0.35); }
 .saved-bin-actions { display: flex; gap: 5px; opacity: 0; transition: opacity 0.15s; }
 .saved-bin-row:hover .saved-bin-actions { opacity: 1; }
 .saved-bin-btn { padding: 4px 9px; font-size: 0.66rem; }
@@ -841,8 +841,8 @@ input[type="range"] { accent-color: var(--accent); width: 100%; }
 .auth-emblem { position: relative; width: 56px; height: 56px; }
 .auth-emblem-ring {
   position: absolute; inset: -5px; border-radius: 12px;
-  border: 1px solid rgba(139,111,240,0.4);
-  box-shadow: 0 0 24px rgba(139,111,240,0.25), inset 0 0 12px rgba(139,111,240,0.10);
+  border: 1px solid rgba(168,85,247,0.4);
+  box-shadow: 0 0 24px rgba(168,85,247,0.25), inset 0 0 12px rgba(168,85,247,0.10);
 }
 .auth-logo { width: 56px; height: 56px; border-radius: 10px; object-fit: cover; }
 .auth-title { font-size: 1.2rem; font-weight: 700; letter-spacing: -0.01em; margin-bottom: 6px; }
