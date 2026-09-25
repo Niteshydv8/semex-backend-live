@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>SEMEX Dashboard Preview</title>
+<link rel="stylesheet" href="dashboard.css">
+</head>
+<body>
+<script>
+// Static preview harness: loads dashboard.html markup, activates the tab from
+// location.hash, hides login overlays, and injects mock data so every panel
+// renders populated. NOT part of the extension — dev preview only.
+(async function () {
+  const res = await fetch("dashboard.html");
+  const html = await res.text();
+  const doc = new DOMParser().parseFromString(html, "text/html");
+  document.body.innerHTML = "";
+  // Copy body content (app container + overlays)
+  Array.from(doc.body.children).forEach(el => document.body.appendChild(el));
+
+  // Force-hide overlays that JS would normally control
+  ["auth-modal", "maintenance-overlay"].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) { el.classList.remove("active"); el.style.display = "none"; }
+  });
+
+  // Activate tab from hash
+  const tabName = (location.hash || "#bypass").slice(1);
+  document.querySelectorAll(".tab-panel").forEach(p => p.classList.remove("active"));
+  const panel = document.getElementById(tabName + "-tab");
+  if (panel) panel.classList.add("active");
+  document.querySelectorAll(".tab").forEach(t => {
+    t.classList.toggle("active", t.dataset.tab === tabName);
+  });
+
+  // ---- Mock data ----
+  // Stats row
+  const vals = document.querySelectorAll(".stat-val");
+  const stats = ["47", "12", "5", "30"];
+  vals.forEach((v, i) => { if (stats[i] !== undefined) v.textContent = stats[i]; });
+  const wins = document.getElementById("session-wins-count");
+  if (wins) wins.textContent = "12";
+
+  // History rows
+  const hist = document.querySelector(".history-list");
+  if (hist) {
+    hist.innerHTML = "";
+    const rows = [
+      { badge: "charged", cls: "hit-badge-charged", pan: "4242 42•• •••• 4242", brand: "VISA · Stripe", time: "2m ago", site: "https://checkout.example-store.com", amount: "$49.99" },
+      { badge: "live", cls: "hit-badge-live", pan: "5555 55•• •••• 4444", brand: "MASTERCARD · Braintree", time: "18m ago", site: "https://pay.demo-shop.io", amount: "$12.00" },
+      { badge: "dead", cls: "hit-badge-dead", pan: "4000 00•• •••• 0002", brand: "VISA · Stripe", time: "1h ago", site: "https://billing.sample.net", amount: "—" },
+    ];
+    rows.forEach((r, i) => {
+      const div = document.createElement("div");
+      div.className = "hit-row";
+      div.innerHTML =
+        '<div class="hit-row-top">' +
+          '<span class="hit-badge ' + r.cls + '">' + r.badge + '</span>' +
+          '<span class="hit-pan">' + r.pan + '</span>' +
+          '<span class="hit-brand">' + r.brand + '</span>' +
+          '<span class="hit-time">' + r.time + '</span>' +
+        '</div>' +
+        (i === 0 ?
+        '<div class="hit-row-body">' +
+          '<div class="hit-details-grid">' +
+            '<div><div class="result-label">Site</div><div class="hit-val">' + r.site + '</div></div>' +
+            '<div><div class="result-label">Amount</div><div class="hit-val hit-amount">' + r.amount + '</div></div>' +
+            '<div><div class="result-label">Gateway</div><div class="hit-val">stripe_checkout</div></div>' +
+            '<div><div class="result-label">Response</div><div class="hit-response">succeeded — payment_intent confirmed</div></div>' +
+          '</div>' +
+        '</div>' : '');
+      hist.appendChild(div);
+    });
+  }
+
+  // BINs rows
+  const bins = document.querySelector(".saved-bins-list");
+  if (bins) {
+    bins.innerHTML = "";
+    [
+      { name: "US Visa Platinum", code: "424242", meta: "VISA · Chase · United States", badge: "cloud" },
+      { name: "UK Master Debit", code: "555555", meta: "MASTERCARD · Barclays · United Kingdom", badge: "local" },
+      { name: "DE Amex", code: "378282", meta: "AMEX · Deutsche Bank · Germany", badge: "cloud" },
+    ].forEach(b => {
+      const div = document.createElement("div");
+      div.className = "saved-bin-row";
+      div.innerHTML =
+        '<div class="saved-bin-info">' +
+          '<span class="saved-bin-name">' + b.name + '</span>' +
+          '<span class="saved-bin-code">' + b.code + '</span>' +
+          '<span class="saved-bin-meta">' + b.meta + '</span>' +
+        '</div>' +
+        '<span class="saved-bin-badge">' + b.badge + '</span>' +
+        '<div class="saved-bin-actions">' +
+          '<button class="saved-bin-btn">Use</button>' +
+          '<button class="saved-bin-btn">Delete</button>' +
+        '</div>';
+      bins.appendChild(div);
+    });
+  }
+
+  // Proxy connected state + saved list
+  const proxyIp = document.querySelector(".proxy-ip");
+  if (proxyIp) proxyIp.textContent = "192.168.100.25:8080";
+  const proxyLatency = document.querySelector(".proxy-latency");
+  if (proxyLatency) proxyLatency.textContent = "84ms";
+  const proxyCountry = document.querySelector(".proxy-country");
+  if (proxyCountry) proxyCountry.textContent = "Germany";
+  const proxyList = document.querySelector(".proxy-results");
+  if (proxyList) {
+    proxyList.innerHTML = "";
+    ["45.155.20.11:8080 · DE · 84ms", "103.75.190.42:1080 · NL · 122ms", "198.50.210.9:3128 · US · 203ms"].forEach(p => {
+      const div = document.createElement("div");
+      div.className = "proxy-row";
+      div.innerHTML = '<span class="sys-dot status-connected"></span><span class="proxy-ip" style="font-size:.74rem">' + p + '</span>';
+      proxyList.appendChild(div);
+    });
+  }
+})();
+</script>
+</body>
+</html>

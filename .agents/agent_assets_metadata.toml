@@ -553,3 +553,87 @@ mtime_ms = 1790350583790
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:a15e5fa0-089d-49e2-816c-bf038725ad77/eab0cb29-17a8-4d06-8f5b-5435ec559241/a139330a-8579-4e79-8fb4-da9c198abcae"
 storage_version_token = "1790350601473850"
 content_type = "image/jpeg"
+
+[[outputs]]
+id = "fTjirh8nMlDeo5vroASr8"
+uri = "file://semex/preview-bypass.jpg"
+type = "image"
+title = "Bypass tab"
+description = "Main tab: BIN/CC card, toggle list, more options."
+logical_id = "1130d7d2-b1c3-4eff-bc3e-f2a1bab40de9"
+content_hash = "sha256:920f22d1ed8df51cf01afe91a4c77768bff9ed6e29b8162db91710023049debd"
+size = 43055
+mtime_ms = 1790350809115
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:a15e5fa0-089d-49e2-816c-bf038725ad77/1130d7d2-b1c3-4eff-bc3e-f2a1bab40de9/ab5a7dde-57ba-4b5d-af6c-b827994a72f5"
+storage_version_token = "1790350855553872"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "A0mzSGiStl8M_d9XUlJr1"
+uri = "file://semex/preview-history.jpg"
+type = "image"
+title = "History tab"
+description = "Filter pills + expandable hit rows with mock data."
+logical_id = "d504acb2-958f-45d0-aa2b-fe3728f0388e"
+content_hash = "sha256:a6be76a3625b5876ec2c4b0e2b1bb16183ae0ee1bb6001785135f8f03eb22c73"
+size = 39147
+mtime_ms = 1790350810467
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:a15e5fa0-089d-49e2-816c-bf038725ad77/d504acb2-958f-45d0-aa2b-fe3728f0388e/5ee78075-7a5c-44c0-bede-9f744501c5bb"
+storage_version_token = "1790350856852478"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "4fnSCJC-KRoOql-58alr7"
+uri = "file://semex/preview-bins.jpg"
+type = "image"
+title = "BINs tab"
+description = "Saved BIN list with cloud/local badges."
+logical_id = "947493be-37cf-4d4a-8a0e-ae3bab8f5ad3"
+content_hash = "sha256:0036545942a041149937e032bee443987cf906ec0d4f17fa1857aef7fc0167d3"
+size = 36948
+mtime_ms = 1790350811715
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:a15e5fa0-089d-49e2-816c-bf038725ad77/947493be-37cf-4d4a-8a0e-ae3bab8f5ad3/4e640741-ff57-4209-9ee9-b0247437e5b9"
+storage_version_token = "1790350858138786"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "d6K9cuFv6apFM9wtQ1NUh"
+uri = "file://semex/preview-captcha.jpg"
+type = "image"
+title = "Captcha tab"
+description = "Provider config + hCaptcha/reCAPTCHA options."
+logical_id = "c1e2db20-29e3-4cf7-bd40-50107f81b568"
+content_hash = "sha256:eef305d43df0c5b162b90fc5a5c7a74a59b3ffb9c4b03d9bc0c010cb295585f5"
+size = 20483
+mtime_ms = 1790350812983
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:a15e5fa0-089d-49e2-816c-bf038725ad77/c1e2db20-29e3-4cf7-bd40-50107f81b568/9c5127e9-9a56-442f-bb88-1a7ce8f56066"
+storage_version_token = "1790350859401549"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "Hh5RClM7PFxKuYv37b-o0"
+uri = "file://semex/preview-proxy.jpg"
+type = "image"
+title = "Proxy tab"
+description = "Proxy Station: connect card + saved proxy list."
+logical_id = "d51d5c8e-6947-4b7b-9d51-219648f0215a"
+content_hash = "sha256:7bb26ba72ffd287f3a8b67760a783b638bc68721bf79fc76aeddfc9c4b06a3b5"
+size = 38392
+mtime_ms = 1790350814347
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:a15e5fa0-089d-49e2-816c-bf038725ad77/d51d5c8e-6947-4b7b-9d51-219648f0215a/eddad05c-dff9-4d8f-a8a8-aca8f9926438"
+storage_version_token = "1790350860628527"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "i2rfDlgLOJwFtEy-t3R6W"
+uri = "file://semex/preview-settings.jpg"
+type = "image"
+title = "Settings tab"
+description = "Grouped settings cards."
+logical_id = "5df188ec-4162-4c01-abdf-10f031ada4a1"
+content_hash = "sha256:aafd3ab0eca33513f37303fd310075791093b416c6b31b7c7d407722a3807513"
+size = 51662
+mtime_ms = 1790350815879
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:a15e5fa0-089d-49e2-816c-bf038725ad77/5df188ec-4162-4c01-abdf-10f031ada4a1/3a2a3d2b-b941-49e8-99f3-ef865d6cd2ce"
+storage_version_token = "1790350861880791"
+content_type = "image/jpeg"
