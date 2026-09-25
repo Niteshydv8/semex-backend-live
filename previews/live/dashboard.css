@@ -1002,3 +1002,55 @@ input[type="range"] { accent-color: var(--accent); width: 100%; }
   padding: 7px 14px; font-size: 0.78rem; flex-shrink: 0;
 }
 .ip-check-row input { flex: 1; min-width: 0; }
+
+/* ============================================================
+   ENHANCE — unified control metrics (ender.black pass)
+   One control height, one button shape, primary action stands
+   out, list-row buttons stay compact.
+   ============================================================ */
+:root { --ctl-h: 36px; }
+
+/* Every input/select shares one height */
+.section-content input[type="text"],
+.section-content input[type="email"],
+.section-content input[type="number"],
+.section-content input[type="password"],
+.section-content input[type="url"],
+.section-content select,
+.form-input, .telegram-id-input, .otp-input, .redeem-input {
+  min-height: var(--ctl-h); padding: 8px 12px; box-sizing: border-box;
+}
+
+/* Buttons: one height, ender-style 8px radius, comfortable padding */
+.btn-action, .btn-primary, .small-button, .btn-copy, .btn-export, .btn-blur,
+.btn-mini-gradient, .news-refresh-btn, .proxy-action-btn,
+.modal-btn, .maintenance-retry-btn, .auth-btn,
+.proxy-controls-row .small-button, .ip-check-row .small-button,
+.subsection-content > .small-button, .redeem-banner .small-button {
+  min-height: var(--ctl-h); padding: 8px 16px;
+  border-radius: 8px; font-size: 0.8rem;
+}
+.btn-full-danger { min-height: 40px; border-radius: 8px; }
+
+/* Compact buttons inside list rows */
+.saved-bin-btn, .hit-copy-btn, .tx-copy-btn, .admin-btn {
+  min-height: 30px; padding: 5px 12px; font-size: 0.74rem; border-radius: 6px;
+}
+
+/* Proxy Management: Connect is the primary action */
+#activate-proxy-btn {
+  background: var(--accent); border-color: var(--accent);
+  color: #fff; font-weight: 600; padding: 8px 22px;
+}
+#activate-proxy-btn:hover {
+  background: var(--accent-hi); border-color: var(--accent-hi); filter: none;
+}
+#disable-proxy-btn { border-color: rgba(224,82,82,0.5); color: var(--danger); }
+#disable-proxy-btn:hover {
+  background: rgba(224,82,82,0.10); border-color: var(--danger); filter: none;
+}
+
+/* Ratio rhythm: consistent gaps inside sections */
+.section-content { padding: 16px 18px; }
+.toggle-row { padding: 10px 0; }
+.subsection { margin-top: 12px; }
