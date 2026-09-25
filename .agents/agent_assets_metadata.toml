@@ -651,3 +651,31 @@ mtime_ms = 1790351074634
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:a15e5fa0-089d-49e2-816c-bf038725ad77/279b9b64-ef91-4116-be57-1089bac27224/7e4ad4af-2051-498c-a5c2-0c61abce90e3"
 storage_version_token = "1790351094684729"
 content_type = "image/jpeg"
+
+[[outputs]]
+id = "lMv-8eHhJ62odFd889uPk"
+uri = "file://previews/preview-bypass-bloom.jpg"
+type = "image"
+title = "Bypass tab — Bloom theme"
+description = "Classic dark console with ambient blue bloom: glowing active tab, lit primary buttons, focus rings, hover halos."
+logical_id = "a9277991-77e4-4489-a6f5-0bfe9daf31d3"
+content_hash = "sha256:e6fe6dbf2ae787a245f9f6f1e7b52c9f48878a5e84e4022b01b03eea812c4422"
+size = 43623
+mtime_ms = 1790351254766
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:a15e5fa0-089d-49e2-816c-bf038725ad77/a9277991-77e4-4489-a6f5-0bfe9daf31d3/8d792b5d-38a7-4d6a-a0a5-2a1c0462d641"
+storage_version_token = "1790351272551541"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "9VvdEs47-F-2wejgt-LJz"
+uri = "file://previews/preview-admin-bloom.jpg"
+type = "image"
+title = "Admin panel — Bloom theme"
+description = "Admin tab with the bloom layer applied."
+logical_id = "648fa6c9-935e-4257-93f1-acf96a045b9d"
+content_hash = "sha256:51055b36fb57db973cd2c7399cfa06952839e9e4f140234ab2439ed272ba895a"
+size = 45821
+mtime_ms = 1790351256070
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:a15e5fa0-089d-49e2-816c-bf038725ad77/648fa6c9-935e-4257-93f1-acf96a045b9d/6fb84d28-ba3e-428d-aaf5-8bb639dd1909"
+storage_version_token = "1790351273847341"
+content_type = "image/jpeg"
