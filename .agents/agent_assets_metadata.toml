@@ -945,3 +945,17 @@ mtime_ms = 1790352435170
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:a15e5fa0-089d-49e2-816c-bf038725ad77/09b3e3f3-542c-41f4-a6db-32044b47231f/5be98fd2-c8e9-4d57-a5e0-215f963989f9"
 storage_version_token = "1790352465904628"
 content_type = "image/jpeg"
+
+[[outputs]]
+id = "28jgERMBZ6AarJewRfqnR"
+uri = "file://previews/show-me.jpg"
+type = "image"
+title = "SEMEX dashboard — live preview right now"
+description = "Bypass tab of the running preview server (port 5000), captured seconds ago. Ice cyan + electric blue on the original neomorph UI."
+logical_id = "680c6dad-5af3-4449-80a5-261c5ad3c99f"
+content_hash = "sha256:87c6e43d4d08eaa76ab0aeac5623583290ea0b56df953be1b84f9885cbae6f07"
+size = 7612
+mtime_ms = 1790353877038
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:a15e5fa0-089d-49e2-816c-bf038725ad77/680c6dad-5af3-4449-80a5-261c5ad3c99f/d7c2d81f-0d49-4701-9be6-5ca78edcec67"
+storage_version_token = "1790353895351106"
+content_type = "image/jpeg"
