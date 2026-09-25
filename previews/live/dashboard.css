@@ -1054,3 +1054,49 @@ input[type="range"] { accent-color: var(--accent); width: 100%; }
 .section-content { padding: 16px 18px; }
 .toggle-row { padding: 10px 0; }
 .subsection { margin-top: 12px; }
+
+/* ============================================================
+   ENDER ELEMENTS — button geometry + hover flow
+   (shapes/sizes/motion matched to ender.black; colors stay ours)
+   Primary: 12px radius, 40px height, soft accent shadow.
+   All buttons: smooth lift + brighten on hover, settle on press.
+   ============================================================ */
+.btn-action, .btn-primary, .small-button, .btn-copy, .btn-export, .btn-blur,
+.btn-mini-gradient, .news-refresh-btn, .proxy-action-btn, .saved-bin-btn,
+.modal-btn, .hit-copy-btn, .tx-copy-btn, .admin-btn, .maintenance-retry-btn,
+.tg-login-btn, .auth-btn, .btn-full-danger, .btn-danger,
+.proxy-controls-row .small-button, .ip-check-row .small-button,
+.subsection-content > .small-button, .redeem-banner .small-button {
+  border-radius: 10px;
+  transition: transform 0.15s ease, filter 0.15s ease,
+              border-color 0.15s ease, background 0.15s ease, box-shadow 0.15s ease;
+}
+.btn-action:hover, .btn-primary:hover, .small-button:hover, .btn-copy:hover,
+.btn-export:hover, .btn-blur:hover, .btn-mini-gradient:hover,
+.news-refresh-btn:hover, .proxy-action-btn:hover, .saved-bin-btn:hover,
+.modal-btn:hover, .hit-copy-btn:hover, .tx-copy-btn:hover, .admin-btn:hover,
+.maintenance-retry-btn:hover, .auth-btn:hover, .btn-full-danger:hover,
+.btn-danger:hover, .proxy-controls-row .small-button:hover,
+.ip-check-row .small-button:hover, .subsection-content > .small-button:hover,
+.redeem-banner .small-button:hover {
+  transform: translateY(-1px); filter: brightness(1.1);
+}
+.btn-action:active, .btn-primary:active, .small-button:active,
+.btn-mini-gradient:active, .proxy-action-btn:active, .modal-btn:active,
+.auth-btn:active, .btn-full-danger:active, .btn-danger:active {
+  transform: translateY(0); filter: brightness(0.96);
+}
+
+/* Primary actions — ender primary geometry: 12px radius, taller, soft shadow */
+.btn-primary, .tg-login-btn, .modal-btn-primary, .auth-btn,
+#activate-proxy-btn {
+  border-radius: 12px; min-height: 40px; padding: 10px 22px;
+  box-shadow: 0 4px 12px rgba(168,85,247,0.25);
+}
+.btn-primary:hover, .tg-login-btn:hover, .modal-btn-primary:hover,
+.auth-btn:hover, #activate-proxy-btn:hover {
+  box-shadow: 0 6px 18px rgba(168,85,247,0.38); filter: none;
+}
+
+/* Full-width danger keeps the same tall geometry */
+.btn-full-danger { min-height: 40px; border-radius: 12px; }
