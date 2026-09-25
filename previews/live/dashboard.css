@@ -969,3 +969,36 @@ input[type="range"] { accent-color: var(--accent); width: 100%; }
   width: 56px; margin-top: 0; flex-shrink: 0;
   font-family: var(--font-mono); text-transform: uppercase; text-align: center;
 }
+
+/* ============================================================
+   PATCH — proxy/settings control-row proportions
+   Buttons and selects in control rows now share one height and
+   rhythm; the list-row card style no longer wraps controls.
+   ============================================================ */
+.subsection > label:not(.checkbox-label):not(.inline-check) {
+  display: block; font-size: 0.78rem; color: var(--text-dim); margin-bottom: 4px;
+}
+.subsection > input[type="text"],
+.subsection > input[type="number"],
+.subsection > select { width: 100%; }
+
+.proxy-controls-row {
+  display: flex; gap: 8px; align-items: center;
+  margin: 8px 0; flex-wrap: wrap;
+}
+.proxy-controls-row .proxy-type-field {
+  display: flex; align-items: center; gap: 6px; flex: 1; min-width: 150px;
+}
+.proxy-controls-row .proxy-type-field label {
+  flex-shrink: 0; font-size: 0.78rem; color: var(--text-dim);
+}
+.proxy-controls-row .proxy-type-field select { flex: 1; min-width: 0; }
+
+/* Buttons beside inputs/selects match control height, not pill-small */
+.proxy-controls-row .small-button,
+.ip-check-row .small-button,
+.subsection-content > .small-button,
+.redeem-banner .small-button {
+  padding: 7px 14px; font-size: 0.78rem; flex-shrink: 0;
+}
+.ip-check-row input { flex: 1; min-width: 0; }
