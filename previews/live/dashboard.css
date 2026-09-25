@@ -1147,3 +1147,49 @@ input[type="range"] { accent-color: var(--accent); width: 100%; }
 /* Page heading — ender's big bold welcome style */
 .topbar-title h1 { font-size: 1.55rem; font-weight: 700; letter-spacing: -0.02em; }
 .topbar-sub { font-size: 0.8rem; margin-top: 6px; }
+
+/* ============================================================
+   TYPOGRAPHY FIT — Geist applied properly, scale tightened
+   One type scale everywhere; oversized headings/numbers brought
+   in line; Geist's tight tracking + antialiasing.
+   ============================================================ */
+body {
+  font-family: var(--font-body);
+  font-size: 13px; letter-spacing: -0.01em;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+h1, h2, h3, button, input, select, textarea, label { letter-spacing: -0.01em; }
+
+/* Headings — confident but not oversized */
+.topbar-title h1 { font-size: 1.3rem; font-weight: 700; }
+.section-header h2 { font-size: 0.92rem; font-weight: 600; }
+.subsection-header h3, .subsection h3 { font-size: 0.8rem; font-weight: 600; }
+
+/* Stat numbers — bold, slightly smaller */
+.stat-val { font-size: 1.35rem; font-weight: 700; }
+.stat-label { font-size: 0.6rem; }
+
+/* One readable size for controls and nav */
+.tab { font-size: 0.82rem; font-weight: 500; }
+.btn-action, .btn-primary, .small-button, .btn-copy, .btn-export, .btn-blur,
+.btn-mini-gradient, .news-refresh-btn, .proxy-action-btn, .modal-btn,
+.maintenance-retry-btn, .auth-btn, .btn-full-danger, .btn-danger,
+.proxy-controls-row .small-button, .ip-check-row .small-button,
+.subsection-content > .small-button, .redeem-banner .small-button {
+  font-size: 0.78rem; font-weight: 500;
+}
+.section-content input, .section-content select, .section-content textarea,
+.form-input, .telegram-id-input, .otp-input, .redeem-input {
+  font-size: 0.78rem;
+}
+.section-content label, .subsection > label, .gen-country-row > label,
+.proxy-controls-row .proxy-type-field label { font-size: 0.76rem; }
+
+/* Hints and meta text stay quiet */
+.hint, .bypass-hint, .ip-check-hint, .info-text { font-size: 0.68rem; }
+.mono-dim { font-size: 0.7rem; }
+
+/* Tighten tall primaries a touch so rows stay balanced */
+.btn-primary, .tg-login-btn, .modal-btn-primary, .auth-btn,
+#activate-proxy-btn { min-height: 38px; padding: 8px 20px; }
