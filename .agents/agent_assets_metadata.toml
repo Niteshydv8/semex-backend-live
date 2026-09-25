@@ -679,3 +679,31 @@ mtime_ms = 1790351256070
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:a15e5fa0-089d-49e2-816c-bf038725ad77/648fa6c9-935e-4257-93f1-acf96a045b9d/6fb84d28-ba3e-428d-aaf5-8bb639dd1909"
 storage_version_token = "1790351273847341"
 content_type = "image/jpeg"
+
+[[outputs]]
+id = "c-louZS0nItK9r38t-6BS"
+uri = "file://previews/preview-ice-bypass.jpg"
+type = "image"
+title = "Bypass tab — Original UI, ice cyan theme"
+description = "The original neomorph dashboard (3D raised cards, glows, gradients) recolored ice cyan + electric blue on dark."
+logical_id = "35b7e168-c3a2-4355-b7ef-8ced792bb809"
+content_hash = "sha256:87c6e43d4d08eaa76ab0aeac5623583290ea0b56df953be1b84f9885cbae6f07"
+size = 7612
+mtime_ms = 1790351476882
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:a15e5fa0-089d-49e2-816c-bf038725ad77/35b7e168-c3a2-4355-b7ef-8ced792bb809/4195ac0e-7eee-485a-9944-de454021fb54"
+storage_version_token = "1790351493477200"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "aL_It2f9QdiJL2mHc9AFm"
+uri = "file://previews/preview-ice-admin.jpg"
+type = "image"
+title = "Admin panel — ice cyan theme"
+description = "Admin tab in the recolored original UI."
+logical_id = "707be561-30e8-4b94-b9a8-b7056b705e26"
+content_hash = "sha256:f980850d9efe6f6a9f24abd66ef96229e626c3666989c08cc5afc1d774d389ae"
+size = 7464
+mtime_ms = 1790351478194
+storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:a15e5fa0-089d-49e2-816c-bf038725ad77/707be561-30e8-4b94-b9a8-b7056b705e26/538ab8cf-cdc4-4bba-ba3f-8a86c9b70f6c"
+storage_version_token = "1790351494733579"
+content_type = "image/jpeg"
