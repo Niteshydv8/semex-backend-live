@@ -353,7 +353,7 @@ body { overflow-x: hidden; }
 }
 .form-input:focus, .telegram-id-input:focus, .otp-input:focus, .redeem-input:focus {
   border-color: var(--accent);
-  box-shadow: 0 0 0 3px rgba(61,157,242,0.16), 0 0 14px rgba(61,157,242,0.12);
+  box-shadow: 0 0 0 3px rgba(61,157,242,0.16);
 }
 .form-input::placeholder { color: var(--text-faint); }
 textarea.form-input { resize: vertical; min-height: 90px; font-family: var(--font-mono); font-size: 0.76rem; line-height: 1.6; }
@@ -392,11 +392,9 @@ input[type="range"] { accent-color: var(--accent); width: 100%; }
 }
 .btn-primary, .tg-login-btn {
   background: var(--accent); border-color: var(--accent); color: #fff; font-weight: 600;
-  box-shadow: 0 0 16px rgba(61,157,242,0.30);
 }
 .btn-primary:hover, .tg-login-btn:hover {
   background: var(--accent-hi); border-color: var(--accent-hi); filter: none;
-  box-shadow: 0 0 24px rgba(61,157,242,0.45);
 }
 .btn-danger, .btn-full-danger, .modal-btn-primary.danger {
   background: transparent; border-color: rgba(224,82,82,0.5); color: var(--danger);
@@ -917,4 +915,57 @@ input[type="range"] { accent-color: var(--accent); width: 100%; }
   .tab.active::before { left: -8px; }
   .main-content { padding: 20px 18px 48px; }
   .stats { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* ============================================================
+   PATCH — classic control coverage
+   Bare inputs/selects/textareas (no .form-input class) were
+   falling back to browser-default white styling. Style every
+   control inside section content so nothing native leaks through.
+   ============================================================ */
+:root { color-scheme: dark; }
+
+.section-content input[type="text"],
+.section-content input[type="email"],
+.section-content input[type="number"],
+.section-content input[type="password"],
+.section-content input[type="url"],
+.section-content select,
+.section-content textarea {
+  background: var(--surface-2); border: 1px solid var(--border);
+  border-radius: var(--radius-ctl); padding: 7px 10px;
+  color: var(--text); font-family: var(--font-body); font-size: 0.8rem;
+  outline: none; transition: border-color 0.15s;
+}
+.section-content input:focus, .section-content select:focus, .section-content textarea:focus {
+  border-color: var(--accent);
+}
+.section-content input::placeholder, .section-content textarea::placeholder { color: var(--text-faint); }
+.section-content select { cursor: pointer; }
+
+/* BIN / CVV / expiry proportions */
+.bin-cvv-row .bin-group { flex: 1; min-width: 0; }
+.bin-cvv-row .cvv-group { flex: 0 0 96px; }
+.bin-input-wrap input { flex: 1; min-width: 0; font-family: var(--font-mono); }
+.cvv-group input { width: 100%; font-family: var(--font-mono); text-align: center; }
+.expiry-selectors .expiry-group { flex: 1; }
+.expiry-selectors select { width: 100%; font-family: var(--font-mono); }
+
+/* CC list textarea */
+#cc-list-input {
+  width: 100%; min-height: 120px; resize: vertical;
+  font-family: var(--font-mono); font-size: 0.76rem; line-height: 1.6;
+}
+
+/* Address generator row — proxy-row is reused here as an inline
+   container; strip the list-row card styling off it */
+.gen-country-row > label { flex-shrink: 0; font-size: 0.78rem; color: var(--text-dim); }
+.gen-country-row .proxy-row {
+  border: 0; padding: 0; background: none; margin-bottom: 0;
+  flex: 1; display: flex; gap: 8px; align-items: center;
+}
+.gen-country-row select { flex: 1; min-width: 0; }
+.country-custom {
+  width: 56px; margin-top: 0; flex-shrink: 0;
+  font-family: var(--font-mono); text-transform: uppercase; text-align: center;
 }
