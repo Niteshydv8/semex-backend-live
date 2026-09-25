@@ -9,7 +9,9 @@ The API is served through a **specific domain** (api.semxhitter.pw). If hosting 
 
 Pushing `main` to origin (github.com/Niteshydv8/semexbackend) auto-redeploys the **Render** backend via its GitHub integration — no manual deploy step needed.
 
-**Current working method (Aug 17, 2026):** plain push with a credential helper reading the `GITHUB_TOKEN` env secret — no connector replay needed:
+**Status check (Sep 25, 2026):** the `GITHUB_TOKEN` env secret was NOT set and the token baked into the origin URL (`ghp_...` in `git remote -v`) was rejected ("Invalid username or token"). Raw `git push` fails auth. Before pushing again, confirm a fresh token with the user or fall back to the connector replay below.
+
+**Working method (Aug 17, 2026, re-verify before relying on it):** plain push with a credential helper reading the `GITHUB_TOKEN` env secret — no connector replay needed:
 ```bash
 git -c credential.helper='!f() { echo username=x-access-token; echo password=$GITHUB_TOKEN; }; f' push origin main
 ```
