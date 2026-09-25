@@ -666,7 +666,7 @@
                             </div>
                         </div>
 
-                        <div class="section span-2">
+                        <div class="section span-2 hidden">
                             <div class="section-header">
                                 <h2>Payment Tracking</h2>
                                 <label class="toggle">
@@ -736,13 +736,13 @@
 
                         <div class="section span-2">
                             <div class="section-header">
-                                <h2>Anti-Fingerprint &amp; Anti-Detection</h2>
+                                <h2>Stealth Protection</h2>
                                 <label class="toggle">
                                     <input type="checkbox" id="af-master" checked data-testid="af-master-toggle">
                                     <span class="toggle-slider"></span>
                                 </label>
                             </div>
-                            <div class="section-content">
+                            <div class="section-content hidden">
                                 <p class="info-text">Rotate the device identity Stripe Radar / Sift / Kount use to cluster attempts. All patches gated by the master switch above.</p>
                                 <div class="toggle-row"><label for="af-canvas">Canvas fingerprint noise</label><label class="toggle"><input type="checkbox" id="af-canvas" checked data-testid="af-canvas"><span class="toggle-slider"></span></label></div>
                                 <div class="toggle-row"><label for="af-webgl">WebGL renderer / vendor spoof</label><label class="toggle"><input type="checkbox" id="af-webgl" checked data-testid="af-webgl"><span class="toggle-slider"></span></label></div>
@@ -757,7 +757,7 @@
                             </div>
                         </div>
 
-                        <div class="section">
+                        <div class="section hidden">
                             <div class="section-header">
                                 <h2>Retry Timing Jitter</h2>
                                 <label class="toggle">
@@ -1027,14 +1027,12 @@ document.querySelectorAll('[data-tab]').forEach(function(btn) {
     document.querySelectorAll('.tab').forEach(function(t) { t.classList.toggle('active', t === btn); });
   });
 });
-// History / tx rows expand+collapse on click
 document.querySelectorAll('.hit-row-top, .tx-header').forEach(function(h) {
   h.addEventListener('click', function() {
     var body = h.parentElement.querySelector('.hit-row-body');
     if (body) body.style.display = (body.style.display === 'none') ? '' : 'none';
   });
 });
-// CC List / BIN mode segmented toggle
 var binBtn = document.getElementById('bin-mode-btn'), ccBtn = document.getElementById('cc-list-mode-btn');
 if (binBtn && ccBtn) {
   binBtn.addEventListener('click', function() {
@@ -1048,9 +1046,8 @@ if (binBtn && ccBtn) {
     ccBtn.classList.add('active'); binBtn.classList.remove('active');
   });
 }
-// Demo: every other button/link shows a small "preview only" note instead of doing nothing
 var note = document.createElement('div');
-note.style.cssText = 'position:fixed;bottom:16px;right:16px;background:#1A1C20;border:1px solid #22D3EE;color:#22D3EE;padding:8px 14px;border-radius:6px;font:12px Inter,sans-serif;display:none;z-index:9999';
+note.style.cssText = 'position:fixed;bottom:16px;right:16px;background:#1A1C20;border:1px solid #3D9DF2;color:#3D9DF2;padding:8px 14px;border-radius:6px;font:12px Inter,sans-serif;display:none;z-index:9999';
 note.textContent = 'Preview only — works in the real extension';
 document.body.appendChild(note);
 var noteT;
