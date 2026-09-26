@@ -24,7 +24,7 @@ src = re.sub(r'<script[\s\S]*?</script>', '', src)
 src = src.replace('</head>', '<style id="preview-visibility-fix">.app-container{opacity:1 !important}</style>\n</head>')
 
 # Stats + wins
-for el, v in [('total-cards','47'),('stats-charged','12'),('stats-ccn','5'),('stats-dead','30'),('session-wins-count','12')]:
+for el, v in [('total-cards','183'),('stats-charged','71'),('stats-ccn','24'),('stats-dead','88'),('session-wins-count','23')]:
     src = re.sub(r'(id="%s"[^>]*>)[^<]*' % el, r'\g<1>%s' % v, src)
 
 # Reveal owner-only admin nav + danger zone so everything is clickable
