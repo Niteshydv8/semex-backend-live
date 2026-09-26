@@ -2565,3 +2565,6 @@ input:not([type]):focus, input[type=email]:focus, input[type=number]:focus {
 /* settings: proportional 2-col rhythm — paired cards stretch to equal height */
 #settings-tab .grid-2 { align-items: stretch; }
 #settings-tab .grid-2 > .glass { height: 100%; }
+
+/* review fix: give the Live chip room so the ring caption isn't clipped */
+#stats-section .stat[data-stat="live"] { min-height: 96px; }
