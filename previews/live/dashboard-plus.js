@@ -44,15 +44,23 @@
     wrap.className = 'sx-live-ring-wrap';
     wrap.innerHTML = '<div class="sx-live-ring"></div><div class="sx-live-num">0</div><div class="sx-live-cap">LIVE</div>';
     bars.parentElement.appendChild(wrap);
+    /* compact linear module for small screens — the circle is scrapped there */
+    var bar = document.createElement('div');
+    bar.className = 'sx-live-bar';
+    bar.innerHTML = '<div class="sx-live-bar-head"><span class="sx-live-bar-count">0 live</span><span class="sx-live-bar-pct">0%</span></div><div class="sx-live-bar-track"><div class="sx-live-bar-fill"></div></div>';
+    bars.parentElement.appendChild(bar);
     var ring = wrap.querySelector('.sx-live-ring');
     var numEl = wrap.querySelector('.sx-live-num');
+    var barCount = bar.querySelector('.sx-live-bar-count');
+    var barPct = bar.querySelector('.sx-live-bar-pct');
+    var barFill = bar.querySelector('.sx-live-bar-fill');
     var lastLive = -1, lastPct = -1;
     function update() {
       var live = num('stats-ccn');
       var total = num('stats-charged') + live + num('stats-dead');
       var pct = total ? Math.min(100, Math.round(live / total * 100)) : 0;
-      if (live !== lastLive) { lastLive = live; numEl.textContent = live; }
-      if (pct !== lastPct) { lastPct = pct; ring.style.setProperty('--pct', pct); }
+      if (live !== lastLive) { lastLive = live; numEl.textContent = live; barCount.textContent = live + ' live'; }
+      if (pct !== lastPct) { lastPct = pct; ring.style.setProperty('--pct', pct); barPct.textContent = pct + '%'; barFill.style.width = pct + '%'; }
     }
     update();
     ['stats-charged', 'stats-ccn', 'stats-dead'].forEach(function (id) {

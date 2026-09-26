@@ -2711,3 +2711,44 @@ body::before {
   .topnav { flex-wrap: wrap; }
   .nav-pills { order: 3; width: 100%; overflow-x: auto; }
 }
+
+/* ============================================================
+   MOBILE STATS — 60px chips, circle scrapped for a linear module
+   ============================================================ */
+
+/* the new live module: slim "N live · P%" bar (hidden on desktop,
+   where the ring stays) */
+.sx-live-bar { display: none; }
+
+@media (max-width: 900px) {
+  #stats-section .sx-live-ring-wrap { display: none; }
+  #stats-section .stat[data-stat="live"] { min-height: 0; }
+  .sx-live-bar { display: block; width: 100%; margin-top: 8px; align-self: stretch; }
+  .sx-live-bar-head {
+    display: flex; justify-content: space-between; align-items: baseline;
+    font-size: 10px; font-weight: 600; letter-spacing: 0.06em;
+    text-transform: uppercase; color: var(--fg-3); margin-bottom: 5px;
+  }
+  .sx-live-bar-count { color: var(--violet-lite); }
+  .sx-live-bar-track { height: 5px; border-radius: 99px; background: rgba(255,255,255,0.08); overflow: hidden; }
+  .sx-live-bar-fill {
+    height: 100%; width: 0; border-radius: inherit;
+    background: linear-gradient(90deg, #6d4dff, #a78bff);
+    box-shadow: 0 0 8px rgba(139,108,255,0.5);
+    transition: width 0.4s ease;
+  }
+}
+
+/* phones: every stat chip a compact 60px module */
+@media (max-width: 640px) {
+  #stats-section { gap: 8px; }
+  #stats-section .stat { min-height: 60px; padding: 8px 12px; border-radius: 14px; }
+  #stats-section .stat[data-stat="live"] { min-height: 60px; }
+  #stats-section .stat-label,
+  #stats-section .rev-stat-lab { font-size: 9.5px; letter-spacing: 0.07em; }
+  #stats-section .rev-big,
+  #stats-section .rev-other-val { font-size: 20px; }
+  .sx-live-bar { margin-top: 6px; }
+  .sx-live-bar-head { font-size: 9px; margin-bottom: 4px; }
+  .hero-status { gap: 8px; }
+}
