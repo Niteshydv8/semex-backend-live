@@ -215,15 +215,12 @@ tr:hover td { background: rgba(139,92,246,0.04); }
     </div>
     <div id="step-otp" style="display:none;">
       <div class="field">
-        <label>Enter OTP from Telegram</label>
+        <label>OTP Code</label>
         <input id="in-otp" type="text" placeholder="6-digit code" maxlength="6" autocomplete="off">
       </div>
       <button class="btn btn-primary btn-full" onclick="verifyOTP()">Verify & Login</button>
-      <p style="text-align:center;margin-top:12px;font-size:12px;color:var(--muted);">
-        Check <b>@Semexautoxbot</b> DM on Telegram
-      </p>
+      <p style="text-align:center;margin-top:10px;font-size:12px;color:var(--muted);">Check your Telegram DMs</p>
     </div>
-    <p class="sub" style="margin-top:24px;">Admin access only</p>
   </div>
 </div>
 
@@ -274,7 +271,7 @@ tr:hover td { background: rgba(139,92,246,0.04); }
   <div id="tab-users" class="panel">
     <div class="card">
       <h2>All users</h2>
-      <p class="subtitle">Ban, unban, extend plans, revoke sessions.</p>
+      <p class="subtitle">Ban, unban, revoke sessions, mute from group.</p>
       <div id="users-table"></div>
     </div>
   </div>
@@ -830,11 +827,11 @@ async function loadUsers() {
         <td>${u.hitCount || 0}</td>
         <td>${u.chargedCount || 0}</td>
         <td>
-          <button class="btn btn-ghost btn-sm" onclick="extendUser(${u.telegramId})">Extend</button>
           ${u.isBanned
             ? `<button class="btn btn-warn btn-sm" onclick="unbanUser(${u.telegramId})">Unban</button>`
             : (u.isAdmin ? '' : `<button class="btn btn-danger btn-sm" onclick="banUser(${u.telegramId})">Ban</button>`)}
           ${u.isAdmin ? '' : `<button class="btn btn-ghost btn-sm" onclick="revokeSessions(${u.telegramId})">Kick devices</button>`}
+          ${u.isAdmin ? '' : `<button class="btn btn-sm ${u.publicMuted ? 'btn-warn' : 'btn-ghost'}" onclick="muteGroup(${u.telegramId}, ${!u.publicMuted})" title="${u.publicMuted ? 'Unmute from group channel' : 'Mute from group channel'}">${u.publicMuted ? '🔇 Muted' : '🔊 Mute Group'}</button>`}
         </td>
       </tr>`;
     }).join("");
@@ -863,6 +860,15 @@ async function revokeSessions(tid) {
   if (!confirm("Kick ALL devices for this user?")) return;
   try { const r = await api("/api/admin/users/revoke-sessions", { method: "POST", body: JSON.stringify({ telegramId: tid }) }); toast(`Kicked ${r.count} devices`, "success"); }
   catch (e) { toast(e.message, "error"); }
+}
+async function muteGroup(tid, mute) {
+  const action = mute ? "Mute this user from the group channel?" : "Unmute this user?";
+  if (!confirm(action)) return;
+  try {
+    await api("/api/admin/users/public-mute", { method: "POST", body: JSON.stringify({ telegramId: tid, muted: mute }) });
+    toast(mute ? "User muted from group channel" : "User unmuted", "success");
+    loadUsers();
+  } catch (e) { toast(e.message, "error"); }
 }
 
 /* ---- Codes ---- */
