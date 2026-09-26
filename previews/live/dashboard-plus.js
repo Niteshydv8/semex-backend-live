@@ -61,4 +61,27 @@
     });
   }
   mountRing();
+
+  /* Quick Status mirrors: read existing elements (proxy/captcha/bin/cc-list)
+     and reflect them on the home strip. Read-only on app state. */
+  function mountQuickStatus() {
+    if (!document.getElementById('sx-qs-strip')) return;
+    function txt(id) { var el = document.getElementById(id); return el ? (el.textContent || '').trim() : ''; }
+    function setVal(id, v) { var el = document.getElementById(id); if (el && el.textContent !== v) el.textContent = v; }
+    function poll() {
+      var pc = txt('proxy-geo-country'), lat = txt('proxy-geo-latency');
+      var on = pc && pc !== 'Not Connected';
+      setVal('sx-qs-proxy', on ? pc + (lat && lat !== '-' ? ' · ' + lat : '') : 'Offline');
+      var dot = document.getElementById('sx-qs-proxy-dot');
+      if (dot) dot.classList.toggle('on', !!on);
+      var cap = document.getElementById('captcha-solving-toggle');
+      setVal('sx-qs-captcha', cap && cap.checked ? 'ON' : 'OFF');
+      var bin = document.getElementById('bin-input');
+      setVal('sx-qs-bin', bin && bin.value ? bin.value : 'auto');
+      setVal('sx-qs-cclist', txt('cc-list-counter') || '0 cards');
+    }
+    poll();
+    setInterval(poll, 1500);
+  }
+  mountQuickStatus();
 })();

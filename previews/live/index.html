@@ -174,9 +174,15 @@
                 </div>
             </div>
 
-            <!-- Cards row 1 -->
-            <div class="cards-3">
-                <div class="glass">
+            <!-- Quick Status — mirrors of key settings so nothing needs a tab switch -->
+            <div class="glass sx-qs-strip" id="sx-qs-strip">
+                <div class="sx-qs-chip"><span class="sx-qs-dot" id="sx-qs-proxy-dot"></span><span class="sx-qs-label">Proxy</span><span class="sx-qs-val" id="sx-qs-proxy">&hellip;</span></div>
+                <div class="sx-qs-chip"><span class="sx-qs-dot violet"></span><span class="sx-qs-label">Captcha</span><span class="sx-qs-val" id="sx-qs-captcha">&hellip;</span></div>
+                <div class="sx-qs-chip"><span class="sx-qs-dot violet"></span><span class="sx-qs-label">Active BIN</span><span class="sx-qs-val mono" id="sx-qs-bin">&hellip;</span></div>
+                <div class="sx-qs-chip"><span class="sx-qs-dot violet"></span><span class="sx-qs-label">CC List</span><span class="sx-qs-val" id="sx-qs-cclist">&hellip;</span></div>
+            </div>
+            <div class="grid-2 sx-home-grid">
+<div class="glass">
                     <div class="glass-head">
                         <div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18"/></svg></span><span class="glass-title">Input Method</span></div>
                         <div class="mode-toggle">
@@ -244,7 +250,18 @@
                     </div>
                 </div>
 
-                <div class="glass">
+<div class="glass">
+                <div class="glass-head">
+                    <div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg></span><span class="glass-title">Last Hit</span></div>
+                </div>
+                <div id="last-hit-result"></div>
+            </div>
+            </div>
+
+            <!-- All bypass levers, consolidated — no more giant toggle cards -->
+            <div class="glass sx-switches">
+                <div class="glass-head sx-switches-head"><div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6l-8-4z"/><path d="m9 12 2 2 4-4"/></svg></span><span class="glass-title">Bypass Switches</span></div><span class="sx-qs-hint">All levers, one place</span></div>
+                <div class="sx-switch-row">
                     <div class="glass-head">
                         <div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span><span class="glass-title">Card Replacement</span></div>
                         <label class="toggle">
@@ -264,9 +281,9 @@
                         <p class="bypass-hint">Auto-uses next card from CC List when one fails. Required for <strong>Automation Mode</strong>.</p>
                         <div id="card-replacement-hint" class="hint warning hidden">Add BIN or CC List above to use Card Replacement.</div>
                     </div>
+                
                 </div>
-
-                <div class="glass">
+                <div class="sx-switch-row">
                     <div class="glass-head">
                         <div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span><span class="glass-title">CVV Bypass</span></div>
                         <label class="toggle">
@@ -284,12 +301,9 @@
                         </div>
                         <p class="bypass-hint"><code>cvc_required</code> error? Disable this bypass for that gateway.</p>
                     </div>
+                
                 </div>
-            </div>
-
-            <!-- Cards row 2 -->
-            <div class="cards-3" style="margin-top:16px;">
-                <div class="glass">
+                <div class="sx-switch-row">
                     <div class="glass-head">
                         <div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-6 8-6s8 2 8 6"/></svg></span><span class="glass-title">Payment UA Bypass</span></div>
                         <label class="toggle">
@@ -301,9 +315,9 @@
                         <p class="info-text">Stripe only</p>
                         <p class="bypass-hint"><code>ua_required</code> error? Disable this bypass.</p>
                     </div>
+                
                 </div>
-
-                <div class="glass">
+                <div class="sx-switch-row">
                     <div class="glass-head">
                         <div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6l-8-4z"/></svg></span><span class="glass-title">Stripe Security Bypass</span></div>
                         <label class="toggle">
@@ -321,9 +335,9 @@
                         <p class="info-text">Stripe only</p>
                         <p class="bypass-hint">Advanced: Makes automation harder to detect. Keep default <strong>ON</strong> recommended.</p>
                     </div>
+                
                 </div>
-
-                <div class="glass" id="three-ds-bypass-section">
+                <div class="sx-switch-row">
                     <div class="glass-head">
                         <div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><path d="m9 12 2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg></span><span class="glass-title">3DS Bypass <span class="premium-badge" id="three-ds-bypass-lock" style="display:none;">🔒 PREMIUM</span></span></div>
                         <label class="toggle">
@@ -338,17 +352,10 @@
                     <div class="section-content" id="three-ds-bypass-locked-note" style="display:none;">
                         <p class="bypass-hint" style="color:#ffcc80;">🔒 <b>3DS Bypass is a Premium feature.</b> Upgrade to MONTHLY / YEARLY / LIFETIME in the bot to unlock it. Type <code>/buy</code> in @<span id="three-ds-bot-handle">Semexautoxbot</span>.</p>
                     </div>
+                
                 </div>
             </div>
-
-            <!-- Last Hit — their wide glass panel -->
-            <div class="glass" style="padding:20px;margin-top:16px;">
-                <div class="glass-head">
-                    <div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg></span><span class="glass-title">Last Hit</span></div>
-                </div>
-                <div id="last-hit-result"></div>
-            </div>
-        </section>
+</section>
 
         <!-- ══ HITS (PixelZero section-transactions) ══ -->
         <section class="section tab-panel" id="history-tab">
