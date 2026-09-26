@@ -2165,36 +2165,6 @@ button.btn-primary, .btn-primary { background: linear-gradient(180deg, var(--vio
 
 .auth-error { margin-top: 12px; font-size: 12px; color: var(--red); }
 
-/* ── OTP entry step ────────────────────────────────────────────── */
-.auth-otp-wrap {
-  margin: 18px 0 0;
-  display: flex; justify-content: center;
-}
-.auth-otp-input {
-  width: 100%; padding: 16px 14px;
-  text-align: center;
-  font-family: "JetBrains Mono", monospace;
-  font-size: 26px; font-weight: 700;
-  letter-spacing: 0.32em; color: #fff;
-  background: rgba(255,255,255,0.06);
-  border: 1px solid rgba(255,255,255,0.14);
-  border-radius: 14px;
-  outline: none; caret-color: var(--violet);
-  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s;
-  box-shadow: 0 2px 14px rgba(0,0,0,0.30) inset;
-}
-.auth-otp-input::placeholder { color: rgba(255,255,255,0.18); letter-spacing: 0.22em; }
-.auth-otp-input:focus {
-  border-color: rgba(124,92,252,0.70);
-  background: rgba(124,92,252,0.07);
-  box-shadow: 0 0 0 3px rgba(124,92,252,0.18), 0 2px 14px rgba(0,0,0,0.30) inset;
-}
-.auth-otp-actions {
-  display: flex; align-items: center; justify-content: center;
-  gap: 8px; margin-top: 14px;
-}
-.auth-otp-sep { color: var(--fg-4); font-size: 12px; }
-
 /* ---- maintenance overlay ---- */
 .maintenance-overlay {
   position: fixed; inset: 0; z-index: 3000;
