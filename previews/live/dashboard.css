@@ -2461,3 +2461,6 @@ input[type=checkbox]:checked::after {
   background: rgba(255,255,255,0.05); border: 1px solid var(--border);
   border-radius: 999px; padding: 5px 10px;
 }
+
+/* review fix: flatten .rev-graph too so the 3 inner chips become real grid items */
+#stats-section .rev-graph { display: contents; }
