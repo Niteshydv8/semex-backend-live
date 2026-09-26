@@ -2547,7 +2547,8 @@ input:not([type]):focus, input[type=email]:focus, input[type=number]:focus {
   margin-top: 0; align-self: auto;
 }
 @media (max-width: 900px) {
-  #stats-section .sx-live-ring-wrap { position: static; transform: none; align-self: center; }
+  /* relative, not static: static lets the absolute ring fill the whole chip */
+  #stats-section .sx-live-ring-wrap { position: relative; right: auto; top: auto; transform: none; align-self: center; margin: 4px auto 16px; }
 }
 
 /* history: uniform pill width so PANs align, legible meta, wrapping actions */
@@ -2633,4 +2634,34 @@ body::before {
 #admin-tab .admin-danger-zone {
   border-color: rgba(248,113,113,0.35);
   background: linear-gradient(180deg, rgba(248,113,113,0.06), rgba(248,113,113,0.01));
+}
+
+/* ============================================================
+   RESPONSIVE FIXES + HIT ROW CARD FORMAT
+   ============================================================ */
+
+/* mobile hero: stack neatly, chip left-aligned, sane title size */
+@media (max-width: 640px) {
+  .hero { flex-direction: column; align-items: flex-start; gap: 12px; margin-bottom: 18px; }
+  .welcome { font-size: 24px; line-height: 1.2; }
+}
+
+/* hit rows: BIN + bank details fill the top line; body is a formatted detail card */
+.hit-row-top { flex-wrap: wrap; row-gap: 6px; }
+.hit-bank {
+  font-size: 11px; color: var(--fg-2); font-weight: 500;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; flex: 1;
+}
+.hit-row-body {
+  display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+  background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+  border-radius: 12px; padding: 10px 12px; margin: 2px 0 10px;
+}
+.hit-row-body .hit-pan { font-size: 13px; font-weight: 700; }
+.hit-resp-inline { flex-basis: 100%; word-break: break-word; }
+.hit-time { flex-shrink: 0; }
+
+@media (max-width: 640px) {
+  .history-actions .btn { padding: 6px 10px; font-size: 11.5px; }
+  .hit-row-top { gap: 7px; }
 }

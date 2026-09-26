@@ -44,20 +44,32 @@ def fill_deep(src, el_id, mock):
     print('WARN unbalanced:', el_id); return src
 
 HIST = ''
-rows = [("charged","hit-badge-charged","4242 42•• •••• 4242","VISA · Stripe","2m ago"),
-        ("live","hit-badge-live","5555 55•• •••• 4444","MASTERCARD · Braintree","18m ago"),
-        ("dead","hit-badge-dead","4000 00•• •••• 0002","VISA · Stripe","1h ago")]
-for i,(b,c,p,br,t) in enumerate(rows):
-    body = ('<div class="hit-row-body"><div class="hit-details-grid">'
-            '<div><div class="result-label">Site</div><div class="hit-val">https://checkout.example-store.com</div></div>'
-            '<div><div class="result-label">Amount</div><div class="hit-val hit-amount">$49.99</div></div>'
-            '<div><div class="result-label">Gateway</div><div class="hit-val">stripe_checkout</div></div>'
-            '<div><div class="result-label">Response</div><div class="hit-response">succeeded — payment_intent confirmed</div></div>'
-            '</div></div>') if i==0 else ''
-    HIST += ('<div class="hit-row"><div class="hit-row-top">'
-             '<span class="hit-badge %s">%s</span><span class="hit-pan">%s</span>'
-             '<span class="hit-brand">%s</span><span class="hit-time">%s</span>'
-             '</div>%s</div>' % (c,b,p,br,t,body))
+_rows = [
+    ("charged", "VISA", "424242", "4242 42•• •••• 4242", "USD 49.99", "Chase · Credit · US", "2m ago",
+     [("EXP","11/27"),("CVV","314"),("GATE","stripe_checkout"),("CODE","succeeded")],
+     "succeeded — payment_intent confirmed", "https://checkout.example-store.com", "45.155.20.11"),
+    ("live", "MASTERCARD", "555555", "5555 55•• •••• 4444", "USD 120.00", "Barclays · Debit · UK", "18m ago",
+     [("EXP","03/26"),("CVV","551"),("GATE","braintree")],
+     "Approved — cvv match", "https://pay.example-shop.io", ""),
+    ("dead", "VISA", "400000", "4000 00•• •••• 0002", "", "Deutsche Bank · DE", "1h ago",
+     [("EXP","08/25"),("CVV","002"),("GATE","stripe_checkout"),("CODE","card_declined")],
+     "card_declined — insufficient funds", "https://checkout.example-store.com", ""),
+]
+for _st, _br, _bin, _pan, _amt, _bank, _time, _chips, _resp, _site, _ip in _rows:
+    _body = '<div class="hit-row-body hist-sensitive"><span class="hit-pan">%s</span>' % _pan
+    _body += ''.join('<span class="hit-chip"><span class="hit-tag">%s</span><span>%s</span></span>' % _c for _c in _chips)
+    if _resp: _body += '<span class="hit-resp-inline">%s</span>' % _resp
+    if _site: _body += '<span class="hit-chip hit-chip-dim"><span class="hit-tag">SITE</span><span class="hit-mono">%s</span></span>' % _site
+    if _ip: _body += '<span class="hit-chip hit-chip-dim"><span class="hit-tag">IP</span><span class="hit-mono">%s</span></span>' % _ip
+    _body += '</div>'
+    HIST += ('<div class="hit-row hit-%s" data-status="%s"><div class="hit-row-top">'
+             '<span class="hit-brand">%s</span><span class="hit-badge hit-badge-%s">%s</span>'
+             '<span class="hit-bin hist-sensitive" title="BIN">%s</span>'
+             '<span class="hit-bank">%s</span>'
+             % (_st, _st, _br, _st, _st, _bin, _bank)
+             + ('<span class="hit-amount">%s</span>' % _amt if _amt else '')
+             + '<span class="hit-time">%s</span>'
+               '<button class="hit-copy-btn" title="Copy full card">⧉</button></div>%s</div>' % (_time, _body))
 src = fill_deep(src, 'historyList', HIST)
 
 BINS = ''
