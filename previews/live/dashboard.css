@@ -2213,3 +2213,6 @@ input:focus, select:focus, textarea:focus {
 @media (prefers-reduced-motion: reduce) {
   .btn-primary::before, .pill-btn.light::before { transition: none; }
 }
+
+/* review polish: anchor the shine sweep to light pill buttons */
+.pill-btn.light { position: relative; }
