@@ -19,8 +19,28 @@
         <!-- ══ TOP NAV (PixelZero topnav) ══ -->
         <header class="topnav">
             <div class="logo brand">
-                <img src="../icons/logo.png" alt="SEMEX" class="brand-logo">
-                <span class="logo-name brand-name">SEMEX</span>
+                <div class="sx-logo-mark" aria-hidden="true">
+                    <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <linearGradient id="lg1" x1="4" y1="4" x2="32" y2="32" gradientUnits="userSpaceOnUse">
+                                <stop offset="0%" stop-color="#a78bff"/>
+                                <stop offset="100%" stop-color="#6d28d9"/>
+                            </linearGradient>
+                            <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+                                <feGaussianBlur stdDeviation="2" result="blur"/>
+                                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                            </filter>
+                        </defs>
+                        <rect width="36" height="36" rx="10" fill="url(#lg1)" opacity="0.15"/>
+                        <path d="M22 8H14a4 4 0 0 0-4 4 4 4 0 0 0 4 4h4a4 4 0 0 1 4 4 4 4 0 0 1-4 4H10"
+                              stroke="url(#lg1)" stroke-width="2.5" stroke-linecap="round" filter="url(#glow)"/>
+                        <path d="M18 6v2M18 28v2" stroke="url(#lg1)" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+                    </svg>
+                </div>
+                <div class="sx-logo-text">
+                    <span class="sx-logo-word">SEMEX</span>
+                    <span class="sx-logo-sub">Automation</span>
+                </div>
             </div>
 
             <nav class="nav-pills tabs" data-testid="sidebar-nav">
@@ -592,28 +612,36 @@
             <div class="grid-2">
 
                 <div class="glass span-2" style="padding:20px;">
-                    <div class="glass-head"><div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><path d="M20 12v8H4v-8M2 7h20v5H2zM12 7v13M12 7s-2-4-4.5-4S5 5.5 6.5 7H12zM12 7s2-4 4.5-4S19 5.5 17.5 7H12z"/></svg></span><span class="glass-title">Redeem Code</span></div><span class="mono-dim" style="font-size:11px;">Have a plan code? Redeem it here</span></div>
-                    <div class="redeem-banner" id="redeem-banner">
-                        <span class="redeem-icon">🎁</span>
-                        <input type="text" id="redeem-code-input" class="redeem-input" placeholder="Have a code? Enter it here" autocomplete="off" spellcheck="false" data-testid="redeem-code-input">
-                        <button id="redeem-code-btn" class="btn btn-primary small-button" data-testid="redeem-code-btn">Redeem</button>
-                        <span id="redeem-status" class="redeem-status hidden"></span>
+                    <div class="glass-head"><div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></svg></span><span class="glass-title">Notifications</span></div><span class="mono-dim" style="font-size:11px;">Where hit alerts are delivered</span></div>
+                    <!-- Bot source toggle -->
+                    <div class="sx-bot-toggle-wrap">
+                        <button class="sx-bot-opt active" id="sx-bot-opt-server" type="button">
+                            <svg viewBox="0 0 16 16" fill="none" width="14" height="14"><path d="m14 1-5 13-2.5-5.5L1 6z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+                            SEMEX Bot
+                        </button>
+                        <button class="sx-bot-opt" id="sx-bot-opt-own" type="button">
+                            <svg viewBox="0 0 16 16" fill="none" width="14" height="14"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3"/><path d="M8 5v3l2 1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                            Own Bot
+                        </button>
                     </div>
-                </div>
-
-                <div class="glass" style="padding:20px;">
-                    <div class="glass-head"><div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></svg></span><span class="glass-title">Telegram Bot</span></div><span class="mono-dim" style="font-size:11px;">Your own bot for personal alerts</span></div>
-                    <div class="form-group"><label class="form-label" for="sx-tg-token">Bot Token</label>
-                        <input type="password" id="sx-tg-token" class="form-input" placeholder="123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11" autocomplete="off" spellcheck="false">
+                    <!-- SEMEX Bot pane -->
+                    <div id="sx-bot-server-pane">
+                        <p class="info-text" style="margin:0;">Hit alerts (Charged + Live) are delivered by the SEMEX bot directly to your Telegram account. No setup needed — login connects you automatically.</p>
                     </div>
-                    <div class="form-group"><label class="form-label" for="sx-tg-chat">Chat ID</label>
-                        <input type="text" id="sx-tg-chat" class="form-input" placeholder="123456789" autocomplete="off" spellcheck="false">
+                    <!-- Own Bot pane -->
+                    <div id="sx-bot-own-pane" class="hidden">
+                        <div class="form-group"><label class="form-label" for="sx-tg-token">Bot Token</label>
+                            <input type="password" id="sx-tg-token" class="form-input" placeholder="123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11" autocomplete="off" spellcheck="false">
+                        </div>
+                        <div class="form-group"><label class="form-label" for="sx-tg-uid">Your Telegram User ID</label>
+                            <input type="text" id="sx-tg-uid" class="form-input" placeholder="e.g. 123456789 — get it from @userinfobot" autocomplete="off" spellcheck="false">
+                        </div>
+                        <div class="proxy-row" style="align-items:center;gap:10px;margin-top:4px;">
+                            <button id="sx-tg-test" class="btn btn-primary small-button" type="button">Send Test DM</button>
+                            <span id="sx-tg-status" class="redeem-status hidden"></span>
+                        </div>
+                        <p class="info-text" style="margin-top:8px;">Your bot DMs you directly. Stored on this device only. Get your User ID from <b>@userinfobot</b> on Telegram.</p>
                     </div>
-                    <div class="proxy-row" style="align-items:center;">
-                        <button id="sx-tg-test" class="btn btn-primary small-button" type="button">Send Test</button>
-                        <span id="sx-tg-status" class="redeem-status hidden"></span>
-                    </div>
-                    <p class="info-text">Stored on this device only. Send Test delivers a message straight from Telegram.</p>
                 </div>
 
                 <div class="glass hidden" style="padding:20px;">
@@ -1208,17 +1236,30 @@ if (proxyTestBtn) {
   });
 }
 
-/* ── settings: Send Test (Telegram) ──────────────────────────── */
-// mountTelegramBot in dashboard-plus.js handles this; fallback below
+/* ── settings: bot source toggle (preview wiring) ────────────── */
+var optServer = document.getElementById('sx-bot-opt-server');
+var optOwn    = document.getElementById('sx-bot-opt-own');
+var paneServer = document.getElementById('sx-bot-server-pane');
+var paneOwn    = document.getElementById('sx-bot-own-pane');
+function setBotSource(src) {
+  var isOwn = src === 'own';
+  if (paneServer) paneServer.classList.toggle('hidden', isOwn);
+  if (paneOwn)    paneOwn.classList.toggle('hidden', !isOwn);
+  if (optServer)  optServer.classList.toggle('active', !isOwn);
+  if (optOwn)     optOwn.classList.toggle('active',  isOwn);
+}
+if (optServer) optServer.addEventListener('click', function() { setBotSource('server'); });
+if (optOwn)    optOwn.addEventListener('click',    function() { setBotSource('own');    });
+/* Send Test DM — preview only, dashboard-plus.js handles the real one */
 var tgTest = document.getElementById('sx-tg-test');
 if (tgTest && !tgTest._wired) {
   tgTest._wired = true;
   tgTest.addEventListener('click', function() {
     var token = (document.getElementById('sx-tg-token') || {}).value || '';
-    var chat  = (document.getElementById('sx-tg-chat')  || {}).value || '';
+    var uid   = (document.getElementById('sx-tg-uid')   || {}).value || '';
     if (!token) { toast('Enter your bot token first', false); return; }
-    if (!chat)  { toast('Enter your chat ID first', false); return; }
-    toast('Sending test message…', null);
+    if (!uid)   { toast('Enter your Telegram User ID first', false); return; }
+    toast('Test DM sent ✓ (preview simulated)', true);
   });
 }
 

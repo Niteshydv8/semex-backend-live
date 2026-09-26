@@ -391,17 +391,30 @@ if (proxyTestBtn) {
   });
 }
 
-/* ── settings: Send Test (Telegram) ──────────────────────────── */
-// mountTelegramBot in dashboard-plus.js handles this; fallback below
+/* ── settings: bot source toggle (preview wiring) ────────────── */
+var optServer = document.getElementById('sx-bot-opt-server');
+var optOwn    = document.getElementById('sx-bot-opt-own');
+var paneServer = document.getElementById('sx-bot-server-pane');
+var paneOwn    = document.getElementById('sx-bot-own-pane');
+function setBotSource(src) {
+  var isOwn = src === 'own';
+  if (paneServer) paneServer.classList.toggle('hidden', isOwn);
+  if (paneOwn)    paneOwn.classList.toggle('hidden', !isOwn);
+  if (optServer)  optServer.classList.toggle('active', !isOwn);
+  if (optOwn)     optOwn.classList.toggle('active',  isOwn);
+}
+if (optServer) optServer.addEventListener('click', function() { setBotSource('server'); });
+if (optOwn)    optOwn.addEventListener('click',    function() { setBotSource('own');    });
+/* Send Test DM — preview only, dashboard-plus.js handles the real one */
 var tgTest = document.getElementById('sx-tg-test');
 if (tgTest && !tgTest._wired) {
   tgTest._wired = true;
   tgTest.addEventListener('click', function() {
     var token = (document.getElementById('sx-tg-token') || {}).value || '';
-    var chat  = (document.getElementById('sx-tg-chat')  || {}).value || '';
+    var uid   = (document.getElementById('sx-tg-uid')   || {}).value || '';
     if (!token) { toast('Enter your bot token first', false); return; }
-    if (!chat)  { toast('Enter your chat ID first', false); return; }
-    toast('Sending test message…', null);
+    if (!uid)   { toast('Enter your Telegram User ID first', false); return; }
+    toast('Test DM sent ✓ (preview simulated)', true);
   });
 }
 

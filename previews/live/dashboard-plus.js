@@ -127,46 +127,71 @@
   }
   mountProfileMirror();
 
-  /* Custom Telegram bot (settings spec): token + chat ID + live test.
-     Stored under our own storage key — popup.js never sees it. */
+  /* Notifications: server bot vs own bot toggle.
+     Own bot stores token + user ID; sends DM via api.telegram.org.
+     Source preference stored in sx_custom_bot.source ('server'|'own'). */
   function mountTelegramBot() {
-    var tokenEl = document.getElementById('sx-tg-token');
-    var chatEl = document.getElementById('sx-tg-chat');
-    var btn = document.getElementById('sx-tg-test');
-    var status = document.getElementById('sx-tg-status');
-    if (!tokenEl || !chatEl || !btn || !status) return;
+    var optServer = document.getElementById('sx-bot-opt-server');
+    var optOwn    = document.getElementById('sx-bot-opt-own');
+    var paneServer = document.getElementById('sx-bot-server-pane');
+    var paneOwn    = document.getElementById('sx-bot-own-pane');
+    var tokenEl   = document.getElementById('sx-tg-token');
+    var uidEl     = document.getElementById('sx-tg-uid');
+    var btn       = document.getElementById('sx-tg-test');
+    var status    = document.getElementById('sx-tg-status');
+    if (!optServer || !optOwn || !paneServer || !paneOwn) return;
     var hasStore = (typeof chrome !== 'undefined' && chrome.storage && chrome.storage.local);
     function show(msg, ok) {
+      if (!status) return;
       status.textContent = msg;
       status.classList.remove('hidden');
       status.style.color = ok ? '#34d399' : '#f87171';
     }
+    function setSource(src) {
+      var isOwn = src === 'own';
+      paneServer.classList.toggle('hidden', isOwn);
+      paneOwn.classList.toggle('hidden', !isOwn);
+      optServer.classList.toggle('active', !isOwn);
+      optOwn.classList.toggle('active', isOwn);
+    }
     function save() {
       if (!hasStore) return;
-      chrome.storage.local.set({ sx_custom_bot: { token: tokenEl.value.trim(), chat: chatEl.value.trim() } });
+      var isOwn = !paneOwn.classList.contains('hidden');
+      chrome.storage.local.set({ sx_custom_bot: {
+        source: isOwn ? 'own' : 'server',
+        token: tokenEl ? tokenEl.value.trim() : '',
+        uid:   uidEl   ? uidEl.value.trim()   : ''
+      }});
     }
     if (hasStore) {
       chrome.storage.local.get(['sx_custom_bot'], function (r) {
         var b = r && r.sx_custom_bot;
-        if (b) { tokenEl.value = b.token || ''; chatEl.value = b.chat || ''; }
+        if (b) {
+          setSource(b.source || 'server');
+          if (tokenEl) tokenEl.value = b.token || '';
+          if (uidEl)   uidEl.value   = b.uid   || '';
+        }
       });
     }
-    tokenEl.addEventListener('change', save);
-    chatEl.addEventListener('change', save);
-    btn.addEventListener('click', function () {
-      var token = tokenEl.value.trim(), chat = chatEl.value.trim();
+    optServer.addEventListener('click', function () { setSource('server'); save(); });
+    optOwn.addEventListener('click', function () { setSource('own'); save(); });
+    if (tokenEl) tokenEl.addEventListener('change', save);
+    if (uidEl)   uidEl.addEventListener('change', save);
+    if (btn) btn.addEventListener('click', function () {
+      var token = tokenEl ? tokenEl.value.trim() : '';
+      var uid   = uidEl   ? uidEl.value.trim()   : '';
       if (!/^\d+:[A-Za-z0-9_-]{20,}$/.test(token)) { show('Invalid bot token format', false); return; }
-      if (!/^-?\d+$/.test(chat)) { show('Chat ID must be numeric', false); return; }
+      if (!/^\d+$/.test(uid)) { show('User ID must be a positive number (from @userinfobot)', false); return; }
       save();
       btn.disabled = true;
-      show('Sending\u2026', true);
+      show('Sending DM\u2026', true);
       fetch('https://api.telegram.org/bot' + token + '/sendMessage', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ chat_id: chat, text: '\u2705 SEMEX test \u2014 your custom bot is connected.' })
+        body: JSON.stringify({ chat_id: uid, text: '\u2705 SEMEX \u2014 your own bot is connected. Hit alerts will arrive here.' })
       }).then(function (r) { return r.json(); }).then(function (j) {
         btn.disabled = false;
-        if (j && j.ok) show('Test message sent \u2713', true);
+        if (j && j.ok) show('Test DM sent \u2713', true);
         else show('Telegram: ' + ((j && j.description) || 'send failed'), false);
       }).catch(function () { btn.disabled = false; show('Network error \u2014 check connection', false); });
     });
