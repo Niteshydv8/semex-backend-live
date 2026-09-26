@@ -1,0 +1,460 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SEMEX — Checkout Toast Preview</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: #0c0e14;
+    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    color: #EDEEFF;
+    padding: 40px 28px;
+    min-height: 100vh;
+  }
+  h1 {
+    font-size: 14px; font-weight: 700; letter-spacing: 0.12em;
+    text-transform: uppercase; color: #5c6b62; margin-bottom: 28px;
+  }
+  h1 span { color: #7C5CFC; }
+  .section { margin-bottom: 48px; }
+  .section-label {
+    font-size: 10px; font-weight: 700; letter-spacing: 0.14em;
+    text-transform: uppercase; color: #3a443c; margin-bottom: 16px;
+    border-bottom: 1px dashed #1e2a1e; padding-bottom: 8px;
+  }
+  .grid { display: flex; flex-direction: column; gap: 10px; max-width: 340px; }
+  .grid.row { flex-direction: row; flex-wrap: wrap; }
+  .stack { position: relative; max-width: 340px; }
+
+  /* ═══════════════════════════════════════════════
+     SEMEX Terminal Trace Toast — v4 design
+     (extracted from toast-notifier-v2.js)
+  ═══════════════════════════════════════════════ */
+  .semex-toast {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 10px 30px 12px 14px;
+    border-radius: 13px;
+    overflow: hidden;
+    cursor: default;
+    background: rgba(18, 19, 26, 0.96);
+    border: 1px solid rgba(255, 255, 255, 0.10);
+    box-shadow: 0 0 26px var(--sx-glow, rgba(96,165,250,0.16)), 0 8px 24px rgba(0,0,0,0.55);
+    color: #EDEEFF;
+    max-width: 340px;
+    width: 100%;
+  }
+  .semex-toast::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 3px;
+    background: var(--sx-color, #60a5fa);
+    box-shadow: 0 0 12px var(--sx-glow, rgba(96,165,250,0.30));
+    z-index: 1;
+  }
+  .semex-toast-icon {
+    position: relative; z-index: 2; flex: 0 0 auto;
+    width: 26px; height: 26px; border-radius: 6px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 12px; color: var(--sx-color, #60a5fa);
+    background: color-mix(in srgb, var(--sx-color, #60a5fa) 14%, transparent);
+    border: 1px solid color-mix(in srgb, var(--sx-color, #60a5fa) 35%, transparent);
+    box-shadow: 0 0 14px -4px var(--sx-glow, rgba(96,165,250,0.30));
+  }
+  .semex-toast-body { flex: 1; min-width: 0; position: relative; z-index: 2; }
+  .semex-toast-titlerow { display: flex; align-items: center; gap: 7px; }
+  .semex-toast-dot {
+    width: 6px; height: 6px; border-radius: 50%;
+    background: var(--sx-color, #60a5fa);
+    box-shadow: 0 0 8px var(--sx-color, #60a5fa);
+    flex: 0 0 auto;
+  }
+  .semex-toast-title {
+    font-size: 12px; font-weight: 700; letter-spacing: 0.04em;
+    line-height: 1.35; color: var(--sx-color, #d3e3d8);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .semex-toast-sub {
+    font-size: 10.5px; color: #88908a; margin-top: 3px;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .semex-toast-chart {
+    margin-top: 7px; padding-top: 6px;
+    border-top: 1px dashed #1e2a24;
+    display: flex; flex-direction: column; gap: 3px;
+  }
+  .semex-toast-row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+  .semex-toast-row-label {
+    flex: 0 0 auto; font-size: 9px; font-weight: 700;
+    letter-spacing: 0.06em; color: #5c6b62; text-transform: uppercase;
+  }
+  .semex-toast-row-value { font-size: 11px; font-weight: 500; color: #EDEEFF; word-break: break-all; text-align: right; }
+  .tone-good  { color: #34d399; }
+  .tone-warn  { color: #fbbf24; }
+  .tone-bad   { color: #f87171; }
+  .semex-toast-brand {
+    position: absolute; right: 10px; bottom: 6px; z-index: 3;
+    font-size: 8px; font-weight: 700; letter-spacing: 0.18em;
+    color: #3a443c; pointer-events: none; text-transform: uppercase;
+  }
+  .semex-toast-bar-track {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    height: 3px; background: #10161c; overflow: hidden;
+  }
+  .semex-toast-bar {
+    height: 100%; width: 100%;
+    background: var(--sx-color, #60a5fa);
+    transform-origin: left;
+    animation: sx-bar 4s linear forwards;
+    box-shadow: 0 0 8px var(--sx-glow, rgba(96,165,250,0.30));
+  }
+  @keyframes sx-bar { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+
+  /* hitting pulse */
+  .semex-toast-hitting {
+    font-size: 10.5px; color: var(--sx-color, #60a5fa);
+    margin-top: 6px; display: flex; align-items: baseline; gap: 2px;
+    animation: sx-hitpulse 1.6s ease-in-out infinite;
+  }
+  @keyframes sx-hitpulse { 0%, 100% { opacity: 0.45; } 50% { opacity: 1; } }
+  .semex-toast-hitting i { font-style: normal; animation: sx-dot 1.4s infinite; }
+  .semex-toast-hitting i:nth-child(2) { animation-delay: 0.2s; }
+  .semex-toast-hitting i:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes sx-dot { 0%, 60%, 100% { opacity: 0.2; } 30% { opacity: 1; } }
+
+  /* live ping ring */
+  .type-live .semex-toast-icon::after,
+  .type-3d_live .semex-toast-icon::after {
+    content: ''; position: absolute; inset: -4px; border-radius: 8px;
+    border: 2px solid var(--sx-color, #fbbf24);
+    animation: sx-ping 1.8s cubic-bezier(0,0,0.2,1) infinite;
+    pointer-events: none;
+  }
+  @keyframes sx-ping { 0% { transform: scale(0.8); opacity: 0.8; } 100% { transform: scale(1.7); opacity: 0; } }
+
+  /* dead skull */
+  .type-dead {
+    background: linear-gradient(160deg, rgba(248,113,113,0.28) 0%, rgba(30,6,6,0.97) 55%);
+    border-color: rgba(248,113,113,0.55);
+    box-shadow: 0 0 40px rgba(248,113,113,0.45), 0 0 16px rgba(248,113,113,0.22), 0 8px 24px rgba(0,0,0,0.6);
+  }
+  .type-dead::before {
+    width: 4px;
+    background: linear-gradient(180deg, #f87171, #991b1b);
+    box-shadow: 0 0 16px rgba(248,113,113,0.65);
+  }
+  .type-dead .semex-toast-icon {
+    background: rgba(248,113,113,0.16); border-color: rgba(248,113,113,0.5);
+    box-shadow: 0 0 18px -2px rgba(248,113,113,0.55); font-size: 14px;
+  }
+  .type-dead .semex-toast-dot {
+    width: auto; height: auto; border-radius: 0; background: none; box-shadow: none;
+  }
+  .type-dead .semex-toast-dot::after {
+    content: "☠"; font-size: 11px; color: #f87171;
+    text-shadow: 0 0 8px rgba(248,113,113,0.85);
+  }
+
+  /* charged green aura */
+  .type-charged { box-shadow: 0 0 34px rgba(52,211,153,0.35), 0 8px 24px rgba(0,0,0,0.55); }
+  .type-charged .semex-toast-body::after {
+    content: ''; position: absolute; top: 0; left: -100%; width: 50%; height: 100%;
+    background: linear-gradient(to right, rgba(255,255,255,0) 0%, rgba(255,255,255,0.08) 50%, rgba(255,255,255,0) 100%);
+    transform: skewX(-22deg); animation: sx-shimmer 2.2s infinite; pointer-events: none;
+  }
+  @keyframes sx-shimmer { 0% { left: -100%; } 20%, 100% { left: 200%; } }
+
+  /* 3DS pulse */
+  .type-3ds .semex-toast-icon { animation: sx-pulse-ring 2s infinite; }
+  @keyframes sx-pulse-ring {
+    0% { box-shadow: 0 0 0 0 rgba(139,92,246,0.4); }
+    70% { box-shadow: 0 0 0 7px rgba(139,92,246,0); }
+    100% { box-shadow: 0 0 0 0 rgba(139,92,246,0); }
+  }
+
+  /* slide-in entrance */
+  .toasts-live .semex-toast { animation: sx-in 0.55s cubic-bezier(0.16, 0.84, 0.28, 1) both; }
+  .toasts-live .semex-toast:nth-child(2) { animation-delay: 0.12s; }
+  .toasts-live .semex-toast:nth-child(3) { animation-delay: 0.24s; }
+  .toasts-live .semex-toast:nth-child(4) { animation-delay: 0.36s; }
+  .toasts-live .semex-toast:nth-child(5) { animation-delay: 0.48s; }
+  @keyframes sx-in {
+    0%   { transform: translateX(50px) skewX(-6deg); opacity: 0; filter: blur(8px); }
+    55%  { opacity: 1; filter: blur(2px); }
+    100% { transform: none; opacity: 1; filter: blur(0); }
+  }
+
+  .close-x {
+    position: absolute; top: 6px; right: 7px; z-index: 3;
+    width: 18px; height: 18px; display: flex; align-items: center; justify-content: center;
+    border: none; border-radius: 5px; background: transparent;
+    color: #5c6b62; font-size: 13px; cursor: pointer;
+  }
+
+  /* page layout */
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+  @media (max-width: 700px) { .two-col { grid-template-columns: 1fr; } }
+
+  .page-note {
+    font-size: 11px; color: #3a443c; margin-top: 40px; line-height: 1.6;
+    border-top: 1px dashed #1a2018; padding-top: 14px; max-width: 680px;
+  }
+  .page-note b { color: #5c6b62; }
+
+  /* overlay context mockup */
+  .mock-checkout-page {
+    background: #fff; border-radius: 14px; padding: 24px;
+    display: flex; flex-direction: column; gap: 14px;
+    position: relative; overflow: hidden; min-height: 220px;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  }
+  .mock-input {
+    height: 40px; border-radius: 7px;
+    background: #f3f4f6; border: 1px solid #e5e7eb;
+  }
+  .mock-btn {
+    height: 42px; border-radius: 7px; background: #6366f1;
+  }
+  .mock-label {
+    height: 12px; width: 60px; background: #e5e7eb; border-radius: 3px;
+  }
+  .mock-page-label {
+    position: absolute; top: 10px; left: 14px;
+    font-size: 9px; font-weight: 700; letter-spacing: 0.1em;
+    text-transform: uppercase; color: #9ca3af;
+  }
+  .mock-toast-anchor {
+    position: absolute; top: 10px; right: 10px;
+    display: flex; flex-direction: column; gap: 6px;
+    width: min(260px, 80%);
+    pointer-events: none;
+  }
+  /* compact inside checkout page */
+  .mock-toast-anchor .semex-toast {
+    font-size: 0.85em; padding: 8px 22px 9px 10px;
+    border-radius: 9px;
+  }
+  .mock-toast-anchor .semex-toast-icon { width: 22px; height: 22px; font-size: 11px; }
+</style>
+</head>
+<body>
+
+<h1>SEMEX <span>Checkout</span> Toast Notifications</h1>
+
+<div class="two-col">
+
+  <!-- LEFT: all types grid -->
+  <div>
+
+    <div class="section">
+      <div class="section-label">Bypass / Hitting… (appears while hitting)</div>
+      <div class="grid toasts-live">
+
+        <div class="semex-toast type-bypass" style="--sx-color:#60a5fa;--sx-glow:rgba(96,165,250,0.42)">
+          <div class="semex-toast-icon">▸</div>
+          <div class="semex-toast-body">
+            <div class="semex-toast-titlerow">
+              <span class="semex-toast-dot"></span>
+              <span class="semex-toast-title">Bypass Activated</span>
+            </div>
+            <div class="semex-toast-sub">STRIPE · proxy ready</div>
+            <div class="semex-toast-hitting">Hitting<span><i>.</i><i>.</i><i>.</i></span></div>
+          </div>
+          <span class="semex-toast-brand">SEMEX</span>
+          <div class="semex-toast-bar-track"><div class="semex-toast-bar" style="animation-duration:8s"></div></div>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">Payment outcomes</div>
+      <div class="grid toasts-live">
+
+        <!-- CHARGED -->
+        <div class="semex-toast type-charged" style="--sx-color:#34d399;--sx-glow:rgba(52,211,153,0.45)">
+          <div class="semex-toast-icon">▲</div>
+          <div class="semex-toast-body" style="position:relative">
+            <div class="semex-toast-titlerow">
+              <span class="semex-toast-dot"></span>
+              <span class="semex-toast-title">Payment Successful</span>
+            </div>
+            <div class="semex-toast-chart">
+              <div class="semex-toast-row"><span class="semex-toast-row-label">GATEWAY</span><span class="semex-toast-row-value">Stripe</span></div>
+              <div class="semex-toast-row"><span class="semex-toast-row-label">RESPONSE</span><span class="semex-toast-row-value tone-good">paid · complete</span></div>
+            </div>
+          </div>
+          <span class="semex-toast-brand">SEMEX</span>
+          <div class="semex-toast-bar-track"><div class="semex-toast-bar" style="animation-duration:4s;animation-delay:0.55s"></div></div>
+        </div>
+
+        <!-- LIVE -->
+        <div class="semex-toast type-live" style="--sx-color:#fbbf24;--sx-glow:rgba(251,191,36,0.40)">
+          <div class="semex-toast-icon" style="position:relative">●</div>
+          <div class="semex-toast-body">
+            <div class="semex-toast-titlerow">
+              <span class="semex-toast-dot"></span>
+              <span class="semex-toast-title">Card Live</span>
+            </div>
+            <div class="semex-toast-chart">
+              <div class="semex-toast-row"><span class="semex-toast-row-label">GATEWAY</span><span class="semex-toast-row-value">Stripe</span></div>
+              <div class="semex-toast-row"><span class="semex-toast-row-label">RESPONSE</span><span class="semex-toast-row-value tone-warn">auth · non-charge</span></div>
+            </div>
+          </div>
+          <span class="semex-toast-brand">SEMEX</span>
+          <div class="semex-toast-bar-track"><div class="semex-toast-bar" style="animation-duration:4s;animation-delay:0.12s"></div></div>
+        </div>
+
+        <!-- 3D_LIVE -->
+        <div class="semex-toast type-3d_live" style="--sx-color:#fbbf24;--sx-glow:rgba(251,191,36,0.40)">
+          <div class="semex-toast-icon" style="position:relative">●</div>
+          <div class="semex-toast-body">
+            <div class="semex-toast-titlerow">
+              <span class="semex-toast-dot"></span>
+              <span class="semex-toast-title">Card Live (3DS)</span>
+            </div>
+            <div class="semex-toast-chart">
+              <div class="semex-toast-row"><span class="semex-toast-row-label">GATEWAY</span><span class="semex-toast-row-value">Stripe</span></div>
+              <div class="semex-toast-row"><span class="semex-toast-row-label">RESPONSE</span><span class="semex-toast-row-value tone-warn">3DS approved</span></div>
+            </div>
+          </div>
+          <span class="semex-toast-brand">SEMEX</span>
+          <div class="semex-toast-bar-track"><div class="semex-toast-bar" style="animation-duration:4s;animation-delay:0.24s"></div></div>
+        </div>
+
+        <!-- DEAD -->
+        <div class="semex-toast type-dead" style="--sx-color:#f87171;--sx-glow:rgba(248,113,113,0.55)">
+          <div class="semex-toast-icon">☠</div>
+          <div class="semex-toast-body">
+            <div class="semex-toast-titlerow">
+              <span class="semex-toast-dot"></span>
+              <span class="semex-toast-title">Card Declined</span>
+            </div>
+            <div class="semex-toast-chart">
+              <div class="semex-toast-row"><span class="semex-toast-row-label">GATEWAY</span><span class="semex-toast-row-value">Stripe</span></div>
+              <div class="semex-toast-row"><span class="semex-toast-row-label">RESPONSE</span><span class="semex-toast-row-value tone-bad">do_not_honor</span></div>
+            </div>
+          </div>
+          <span class="semex-toast-brand">SEMEX</span>
+          <div class="semex-toast-bar-track"><div class="semex-toast-bar" style="animation-duration:4s;animation-delay:0.36s"></div></div>
+        </div>
+
+        <!-- 3DS -->
+        <div class="semex-toast type-3ds" style="--sx-color:#7C5CFC;--sx-glow:rgba(139,92,246,0.32)">
+          <div class="semex-toast-icon" style="position:relative">🛡</div>
+          <div class="semex-toast-body">
+            <div class="semex-toast-titlerow">
+              <span class="semex-toast-dot"></span>
+              <span class="semex-toast-title">3DS Challenge</span>
+            </div>
+            <div class="semex-toast-sub">Verifying card with issuer…</div>
+          </div>
+          <span class="semex-toast-brand">SEMEX</span>
+          <div class="semex-toast-bar-track"><div class="semex-toast-bar" style="animation-duration:4s;animation-delay:0.48s"></div></div>
+        </div>
+
+      </div>
+    </div>
+
+  </div>
+
+  <!-- RIGHT: in-context mockup -->
+  <div>
+    <div class="section">
+      <div class="section-label">How they look over a checkout page</div>
+      <div class="mock-checkout-page">
+        <span class="mock-page-label">Merchant checkout page</span>
+        <div style="height:14px"></div>
+        <div class="mock-label"></div>
+        <div class="mock-input"></div>
+        <div class="mock-label"></div>
+        <div class="mock-input"></div>
+        <div class="mock-btn"></div>
+
+        <!-- 3-toast stack as it appears in real use -->
+        <div class="mock-toast-anchor">
+          <div class="semex-toast type-charged" style="--sx-color:#34d399;--sx-glow:rgba(52,211,153,0.45);animation:sx-in 0.55s 0.0s cubic-bezier(0.16,0.84,0.28,1) both">
+            <div class="semex-toast-icon">▲</div>
+            <div class="semex-toast-body" style="position:relative">
+              <div class="semex-toast-titlerow">
+                <span class="semex-toast-dot"></span>
+                <span class="semex-toast-title">Payment Successful</span>
+              </div>
+              <div class="semex-toast-sub">Stripe · paid · complete</div>
+            </div>
+            <span class="semex-toast-brand">SEMEX</span>
+          </div>
+          <div class="semex-toast type-bypass" style="--sx-color:#60a5fa;--sx-glow:rgba(96,165,250,0.42);animation:sx-in 0.55s 0.12s cubic-bezier(0.16,0.84,0.28,1) both;opacity:0.88;transform:scale(0.97)">
+            <div class="semex-toast-icon">▸</div>
+            <div class="semex-toast-body">
+              <div class="semex-toast-titlerow">
+                <span class="semex-toast-dot"></span>
+                <span class="semex-toast-title">Bypass Activated</span>
+              </div>
+            </div>
+            <span class="semex-toast-brand">SEMEX</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="section">
+      <div class="section-label">Other states</div>
+      <div class="grid toasts-live">
+
+        <div class="semex-toast" style="--sx-color:#6b7280;--sx-glow:rgba(107,114,128,0.22)">
+          <div class="semex-toast-icon">○</div>
+          <div class="semex-toast-body">
+            <div class="semex-toast-titlerow">
+              <span class="semex-toast-dot"></span>
+              <span class="semex-toast-title">Session Expired</span>
+            </div>
+            <div class="semex-toast-sub">Login again to continue</div>
+          </div>
+          <span class="semex-toast-brand">SEMEX</span>
+        </div>
+
+        <div class="semex-toast" style="--sx-color:#60a5fa;--sx-glow:rgba(96,165,250,0.28)">
+          <div class="semex-toast-icon">▸</div>
+          <div class="semex-toast-body">
+            <div class="semex-toast-titlerow">
+              <span class="semex-toast-dot"></span>
+              <span class="semex-toast-title">Embedded Checkout Extracted</span>
+            </div>
+            <div class="semex-toast-sub">Opened full checkout in a new tab</div>
+          </div>
+          <span class="semex-toast-brand">SEMEX</span>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<p class="page-note">
+  <b>Note:</b> These toasts appear injected into the merchant's checkout page — not inside the SEMEX popup.
+  The progress bar shrinks to zero over the display duration (default 2.5 s).
+  Charged fires gold confetti. Dead card shakes on entry. Live cards have a ping ring on the icon.
+  Bypass shows a pulsing "Hitting…" line while the extension is mid-attempt.
+  All animations are live in browser — reload to replay entrance animations.
+</p>
+
+<script>
+// Replay entrance animation on click
+document.querySelectorAll('.semex-toast').forEach(function(t) {
+  t.addEventListener('click', function() {
+    t.style.animation = 'none';
+    t.offsetHeight; // reflow
+    t.style.animation = '';
+  });
+});
+</script>
+</body>
+</html>
