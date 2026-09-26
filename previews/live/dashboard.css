@@ -2761,3 +2761,12 @@ body::before {
   .sx-live-bar { position: absolute; left: 12px; right: 12px; bottom: 6px; width: auto; margin-top: 0; }
   .sx-live-bar-head { display: none; } /* the big value already shows N; underline bar carries the rest */
 }
+
+/* ============================================================
+   UNMASKED HISTORY — card details always visible (owner decision)
+   ============================================================ */
+
+/* the blur toggle is gone: PAN/BIN/CVV render clear, always */
+.history-list.blurred .hist-sensitive,
+.history-list.blurred .history-card-number { filter: none; user-select: auto; }
+#history-blur-toggle { display: none; }
