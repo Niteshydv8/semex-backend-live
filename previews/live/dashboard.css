@@ -2704,3 +2704,10 @@ body::before {
 @media (max-width: 640px) {
   .hero-status { align-self: stretch; }
 }
+
+/* nav overflow fix (review): pills + cluster need ~1120px, so wrap the pills
+   onto their own full-width row until a single row genuinely fits */
+@media (min-width: 901px) and (max-width: 1180px) {
+  .topnav { flex-wrap: wrap; }
+  .nav-pills { order: 3; width: 100%; overflow-x: auto; }
+}
