@@ -4,6 +4,7 @@ description: How to push to GitHub (auto-redeploys Render backend) — credentia
 ---
 
 ⚠️ The backend is hosted on **Render**, not Railway. Do not say "Railway" in commit messages or responses.
+⚠️ Live API URL for building the extension: **https://api.semxhitter.pw** — always use this when running build.sh. The old SEMEX_GUIDE.md references `semexbackend-production.up.railway.app` which is wrong/outdated.
 
 The API is served through a **specific domain** (api.semxhitter.pw). If hosting ever moves to a different provider, the domain stays the same and all extension versions — old and new — continue working without any change. The domain is the stable contract with users, not the hosting platform.
 
