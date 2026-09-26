@@ -114,6 +114,19 @@ for _hid in ['captcha-solving-content', 'hcaptcha-content', 'recaptcha-content']
 src = src.replace('data-testid="af-master-toggle"><span class="toggle-slider"></span></label></div>\n                    <div class="section-content hidden">',
                   'data-testid="af-master-toggle"><span class="toggle-slider"></span></label></div>\n                    <div class="section-content">')
 
+# Connected topnav mock: green status, version, visible profile, wins, notifications
+src = src.replace('<div class="sys-dot" id="sys-dot"></div>', '<div class="sys-dot status-connected" id="sys-dot"></div>')
+src = src.replace('<span class="sys-text" id="sys-text">Connecting...</span>', '<span class="sys-text" id="sys-text">Connected</span>')
+src = re.sub(r'(id="version-text"[^>]*>)[^<]*', r'\g<1>v2.9.12', src)
+src = src.replace('<div id="user-badge" class="user-info-group hidden">', '<div id="user-badge" class="user-info-group">')
+src = src.replace('<div class="user-name" id="user-name">User</div>', '<div class="user-name" id="user-name">nitesh</div>')
+src = src.replace('<span id="user-plan" class="plan-badge"></span>', '<span id="user-plan" class="plan-badge lifetime">Lifetime</span>')
+src = src.replace('id="session-wins-badge" class="wins-badge hidden"', 'id="session-wins-badge" class="wins-badge"')
+src = src.replace('<span class="notif-badge hidden" id="notif-badge">0</span>', '<span class="notif-badge" id="notif-badge">2</span>')
+NOTIFS = ('<div class="notif-item unread clickable"><div><b>Charged hit</b> — 4242 42•• •••• 4242 · $49.99<div class="mono-dim" style="font-size:11px;margin-top:2px;">2m ago</div></div></div>'
+          '<div class="notif-item clickable"><div><b>Extension update</b> — v2.9.12 is live<div class="mono-dim" style="font-size:11px;margin-top:2px;">1h ago</div></div></div>')
+src = src.replace('<div class="notif-empty">No new notifications</div>', NOTIFS)
+
 INTERACT = '''
 <script src="dashboard-plus.js"></script>
 <script>
@@ -128,6 +141,17 @@ document.querySelectorAll('[data-tab]').forEach(function(btn) {
   btn.addEventListener('click', function() { semexPreviewSwitch(btn.dataset.tab); });
 });
 if (location.hash.length > 1) semexPreviewSwitch(location.hash.slice(1));
+var bell = document.getElementById('notif-bell'), dd = document.getElementById('notif-dropdown');
+if (bell && dd) {
+  bell.addEventListener('click', function(ev) { ev.stopPropagation(); dd.classList.toggle('hidden'); });
+  document.addEventListener('click', function(ev) { if (!dd.contains(ev.target)) dd.classList.add('hidden'); });
+  var clearAll = document.getElementById('notif-clear-all');
+  if (clearAll) clearAll.addEventListener('click', function() {
+    var list = document.getElementById('notif-list');
+    if (list) list.innerHTML = '<div class="notif-empty">No new notifications</div>';
+    var badge = document.getElementById('notif-badge'); if (badge) badge.classList.add('hidden');
+  });
+}
 document.querySelectorAll('.hit-row-top, .tx-header').forEach(function(h) {
   h.addEventListener('click', function() {
     var body = h.parentElement.querySelector('.hit-row-body');
@@ -153,7 +177,7 @@ note.textContent = 'Preview only — works in the real extension';
 document.body.appendChild(note);
 var noteT;
 document.querySelectorAll('button, a').forEach(function(el) {
-  if (el.dataset.tab || el.id === 'bin-mode-btn' || el.id === 'cc-list-mode-btn') return;
+  if (el.dataset.tab || el.id === 'bin-mode-btn' || el.id === 'cc-list-mode-btn' || el.id === 'notif-bell' || el.id === 'notif-clear-all') return;
   el.addEventListener('click', function(ev) {
     if (el.tagName === 'A') ev.preventDefault();
     note.style.display = 'block';

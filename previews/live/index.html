@@ -61,14 +61,14 @@
             <div class="nav-actions">
                 <div class="status-footer" id="status-footer">
                     <div class="sys-stat">
-                        <div class="sys-dot" id="sys-dot"></div>
-                        <span class="sys-text" id="sys-text">Connecting...</span>
+                        <div class="sys-dot status-connected" id="sys-dot"></div>
+                        <span class="sys-text" id="sys-text">Connected</span>
                     </div>
-                    <span class="version-text" id="version-text">v...</span>
+                    <span class="version-text" id="version-text">v2.9.12</span>
                 </div>
 
                 <!-- Session wins streak badge -->
-                <div id="session-wins-badge" class="wins-badge hidden" title="Charged hits this session" data-testid="session-wins-badge">
+                <div id="session-wins-badge" class="wins-badge" title="Charged hits this session" data-testid="session-wins-badge">
                     <svg class="wins-flame" viewBox="0 0 24 24"><path d="M12 2c1 3-1.5 4.5-1.5 7A2.5 2.5 0 0 0 13 11c1.5 0 2-1 2-1 .5 2 2 3 2 5.5A5.5 5.5 0 1 1 6.5 15c0-3 2-4 2.5-6 .3-1.2 0-2.5 3-7z"/></svg>
                     <span id="session-wins-count">12</span>
                     <span class="wins-label">wins</span>
@@ -80,17 +80,17 @@
                         <svg viewBox="0 0 24 24">
                             <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"></path>
                         </svg>
-                        <span class="notif-badge hidden" id="notif-badge">0</span>
+                        <span class="notif-badge" id="notif-badge">2</span>
                     </button>
                 </div>
 
                 <!-- User Badge -->
-                <div id="user-badge" class="user-info-group hidden">
+                <div id="user-badge" class="user-info-group">
                     <div class="user-badge-row" id="user-badge-container" title="User">
                         <img id="user-avatar" src="../icons/default-avatar.png" class="user-avatar">
                         <div class="user-meta">
-                            <div class="user-name" id="user-name">User</div>
-                            <span id="user-plan" class="plan-badge"></span>
+                            <div class="user-name" id="user-name">nitesh</div>
+                            <span id="user-plan" class="plan-badge lifetime">Lifetime</span>
                         </div>
                         <button id="logout-btn" class="circle-btn logout-btn" title="Logout" data-testid="logout-btn">
                             <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></svg>
@@ -112,7 +112,7 @@
                 <span class="notif-clear-all" id="notif-clear-all" data-testid="notif-clear-all">Clear All</span>
             </div>
             <div class="notif-list" id="notif-list">
-                <div class="notif-empty">No new notifications</div>
+                <div class="notif-item unread clickable"><div><b>Charged hit</b> — 4242 42•• •••• 4242 · $49.99<div class="mono-dim" style="font-size:11px;margin-top:2px;">2m ago</div></div></div><div class="notif-item clickable"><div><b>Extension update</b> — v2.9.12 is live<div class="mono-dim" style="font-size:11px;margin-top:2px;">1h ago</div></div></div>
             </div>
         </div>
 
@@ -960,6 +960,17 @@ document.querySelectorAll('[data-tab]').forEach(function(btn) {
   btn.addEventListener('click', function() { semexPreviewSwitch(btn.dataset.tab); });
 });
 if (location.hash.length > 1) semexPreviewSwitch(location.hash.slice(1));
+var bell = document.getElementById('notif-bell'), dd = document.getElementById('notif-dropdown');
+if (bell && dd) {
+  bell.addEventListener('click', function(ev) { ev.stopPropagation(); dd.classList.toggle('hidden'); });
+  document.addEventListener('click', function(ev) { if (!dd.contains(ev.target)) dd.classList.add('hidden'); });
+  var clearAll = document.getElementById('notif-clear-all');
+  if (clearAll) clearAll.addEventListener('click', function() {
+    var list = document.getElementById('notif-list');
+    if (list) list.innerHTML = '<div class="notif-empty">No new notifications</div>';
+    var badge = document.getElementById('notif-badge'); if (badge) badge.classList.add('hidden');
+  });
+}
 document.querySelectorAll('.hit-row-top, .tx-header').forEach(function(h) {
   h.addEventListener('click', function() {
     var body = h.parentElement.querySelector('.hit-row-body');
@@ -985,7 +996,7 @@ note.textContent = 'Preview only — works in the real extension';
 document.body.appendChild(note);
 var noteT;
 document.querySelectorAll('button, a').forEach(function(el) {
-  if (el.dataset.tab || el.id === 'bin-mode-btn' || el.id === 'cc-list-mode-btn') return;
+  if (el.dataset.tab || el.id === 'bin-mode-btn' || el.id === 'cc-list-mode-btn' || el.id === 'notif-bell' || el.id === 'notif-clear-all') return;
   el.addEventListener('click', function(ev) {
     if (el.tagName === 'A') ev.preventDefault();
     note.style.display = 'block';

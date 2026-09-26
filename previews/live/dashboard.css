@@ -2568,3 +2568,69 @@ input:not([type]):focus, input[type=email]:focus, input[type=number]:focus {
 
 /* review fix: give the Live chip room so the ring caption isn't clipped */
 #stats-section .stat[data-stat="live"] { min-height: 96px; }
+
+/* ============================================================
+   TOPNAV VISIBILITY + BACKGROUND MESH + ADMIN POLISH
+   ============================================================ */
+
+/* smooth layered gradient mesh behind everything (static — zero repaint cost) */
+body { background: #0a0a0f; }
+body::before {
+  content: ""; position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(900px 600px at 10% -10%, rgba(139,108,255,0.16), transparent 60%),
+    radial-gradient(820px 520px at 96% 4%, rgba(64,120,255,0.11), transparent 62%),
+    radial-gradient(1100px 760px at 50% 118%, rgba(168,85,247,0.12), transparent 62%);
+}
+.panel { background: transparent; position: relative; z-index: 1; }
+
+/* nav pills: inactive tabs get a real glass pill, violet icon tint, hover glow */
+@media (min-width: 641px) {
+  .nav-pills { box-shadow: 0 10px 28px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.06); }
+  .nav-item.tab:not(.active) {
+    color: #cfcfe0; font-weight: 600;
+    background: rgba(255,255,255,0.05);
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .nav-item.tab:not(.active) .nav-ico { color: var(--violet-lite); opacity: 1; }
+  .nav-item.tab:not(.active):hover {
+    color: #fff; background: rgba(139,108,255,0.16);
+    border-color: rgba(139,108,255,0.4);
+    box-shadow: 0 0 16px rgba(139,108,255,0.28);
+    transform: translateY(-1px);
+  }
+}
+
+/* admin panel: enhanced stat chips, rows and danger zone */
+#admin-tab .admin-stat-card {
+  position: relative; overflow: hidden;
+  background: linear-gradient(180deg, rgba(255,255,255,0.055), rgba(255,255,255,0.015));
+  border: 1px solid var(--border); border-radius: 14px;
+  transition: transform .16s ease, border-color .16s ease, box-shadow .16s ease;
+}
+#admin-tab .admin-stat-card::before {
+  content: ""; position: absolute; top: 0; left: 12%; right: 12%; height: 2px; border-radius: 2px;
+  background: linear-gradient(90deg, transparent, var(--violet-lite), transparent);
+  opacity: .8;
+}
+#admin-tab .admin-stat-card:hover {
+  transform: translateY(-2px); border-color: rgba(139,108,255,0.45);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.35), 0 0 18px rgba(139,108,255,0.15);
+}
+#admin-tab .admin-stat-value { font-size: 24px; font-weight: 700; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+#admin-tab .admin-stat-label { font-size: 10.5px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--fg-3); }
+#admin-tab .admin-user-row { border-radius: 12px; transition: background .15s ease; }
+#admin-tab .admin-user-row:hover { background: rgba(255,255,255,0.03); }
+#admin-tab .admin-user-avatar {
+  background: linear-gradient(135deg, var(--violet-2), #5b34d6);
+  box-shadow: 0 4px 12px rgba(124,92,252,0.35); font-weight: 700;
+}
+#admin-tab .code-row { font-family: 'JetBrains Mono', ui-monospace, monospace; font-size: 12.5px; }
+#admin-tab .admin-btn { border-radius: 999px; }
+#admin-tab .glass-head { margin-bottom: 14px; }
+#admin-tab .grid-2 { align-items: stretch; }
+#admin-tab .grid-2 > .glass { height: 100%; }
+#admin-tab .admin-danger-zone {
+  border-color: rgba(248,113,113,0.35);
+  background: linear-gradient(180deg, rgba(248,113,113,0.06), rgba(248,113,113,0.01));
+}
