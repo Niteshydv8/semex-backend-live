@@ -53,13 +53,59 @@ body {
 @keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: 0.5 } }
 
 /* Login */
-.login-shell { display: flex; align-items: center; justify-content: center; min-height: 80vh; }
-.login-card {
-  background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
-  padding: 40px; width: 400px; box-shadow: 0 20px 60px rgba(139, 92, 246, 0.2);
+.login-shell {
+  display: flex; align-items: center; justify-content: center; min-height: 80vh;
+  position: relative; overflow: hidden;
 }
-.login-card h1 { text-align: center; margin-bottom: 8px; }
-.login-card .sub { text-align: center; color: var(--muted); margin-bottom: 28px; font-size: 13px; }
+/* atmosphere orbs */
+.login-shell::before, .login-shell::after {
+  content: ''; position: fixed; border-radius: 50%; pointer-events: none;
+  filter: blur(90px);
+}
+.login-shell::before {
+  width: 480px; height: 480px; top: -160px; left: -100px;
+  background: rgba(94,66,210,0.20);
+}
+.login-shell::after {
+  width: 280px; height: 280px; bottom: -80px; right: -60px;
+  background: rgba(167,139,250,0.13);
+}
+@keyframes lc-in {
+  from { opacity:0; transform: translateY(22px) scale(0.97); filter: blur(6px); }
+  to   { opacity:1; transform: translateY(0) scale(1); filter: blur(0); }
+}
+.login-card {
+  position: relative; z-index: 2;
+  width: 400px;
+  background: linear-gradient(160deg, rgba(255,255,255,0.09) 0%, rgba(255,255,255,0.04) 60%, rgba(0,0,0,0.06) 100%);
+  border: 1px solid rgba(255,255,255,0.13);
+  border-radius: 24px;
+  padding: 44px 38px 38px;
+  box-shadow: 0 32px 80px rgba(0,0,0,0.70), 0 0 0 1px rgba(255,255,255,0.06) inset, 0 1px 0 rgba(255,255,255,0.16) inset;
+  backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+  animation: lc-in 0.52s cubic-bezier(0.34,1.15,0.64,1) both;
+}
+/* emblem */
+.login-emblem {
+  width: 64px; height: 64px; border-radius: 18px; margin: 0 auto 20px;
+  background: linear-gradient(135deg, rgba(142,107,255,0.82), rgba(94,66,210,0.75));
+  display: flex; align-items: center; justify-content: center;
+  box-shadow: 0 8px 28px rgba(124,92,252,0.50), 0 0 0 1px rgba(255,255,255,0.14) inset;
+  font-size: 26px; position: relative;
+}
+.login-emblem::after {
+  content: ''; position: absolute; inset: -8px; border-radius: 24px;
+  border: 1px solid rgba(124,92,252,0.30);
+  animation: lc-ring 2.8s ease-in-out infinite;
+}
+@keyframes lc-ring { 0%,100%{opacity:.45;transform:scale(1)} 50%{opacity:1;transform:scale(1.04)} }
+.login-card h1 { text-align: center; margin-bottom: 6px; font-size: 26px; font-weight: 800; letter-spacing: -0.03em; background: linear-gradient(135deg,#fff 0%,#c4b5fd 55%,#a78bfa 100%); -webkit-background-clip:text; background-clip:text; -webkit-text-fill-color:transparent; }
+.login-card .sub { text-align: center; color: #5c6b8a; margin-bottom: 32px; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; }
+/* OTP digit input highlight */
+#in-otp { text-align: center; font-size: 22px; font-family: 'JetBrains Mono', monospace; letter-spacing: 0.28em; font-weight: 600; }
+/* step transition */
+#step-otp { animation: lc-in 0.35s cubic-bezier(0.34,1.1,0.64,1) both; }
+.login-otp-hint { text-align: center; margin-top: 12px; font-size: 12px; color: #4b5563; }
 
 /* Nav tabs */
 .nav {
@@ -204,22 +250,23 @@ tr:hover td { background: rgba(139,92,246,0.04); }
 <!-- LOGIN -->
 <div id="login-shell" class="login-shell">
   <div class="login-card">
-    <h1 class="brand" style="font-size:32px;">SEMEX</h1>
-    <p class="sub">ADMIN DASHBOARD</p>
+    <div class="login-emblem">⚡</div>
+    <h1 class="brand">SEMEX</h1>
+    <p class="sub">Admin Dashboard</p>
     <div id="step-tid">
       <div class="field">
         <label>Telegram ID</label>
-        <input id="in-tid" type="text" placeholder="e.g. 5762701937" autocomplete="off">
+        <input id="in-tid" type="text" placeholder="e.g. 5762701937" autocomplete="off" onkeydown="if(event.key==='Enter')requestOTP()">
       </div>
       <button class="btn btn-primary btn-full" onclick="requestOTP()">Send OTP</button>
     </div>
     <div id="step-otp" style="display:none;">
       <div class="field">
-        <label>OTP Code</label>
-        <input id="in-otp" type="text" placeholder="6-digit code" maxlength="6" autocomplete="off">
+        <label style="text-align:center;display:block;margin-bottom:10px;">Enter OTP from Telegram</label>
+        <input id="in-otp" type="text" placeholder="· · · · · ·" maxlength="6" autocomplete="one-time-code" onkeydown="if(event.key==='Enter')verifyOTP()">
       </div>
-      <button class="btn btn-primary btn-full" onclick="verifyOTP()">Verify & Login</button>
-      <p style="text-align:center;margin-top:10px;font-size:12px;color:var(--muted);">Check your Telegram DMs</p>
+      <button class="btn btn-primary btn-full" onclick="verifyOTP()">Verify &amp; Login</button>
+      <p class="login-otp-hint">Check your Telegram DMs</p>
     </div>
   </div>
 </div>

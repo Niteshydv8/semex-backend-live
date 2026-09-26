@@ -76,12 +76,12 @@
     flex: 0 0 auto;
   }
   .semex-toast-title {
-    font-size: 12px; font-weight: 700; letter-spacing: 0.04em;
-    line-height: 1.35; color: var(--sx-color, #d3e3d8);
+    font-size: 13px; font-weight: 700; letter-spacing: 0.02em;
+    line-height: 1.3; color: var(--sx-color, #d3e3d8);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .semex-toast-sub {
-    font-size: 10.5px; color: #88908a; margin-top: 3px;
+    font-size: 11.5px; color: #9aa0a6; margin-top: 3px;
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
   }
   .semex-toast-chart {
@@ -91,10 +91,10 @@
   }
   .semex-toast-row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
   .semex-toast-row-label {
-    flex: 0 0 auto; font-size: 9px; font-weight: 700;
-    letter-spacing: 0.06em; color: #5c6b62; text-transform: uppercase;
+    flex: 0 0 auto; font-size: 9.5px; font-weight: 700;
+    letter-spacing: 0.08em; color: #6b7a70; text-transform: uppercase;
   }
-  .semex-toast-row-value { font-size: 11px; font-weight: 500; color: #EDEEFF; word-break: break-all; text-align: right; }
+  .semex-toast-row-value { font-size: 12px; font-weight: 500; color: #EDEEFF; word-break: break-all; text-align: right; }
   .tone-good  { color: #34d399; }
   .tone-warn  { color: #fbbf24; }
   .tone-bad   { color: #f87171; }
@@ -178,16 +178,16 @@
     100% { box-shadow: 0 0 0 0 rgba(139,92,246,0); }
   }
 
-  /* slide-in entrance */
+  /* slide-in entrance — v4.1 clean blur motion (matches toast-notifier-v2.js) */
   .toasts-live .semex-toast { animation: sx-in 0.55s cubic-bezier(0.16, 0.84, 0.28, 1) both; }
   .toasts-live .semex-toast:nth-child(2) { animation-delay: 0.12s; }
   .toasts-live .semex-toast:nth-child(3) { animation-delay: 0.24s; }
   .toasts-live .semex-toast:nth-child(4) { animation-delay: 0.36s; }
   .toasts-live .semex-toast:nth-child(5) { animation-delay: 0.48s; }
   @keyframes sx-in {
-    0%   { transform: translateX(50px) skewX(-6deg); opacity: 0; filter: blur(8px); }
-    55%  { opacity: 1; filter: blur(2px); }
-    100% { transform: none; opacity: 1; filter: blur(0); }
+    0%   { transform: translateX(52px); opacity: 0; filter: blur(8px); }
+    45%  { opacity: 1; filter: blur(1.5px); }
+    100% { transform: translateX(0); opacity: 1; filter: blur(0); }
   }
 
   .close-x {
