@@ -84,4 +84,36 @@
     setInterval(poll, 1500);
   }
   mountQuickStatus();
+
+  /* Header profile + name mirrors. popup.js never writes #page-title,
+     so greeting + hero chip are ours to fill from #user-badge (read-only source). */
+  function mountProfileMirror() {
+    var srcName = document.getElementById('user-name');
+    if (!srcName) return;
+    function sync() {
+      var name = (srcName.textContent || '').trim() || 'Operator';
+      var pt = document.getElementById('page-title');
+      if (pt && pt.textContent !== name) pt.textContent = name;
+      var hn = document.getElementById('sx-hero-name');
+      if (hn && hn.textContent !== name) hn.textContent = name;
+      var sp = document.getElementById('user-plan');
+      var hp = document.getElementById('sx-hero-plan');
+      if (sp && hp) {
+        if (hp.textContent !== sp.textContent) hp.textContent = sp.textContent;
+        if (hp.className !== sp.className) hp.className = sp.className;
+      }
+      var sa = document.getElementById('user-avatar');
+      var ha = document.getElementById('sx-hero-avatar');
+      if (sa && ha && ha.getAttribute('src') !== sa.getAttribute('src')) {
+        ha.setAttribute('src', sa.getAttribute('src'));
+      }
+    }
+    sync();
+    new MutationObserver(sync).observe(srcName, { childList: true, characterData: true, subtree: true });
+    ['user-plan', 'user-avatar'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) new MutationObserver(sync).observe(el, { attributes: true, childList: true, characterData: true, subtree: true });
+    });
+  }
+  mountProfileMirror();
 })();
