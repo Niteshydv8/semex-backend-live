@@ -2391,3 +2391,6 @@ input[type=checkbox]:checked::after {
   box-shadow: var(--liquid-shadow), 0 4px 16px rgba(232,180,74,0.35);
 }
 .nav-item.active .nav-ico, .nav-item.active svg { color: #fff; stroke: currentColor; }
+
+/* review fix: outrank .nav-item.tab.active .nav-ico so the active tab icon turns white */
+.nav-item.tab.active .nav-ico, .nav-item.tab.active svg { color: #fff !important; stroke: currentColor !important; }
