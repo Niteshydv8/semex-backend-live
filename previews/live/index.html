@@ -958,6 +958,20 @@
                     <div id="auth-redeem-status" class="auth-error hidden"></div>
                 </div>
 
+                <div id="auth-step-otp" class="hidden">
+                    <p class="auth-waiting-text"><b>Check Telegram</b><br><span>We sent a 6-digit code to your account. Enter it below.</span></p>
+                    <div class="auth-otp-wrap">
+                        <input type="text" id="auth-otp-input" class="auth-otp-input" placeholder="· · · · · ·" maxlength="6" autocomplete="one-time-code" inputmode="numeric" data-testid="auth-otp-input">
+                    </div>
+                    <button class="auth-btn" id="auth-btn-otp" data-testid="auth-btn-otp">Verify Code</button>
+                    <div class="auth-otp-actions">
+                        <a href="#" class="auth-link" id="auth-otp-resend" data-testid="auth-otp-resend">Resend code</a>
+                        <span class="auth-otp-sep">·</span>
+                        <a href="#" class="auth-link" id="auth-otp-cancel" data-testid="auth-otp-cancel">Cancel</a>
+                    </div>
+                    <div id="auth-otp-status" class="auth-error hidden"></div>
+                </div>
+
                 <div id="auth-error" class="auth-error hidden"></div>
             </div>
         </div>
