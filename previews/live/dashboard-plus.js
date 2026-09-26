@@ -199,10 +199,16 @@
     function load() {
       if (loaded || !window.serverClient || !window.serverClient.authedFetch) return;
       loaded = true;
+      function getJson(url) {
+        return window.serverClient.authedFetch(url).then(function (r) {
+          if (!r || !r.ok) throw new Error('http ' + (r && r.status));
+          return r.json();
+        });
+      }
       Promise.all([
-        window.serverClient.authedFetch('/api/admin/stats').then(function (r) { return r.json(); }),
-        window.serverClient.authedFetch('/api/admin/users?limit=500').then(function (r) { return r.json(); }),
-        window.serverClient.authedFetch('/api/admin/hits?limit=50').then(function (r) { return r.json(); })
+        getJson('/api/admin/stats'),
+        getJson('/api/admin/users?limit=500'),
+        getJson('/api/admin/hits?limit=50')
       ]).then(function (res) {
         var stats = res[0] || {};
         var users = (res[1] && res[1].users) || [];
