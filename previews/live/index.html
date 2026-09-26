@@ -9,7 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link rel="stylesheet"
         href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap">
-    <link rel="stylesheet" href="dashboard.css?v=4">
+    <link rel="stylesheet" href="dashboard.css?v=5">
 <style id="preview-visibility-fix">.app-container{opacity:1 !important}</style>
 </head>
 
@@ -162,11 +162,11 @@
                 <div class="rev-chart">
                     <div class="rev-graph">
                         <div class="stat" data-stat="charged">
-                            <div class="rev-stat-lab stat-label"><span class="pct">Charged</span> hits</div>
+                            <div class="rev-stat-lab stat-label"><span class="pct">Charged</span></div>
                             <div class="rev-other-val stat-val green" id="stats-charged">12</div>
                         </div>
                         <div class="stat" data-stat="live">
-                            <div class="rev-stat-lab stat-label"><span class="pct">Live</span> · this session</div>
+                            <div class="rev-stat-lab stat-label"><span class="pct">Live</span></div>
                             <div class="rev-other-val stat-val purple" id="stats-ccn">5</div>
                             <div class="rev-bars" aria-hidden="true" style="height:30px;margin-top:8px;">
                                 <i class="rev-bar" style="height:35%"></i><i class="rev-bar" style="height:55%"></i><i class="rev-bar" style="height:42%"></i><i class="rev-bar" style="height:70%"></i><i class="rev-bar" style="height:50%"></i><i class="rev-bar" style="height:82%"></i><i class="rev-bar" style="height:64%"></i><i class="rev-bar" style="height:92%"></i><i class="rev-bar" style="height:58%"></i><i class="rev-bar" style="height:76%"></i><i class="rev-bar" style="height:66%"></i><i class="rev-bar" style="height:88%"></i><i class="rev-bar" style="height:74%"></i><i class="rev-bar" style="height:96%"></i>
@@ -443,7 +443,7 @@
                         <span class="toggle-slider"></span>
                     </label>
                 </div>
-                <div class="section-content hidden" id="captcha-solving-content">
+                <div class="section-content" id="captcha-solving-content">
                     <p class="bypass-hint"><strong>Cloudflare Warning:</strong> Auto-pauses on Cloudflare challenge pages to prevent infinite loops.</p>
 
                     <div class="subsection">
@@ -473,7 +473,7 @@
                                 <span class="toggle-slider"></span>
                             </label>
                         </div>
-                        <div class="subsection-content hidden" id="hcaptcha-content">
+                        <div class="subsection-content" id="hcaptcha-content">
                             <p class="bypass-hint warn-text">Enable only on checkout pages. Enabling on all pages may cause Cloudflare infinite loops!</p>
                             <div class="toggle-row"><div class="toggle-name">Tap-based solving (auto-click checkbox)</div><input type="checkbox" id="hcaptcha-tap-based" checked></div>
                             <div class="toggle-row"><div class="toggle-name">Auto-solve via token API (needs API key)</div><input type="checkbox" id="hcaptcha-2captcha" checked></div>
@@ -489,7 +489,7 @@
                                 <span class="toggle-slider"></span>
                             </label>
                         </div>
-                        <div class="subsection-content hidden" id="recaptcha-content">
+                        <div class="subsection-content" id="recaptcha-content">
                             <div class="toggle-row"><div class="toggle-name">Auto-open (click checkbox automatically)</div><input type="checkbox" id="recaptcha-auto-open" checked></div>
                             <div class="toggle-row"><div class="toggle-name">Auto-solve image challenges via API</div><input type="checkbox" id="recaptcha-auto-solve" checked></div>
                             <p class="bypass-hint">Auto-solve requires NopeCHA API key above</p>
@@ -668,6 +668,12 @@
                             <div id="user-result" class="hidden gen-result"></div>
                         </div>
                     </div>
+                    <div class="subsection">
+                        <div class="subsection-header"><h3>Danger Zone</h3></div>
+                        <div class="subsection-content">
+                            <button id="reset-stats-btn" class="btn btn-danger btn-full-danger" data-testid="reset-stats-btn">Reset Statistics</button>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="glass span-2 hidden" style="padding:20px;">
@@ -700,7 +706,7 @@
                     </div>
                 </div>
 
-                <div class="glass span-2" style="padding:20px;">
+                <div class="glass" style="padding:20px;">
                     <div class="glass-head"><div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></span><span class="glass-title">Form Filling</span></div>
                         <label class="toggle"><input type="checkbox" id="form-filling-toggle" checked><span class="toggle-slider"></span></label></div>
                     <p class="info-text" style="margin-bottom:12px;">Stripe Checkout pages always auto-fill. Toggle controls other sites.</p>
@@ -724,10 +730,10 @@
                         <input type="checkbox" id="form-filling-random-address"></div>
                 </div>
 
-                <div class="glass span-2" style="padding:20px;">
+                <div class="glass" style="padding:20px;">
                     <div class="glass-head"><div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6l-8-4z"/><path d="m9 12 2 2 4-4"/></svg></span><span class="glass-title">Stealth Protection</span></div>
                         <label class="toggle"><input type="checkbox" id="af-master" checked data-testid="af-master-toggle"><span class="toggle-slider"></span></label></div>
-                    <div class="section-content hidden">
+                    <div class="section-content">
                         <p class="info-text" style="margin-bottom:8px;">Rotate the device identity Stripe Radar / Sift / Kount use to cluster attempts. All patches gated by the master switch above.</p>
                         <div class="toggle-row"><div class="toggle-name">Canvas fingerprint noise</div><input type="checkbox" id="af-canvas" checked data-testid="af-canvas"></div>
                         <div class="toggle-row"><div class="toggle-name">WebGL renderer / vendor spoof</div><input type="checkbox" id="af-webgl" checked data-testid="af-webgl"></div>
@@ -757,10 +763,6 @@
                     </div>
                 </div>
 
-                <div class="glass" style="padding:20px;">
-                    <div class="glass-head"><div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h10"/></svg></span><span class="glass-title">Actions</span></div></div>
-                    <button id="reset-stats-btn" class="btn btn-danger btn-full-danger" data-testid="reset-stats-btn">Reset Statistics</button>
-                </div>
             </div>
         </section>
 

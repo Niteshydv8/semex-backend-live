@@ -2525,3 +2525,43 @@ input:not([type]):focus, input[type=email]:focus, input[type=number]:focus {
 /* review polish: keep the hero chip compact on narrow screens */
 .sx-hero-name { max-width: 160px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 @media (max-width: 760px) { .sx-hero-name { max-width: 110px; } }
+
+/* ============================================================
+   STATS TEXT MANAGEMENT + HISTORY/CAPTCHA/SETTINGS POLISH
+   ============================================================ */
+
+/* four stat chips: one typographic system — uniform uppercase labels,
+   uniform 26px tabular values; semantic color carried by the VALUE only */
+#stats-section .stat-label,
+#stats-section .rev-stat-lab {
+  font-size: 11px; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.08em; color: var(--fg-3); margin-bottom: 0;
+}
+#stats-section .rev-stat-lab .pct { color: inherit; font-weight: inherit; }
+#stats-section .rev-big { font-size: 26px; letter-spacing: -0.01em; margin-top: 0; }
+#stats-section .rev-other { text-align: left; }
+#stats-section .stat { justify-content: center; }
+/* live ring docks to the right edge of the Live chip instead of stacking */
+#stats-section .sx-live-ring-wrap {
+  position: absolute; right: 14px; top: 50%; transform: translateY(-50%);
+  margin-top: 0; align-self: auto;
+}
+@media (max-width: 900px) {
+  #stats-section .sx-live-ring-wrap { position: static; transform: none; align-self: center; }
+}
+
+/* history: uniform pill width so PANs align, legible meta, wrapping actions */
+.history-actions { flex-wrap: wrap; }
+.hit-badge, .tx-badge { display: inline-flex; align-items: center; gap: 6px; min-width: 76px; justify-content: center; }
+.hit-brand, .tx-brand { color: var(--fg-2); font-weight: 500; }
+.hit-row-top, .tx-header { min-height: 40px; }
+
+/* captcha + settings: stronger subsection/type rhythm */
+.subsection-header h3 { font-size: 13px; font-weight: 700; letter-spacing: 0.01em; color: var(--fg); }
+.toggle-name { font-weight: 600; color: var(--fg); }
+.toggle-desc { line-height: 1.5; }
+#captcha-tab .form-label, #settings-tab .form-label { font-weight: 600; color: var(--fg-2); }
+
+/* settings: proportional 2-col rhythm — paired cards stretch to equal height */
+#settings-tab .grid-2 { align-items: stretch; }
+#settings-tab .grid-2 > .glass { height: 100%; }

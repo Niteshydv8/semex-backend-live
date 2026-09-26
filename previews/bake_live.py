@@ -107,6 +107,13 @@ src = fill_deep(src, 'all-hits-list', ADMIN_HITS)
 RELS = ''.join('<div class="code-row"><span>%s</span></div>' % r for r in ["v2.9.12 · latest · 2.1 MB","v2.9.11 · 2.0 MB"])
 src = fill_deep(src, 'releases-list', RELS)
 
+# Preview-only: expand captcha + stealth panels so the full page renders for review
+for _hid in ['captcha-solving-content', 'hcaptcha-content', 'recaptcha-content']:
+    src = src.replace('class="section-content hidden" id="%s"' % _hid, 'class="section-content" id="%s"' % _hid)
+    src = src.replace('class="subsection-content hidden" id="%s"' % _hid, 'class="subsection-content" id="%s"' % _hid)
+src = src.replace('data-testid="af-master-toggle"><span class="toggle-slider"></span></label></div>\n                    <div class="section-content hidden">',
+                  'data-testid="af-master-toggle"><span class="toggle-slider"></span></label></div>\n                    <div class="section-content">')
+
 INTERACT = '''
 <script src="dashboard-plus.js"></script>
 <script>
