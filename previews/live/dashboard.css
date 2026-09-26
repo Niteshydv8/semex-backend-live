@@ -2770,3 +2770,30 @@ body::before {
 .history-list.blurred .hist-sensitive,
 .history-list.blurred .history-card-number { filter: none; user-select: auto; }
 #history-blur-toggle { display: none; }
+
+/* ============================================================
+   SETTINGS SPEC + ADMIN INSIGHTS
+   ============================================================ */
+
+/* hidden always-ON switch rows stay fully gone even with flex display */
+.sx-switch-row.hidden { display: none !important; }
+
+/* admin insights — read-only charts, pure CSS bars */
+.sx-insights { margin-top: 4px; }
+.sx-ins-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 14px; }
+.sx-ins-block { min-width: 0; }
+.sx-ins-title { font-size: 11px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.08em; color: var(--fg-3); margin-bottom: 8px; }
+.sx-bar-row { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--fg-2); margin-bottom: 6px; }
+.sx-bar-row > span { min-width: 84px; max-width: 120px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.sx-bar-row > b { min-width: 34px; text-align: right; font-variant-numeric: tabular-nums; }
+.sx-bar-track { flex: 1; height: 6px; border-radius: 99px; background: rgba(255,255,255,0.07); overflow: hidden; }
+.sx-bar-fill { height: 100%; width: 0; border-radius: inherit; background: linear-gradient(90deg, #6d4dff, #a78bff); transition: width 0.5s ease; }
+.sx-bar-track.alt .sx-bar-fill { background: linear-gradient(90deg, #0ea5e9, #34d399); }
+.sx-trend { display: flex; align-items: flex-end; gap: 6px; height: 72px; }
+.sx-trend-col { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; height: 100%; }
+.sx-trend-bar { width: 100%; border-radius: 4px 4px 2px 2px; background: linear-gradient(180deg, #a78bff, #6d4dff); min-height: 3px; }
+.sx-trend-col span { font-size: 9.5px; color: var(--fg-3); }
+.sx-chip-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.sx-ins-chip { font-size: 11.5px; color: var(--fg-2); background: rgba(255,255,255,0.04); border: 1px solid var(--border); border-radius: 99px; padding: 4px 10px; }
+.sx-ins-chip b { color: var(--fg); }
+@media (max-width: 640px) { .sx-ins-grid { grid-template-columns: 1fr; } }

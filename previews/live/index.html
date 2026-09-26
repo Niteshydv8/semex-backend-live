@@ -305,7 +305,7 @@
                     </div>
                 
                 </div>
-                <div class="sx-switch-row">
+                <div class="sx-switch-row hidden">
                     <div class="glass-head">
                         <div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-6 8-6s8 2 8 6"/></svg></span><span class="glass-title">Payment UA Bypass</span></div>
                         <label class="toggle">
@@ -319,7 +319,7 @@
                     </div>
                 
                 </div>
-                <div class="sx-switch-row">
+                <div class="sx-switch-row hidden">
                     <div class="glass-head">
                         <div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6l-8-4z"/></svg></span><span class="glass-title">Stripe Security Bypass</span></div>
                         <label class="toggle">
@@ -602,6 +602,21 @@
                 </div>
 
                 <div class="glass" style="padding:20px;">
+                    <div class="glass-head"><div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></svg></span><span class="glass-title">Telegram Bot</span></div><span class="mono-dim" style="font-size:11px;">Your own bot for personal alerts</span></div>
+                    <div class="form-group"><label class="form-label" for="sx-tg-token">Bot Token</label>
+                        <input type="password" id="sx-tg-token" class="form-input" placeholder="123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11" autocomplete="off" spellcheck="false">
+                    </div>
+                    <div class="form-group"><label class="form-label" for="sx-tg-chat">Chat ID</label>
+                        <input type="text" id="sx-tg-chat" class="form-input" placeholder="123456789" autocomplete="off" spellcheck="false">
+                    </div>
+                    <div class="proxy-row" style="align-items:center;">
+                        <button id="sx-tg-test" class="btn btn-primary small-button" type="button">Send Test</button>
+                        <span id="sx-tg-status" class="redeem-status hidden"></span>
+                    </div>
+                    <p class="info-text">Stored on this device only. Send Test delivers a message straight from Telegram.</p>
+                </div>
+
+                <div class="glass hidden" style="padding:20px;">
                     <div class="glass-head"><div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 15-4.5-4.5L9 18"/></svg></span><span class="glass-title">Screenshot Settings</span></div></div>
                     <div class="toggle-row"><div><div class="toggle-name">Save screenshots locally</div><div class="toggle-desc">When OFF, you receive text notifications only</div></div><input type="checkbox" id="screenshot-save-locally" checked></div>
                     <div class="slider-block">
@@ -625,9 +640,9 @@
                     </div>
                 </div>
 
-                <div class="glass span-2" style="padding:20px;">
-                    <div class="glass-head"><div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 1-5 5L4 17v3h3l5.7-5.7a4 4 0 0 1 5-5l-2.6 2.6-1.4-1.4 2.6-2.6z"/></svg></span><span class="glass-title">Utilities</span></div></div>
-                    <div class="subsection">
+                <div class="glass" style="padding:20px;">
+                    <div class="glass-head"><div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 1-5 5L4 17v3h3l5.7-5.7a4 4 0 0 1 5-5l-2.6 2.6-1.4-1.4 2.6-2.6z"/></svg></span><span class="glass-title">Danger Zone</span></div></div>
+                    <div class="subsection hidden">
                         <div class="subsection-header"><h3>Address Generator</h3></div>
                         <div class="subsection-content">
                             <div class="toggle-row"><div class="toggle-name">Use proxy country for address generation</div><input type="checkbox" id="address-follow-proxy"></div>
@@ -655,7 +670,7 @@
                             <div id="address-result" class="hidden gen-result"></div>
                         </div>
                     </div>
-                    <div class="subsection">
+                    <div class="subsection hidden">
                         <div class="subsection-header"><h3>User Generator</h3></div>
                         <div class="subsection-content">
                             <p class="info-text">Generates user info based on address country</p>
@@ -725,7 +740,7 @@
                         <input type="checkbox" id="form-filling-random-address"></div>
                 </div>
 
-                <div class="glass" style="padding:20px;">
+                <div class="glass hidden" style="padding:20px;">
                     <div class="glass-head"><div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6l-8-4z"/><path d="m9 12 2 2 4-4"/></svg></span><span class="glass-title">Stealth Protection</span></div>
                         <label class="toggle"><input type="checkbox" id="af-master" checked data-testid="af-master-toggle"><span class="toggle-slider"></span></label></div>
                     <div class="section-content">
