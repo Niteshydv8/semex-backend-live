@@ -2521,3 +2521,7 @@ input:not([type]):focus, input[type=email]:focus, input[type=number]:focus {
 #admin-tab .proxy-row, #settings-tab .proxy-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
 #admin-tab .form-input { flex: 1; min-width: 120px; }
 .admin-stat-card { text-align: left; }
+
+/* review polish: keep the hero chip compact on narrow screens */
+.sx-hero-name { max-width: 160px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+@media (max-width: 760px) { .sx-hero-name { max-width: 110px; } }

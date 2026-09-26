@@ -100,7 +100,9 @@
       var hp = document.getElementById('sx-hero-plan');
       if (sp && hp) {
         if (hp.textContent !== sp.textContent) hp.textContent = sp.textContent;
-        if (hp.className !== sp.className) hp.className = sp.className;
+        /* keep our own class hook, adopt only the plan-state classes */
+        var want = ('sx-hero-plan ' + sp.className).trim();
+        if (hp.className !== want) hp.className = want;
       }
       var sa = document.getElementById('user-avatar');
       var ha = document.getElementById('sx-hero-avatar');
