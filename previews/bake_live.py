@@ -478,6 +478,76 @@ setTimeout(function() {
   if (num) num.textContent = '5';
 }, 100);
 
+/* ── login preview: show auth modal when hash is #login ───────── */
+if (location.hash === '#login') {
+  var _am = document.getElementById('auth-modal');
+  if (_am) {
+    _am.style.removeProperty('display');
+    _am.classList.add('active');
+    /* hide main app so only the login page shows */
+    var _ac = document.querySelector('.app-container');
+    if (_ac) _ac.style.visibility = 'hidden';
+  }
+}
+
+/* ── auth cursor tracking & card tilt ─────────────────────────── */
+(function() {
+  var overlay = document.getElementById('auth-modal');
+  var glow    = document.getElementById('auth-cursor-glow');
+  var card    = document.getElementById('auth-card-3d');
+  if (!overlay || !glow) return;
+
+  function onMove(e) {
+    /* cursor glow follows pointer exactly */
+    glow.style.left = e.clientX + 'px';
+    glow.style.top  = e.clientY + 'px';
+    glow.style.opacity = '1';
+
+    /* card 3-D tilt towards cursor — max ±8° */
+    if (!card) return;
+    var r  = card.getBoundingClientRect();
+    var cx = r.left + r.width  / 2;
+    var cy = r.top  + r.height / 2;
+    var dx = Math.max(-1, Math.min(1, (e.clientX - cx) / (r.width  * 0.55)));
+    var dy = Math.max(-1, Math.min(1, (e.clientY - cy) / (r.height * 0.55)));
+    card.style.transform =
+      'perspective(900px) rotateX(' + (-dy * 8) + 'deg) rotateY(' + (dx * 8) + 'deg)';
+    /* subtle highlight shift on the card border */
+    card.style.boxShadow =
+      '0 32px 90px rgba(0,0,0,0.75),' +
+      '0 0 0 1px rgba(255,255,255,0.06) inset,' +
+      '0 1px 0 rgba(255,255,255,0.18) inset,' +
+      (dx * 40) + 'px ' + (dy * 20) + 'px 60px rgba(124,92,252,0.18)';
+  }
+
+  function onLeave() {
+    if (card) {
+      card.style.transform = 'perspective(900px) rotateX(0deg) rotateY(0deg)';
+      card.style.boxShadow = '';
+    }
+    glow.style.opacity = '0';
+  }
+
+  /* magnetic pull on buttons when cursor is close */
+  var btns = overlay.querySelectorAll('.tg-login-btn, .auth-guest-btn');
+  btns.forEach(function(btn) {
+    btn.addEventListener('mousemove', function(e) {
+      var r  = btn.getBoundingClientRect();
+      var cx = r.left + r.width  / 2;
+      var cy = r.top  + r.height / 2;
+      var dx = (e.clientX - cx) * 0.22;
+      var dy = (e.clientY - cy) * 0.22;
+      btn.style.transform = 'translate(' + dx + 'px, ' + (dy - 3) + 'px)';
+    });
+    btn.addEventListener('mouseleave', function() {
+      btn.style.transform = '';
+    });
+  });
+
+  overlay.addEventListener('mousemove',  onMove);
+  overlay.addEventListener('mouseleave', onLeave);
+})();
+
 /* ── toast demo: cycle through real examples using the actual .popup-toast CSS */
 (function() {
   var demos = [
