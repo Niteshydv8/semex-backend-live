@@ -18,21 +18,27 @@
     var el = document.getElementById(id);
     if (!el) return;
     var shown = parseInt(el.textContent, 10) || 0;
+    var writing = false; /* true while WE write intermediate frames */
+    var rafId = null;
     new MutationObserver(function () {
+      if (writing) return; /* ignore our own intermediate writes */
       var target = parseInt(el.textContent.replace(/[^\d-]/g, ''), 10);
       if (isNaN(target) || target === shown) return;
+      if (rafId !== null) cancelAnimationFrame(rafId); /* one animation at a time */
       var from = shown;
       shown = target;
       el.classList.remove('sx-tick');
       void el.offsetWidth; /* restart the flash animation */
       el.classList.add('sx-tick');
       var t0 = null, dur = 500;
-      requestAnimationFrame(function step(ts) {
+      rafId = requestAnimationFrame(function step(ts) {
         if (!t0) t0 = ts;
         var p = Math.min(1, (ts - t0) / dur);
         var v = Math.round(from + (target - from) * (1 - Math.pow(1 - p, 3)));
-        if (el.textContent !== String(v)) el.textContent = v;
-        if (p < 1) requestAnimationFrame(step);
+        writing = true;
+        el.textContent = v;
+        writing = false;
+        if (p < 1) { rafId = requestAnimationFrame(step); } else { rafId = null; }
       });
     }).observe(el, { childList: true, characterData: true, subtree: true });
   }

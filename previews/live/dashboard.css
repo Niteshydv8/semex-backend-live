@@ -2133,3 +2133,9 @@ button.btn-primary, .btn-primary { background: linear-gradient(180deg, var(--vio
 /* Stat tick flash (dashboard-plus.js adds .sx-tick on change) */
 .stat-val.sx-tick { animation: tick-flash 0.5s ease; }
 @keyframes tick-flash { 0% { color: #C4B0FF; text-shadow: 0 0 14px rgba(157, 124, 252, 0.8); } }
+
+/* Respect reduced motion: kill the continuous decoration loops */
+@media (prefers-reduced-motion: reduce) {
+  .rev-bar, .btn-primary::after, .saved-bins-empty, .news-loading,
+  .notif-badge:not(.hidden), .stat-val.sx-tick { animation: none !important; }
+}
