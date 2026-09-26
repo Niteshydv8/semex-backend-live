@@ -143,23 +143,20 @@ INTERACT = '''
 //  SEMEX PREVIEW INTERACTION LAYER  (preview only — not in extension)
 // ═══════════════════════════════════════════════════════════════════
 
-/* ── toast helper ─────────────────────────────────────────────── */
-var _toastEl = null, _toastT;
+/* ── toast helper — uses the real .popup-toast class from dashboard.css ── */
+var _toastT;
 function toast(msg, ok) {
-  if (!_toastEl) {
-    _toastEl = document.createElement('div');
-    _toastEl.style.cssText = 'position:fixed;bottom:20px;left:50%;transform:translateX(-50%);'
-      + 'padding:9px 18px;border-radius:8px;font:13px/1 Inter,sans-serif;'
-      + 'box-shadow:0 4px 24px rgba(0,0,0,.5);z-index:99999;transition:opacity .2s;pointer-events:none';
-    document.body.appendChild(_toastEl);
-  }
-  _toastEl.textContent = msg;
-  _toastEl.style.background = ok === false ? '#7f1d1d' : ok === true ? '#14532d' : '#1e1b4b';
-  _toastEl.style.color = ok === false ? '#fca5a5' : ok === true ? '#86efac' : '#a78bfa';
-  _toastEl.style.border = '1px solid ' + (ok === false ? '#f87171' : ok === true ? '#34d399' : '#7c3aed');
-  _toastEl.style.opacity = '1';
+  var prev = document.querySelector('.popup-toast.sx-preview-toast');
+  if (prev) prev.remove();
+  var el = document.createElement('div');
+  el.className = 'popup-toast sx-preview-toast';
+  /* type colour on top of the base CSS */
+  if (ok === true)  { el.style.borderColor = '#22c55e'; el.style.color = '#86efac'; }
+  if (ok === false) { el.style.borderColor = '#ef4444'; el.style.color = '#fca5a5'; }
+  el.textContent = msg;
+  document.body.appendChild(el);
   clearTimeout(_toastT);
-  _toastT = setTimeout(function() { _toastEl.style.opacity = '0'; }, 2200);
+  _toastT = setTimeout(function() { if (el.parentNode) el.remove(); }, 2400);
 }
 
 /* ── tab switching ─────────────────────────────────────────────── */
@@ -481,51 +478,21 @@ setTimeout(function() {
   if (num) num.textContent = '5';
 }, 100);
 
-/* ── toast demo strip (preview only) ─────────────────────────── */
+/* ── toast demo: cycle through real examples using the actual .popup-toast CSS */
 (function() {
-  var strip = document.createElement('div');
-  strip.id = 'sx-toast-demo';
-  strip.style.cssText = [
-    'position:fixed;bottom:20px;right:20px;z-index:99990',
-    'display:flex;flex-direction:column;gap:8px;align-items:flex-end'
-  ].join(';');
-
   var demos = [
-    { label:'CHARGED — $49.99', ok:true,  sub:'4242 42•• •••• 4242 · Chase Credit · US' },
-    { label:'LIVE — no charge',  ok:null,  sub:'5555 55•• •••• 4444 · Barclays Debit · UK' },
-    { label:'DEAD — declined',   ok:false, sub:'4000 00•• •••• 0002 · card_declined' }
+    { msg: 'CHARGED — $49.99 · Chase Credit · US', ok: true  },
+    { msg: 'LIVE — Barclays Debit · UK',           ok: null  },
+    { msg: 'DEAD — card_declined',                 ok: false }
   ];
-  var colors = {
-    true:  { bg:'#0d2e1a', fg:'#86efac', border:'#22c55e' },
-    false: { bg:'#2d0b0b', fg:'#fca5a5', border:'#ef4444' },
-    'null':{ bg:'#1e1b4b', fg:'#c4b5fd', border:'#7c3aed' }
-  };
-
-  demos.forEach(function(d) {
-    var c = colors[String(d.ok)];
-    var card = document.createElement('div');
-    card.style.cssText = [
-      'background:' + c.bg,
-      'border:1px solid ' + c.border,
-      'color:' + c.fg,
-      'border-radius:10px',
-      'padding:10px 16px',
-      'font:600 13px/1.3 Inter,sans-serif',
-      'box-shadow:0 4px 24px rgba(0,0,0,.5)',
-      'min-width:240px',
-      'cursor:default'
-    ].join(';');
-    card.innerHTML = d.label + '<div style="font-size:11px;font-weight:400;opacity:.75;margin-top:3px">' + d.sub + '</div>';
-    strip.appendChild(card);
-  });
-
-  /* label above */
-  var lbl = document.createElement('div');
-  lbl.style.cssText = 'font:500 10px/1 Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#6b7280;margin-bottom:2px;text-align:right';
-  lbl.textContent = 'Toast Alerts — Preview';
-  strip.insertBefore(lbl, strip.firstChild);
-
-  document.body.appendChild(strip);
+  var i = 0;
+  function next() {
+    var d = demos[i % demos.length];
+    toast(d.msg, d.ok);
+    i++;
+    setTimeout(next, 2800);
+  }
+  setTimeout(next, 600);
 })();
 
 </script>

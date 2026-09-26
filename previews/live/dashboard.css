@@ -2673,10 +2673,31 @@ body::before {
 /* identity lives in the topnav now; hero is greeting-only */
 .hero { margin-bottom: 20px; }
 
-/* tighter right cluster */
-.nav-actions { gap: 6px; }
+/* right cluster — clear visual separation between bell | user chip | support */
+.nav-actions { gap: 14px; align-items: center; }
 .wins-badge { gap: 5px; }
-.support-link { padding: 8px 14px; white-space: nowrap; }
+.support-link { padding: 8px 16px; white-space: nowrap; }
+
+/* user chip: distinct glass pill so it reads as one grouped element */
+.user-badge-row {
+  background: rgba(255,255,255,0.06);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 999px;
+  padding: 4px 10px 4px 4px;
+  gap: 9px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.18);
+}
+.user-badge-row .logout-btn {
+  width: 30px; height: 30px;
+  background: transparent;
+  border-color: transparent;
+  box-shadow: none;
+  margin-left: 2px;
+}
+.user-badge-row .logout-btn:hover {
+  background: rgba(248,113,113,0.14);
+  border-color: rgba(248,113,113,0.28);
+}
 
 /* medium widths (901–1180px, above the 900px wrap breakpoint):
    shrink labels so the whole cluster fits and Support stays on screen */
