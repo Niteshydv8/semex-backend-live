@@ -2069,3 +2069,67 @@ button.btn-primary, .btn-primary { background: linear-gradient(180deg, var(--vio
 @media (max-width: 640px) {
   .nav-pills { z-index: 2500; }
 }
+
+/* ============================================================
+   SEMEX+ — 21st.dev-style enhancements over the Pixel base.
+   Spotlight cards, border beam, number ticker, equalizer bars,
+   shimmer loading, micro-interactions. Additive; behavioral
+   hooks live in dashboard-plus.js (read-only on DOM).
+   ============================================================ */
+
+/* Spotlight cards (cursor-tracked violet glow) */
+.glass { position: relative; overflow: hidden; }
+.glass::before {
+  content: ""; position: absolute; inset: 0; z-index: 0;
+  background: radial-gradient(320px circle at var(--mx, 50%) var(--my, 50%), rgba(124, 92, 252, 0.10), transparent 65%);
+  opacity: 0; transition: opacity 0.25s; pointer-events: none;
+}
+.glass:hover::before { opacity: 1; }
+.glass > * { position: relative; z-index: 1; }
+
+/* Border beam on primary actions */
+@property --beam { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+.btn-primary::after {
+  content: ""; position: absolute; inset: -1px; border-radius: inherit; padding: 1px;
+  background: conic-gradient(from var(--beam), transparent 0 70%, rgba(157, 124, 252, 0.9) 82%, transparent 94%);
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor; mask-composite: exclude;
+  animation: beam-spin 3.2s linear infinite; pointer-events: none;
+  opacity: 0; transition: opacity 0.2s;
+}
+.btn-primary { position: relative; }
+.btn-primary:hover::after { opacity: 1; }
+@keyframes beam-spin { to { --beam: 360deg; } }
+
+/* Equalizer bars in the stats chart */
+.rev-bar { transform-origin: bottom; animation: eq-pulse 2.2s ease-in-out infinite; }
+.rev-bar:nth-child(3n) { animation-duration: 2.9s; }
+.rev-bar:nth-child(4n) { animation-duration: 1.7s; }
+.rev-bar:nth-child(5n) { animation-delay: 0.35s; }
+@keyframes eq-pulse { 0%, 100% { transform: scaleY(0.75); } 50% { transform: scaleY(1); } }
+
+/* Hero gradient name */
+.welcome b {
+  background: linear-gradient(92deg, #9D7CFF, #7C5CFC 45%, #C4B0FF);
+  -webkit-background-clip: text; background-clip: text; color: transparent;
+}
+
+/* Shimmer on loading/empty states */
+.saved-bins-empty, .news-loading { animation: sx-shimmer 1.6s ease-in-out infinite; }
+@keyframes sx-shimmer { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+
+/* Micro-interactions */
+.btn, .pill-btn, .circle-btn, .filter-btn, .mode-btn, .saved-bin-btn, .admin-btn {
+  transition: transform 0.12s ease, filter 0.15s, background 0.15s, border-color 0.15s, color 0.15s;
+}
+.btn:active, .pill-btn:active, .circle-btn:active, .filter-btn:active, .mode-btn:active { transform: scale(0.96); }
+:focus-visible { outline: 2px solid rgba(124, 92, 252, 0.65); outline-offset: 2px; }
+.btn:focus-visible, .pill-btn:focus-visible { outline: none; box-shadow: 0 0 0 3px rgba(124, 92, 252, 0.35); }
+
+/* Notification badge pulse */
+.notif-badge:not(.hidden) { animation: badge-pulse 2s ease-in-out infinite; }
+@keyframes badge-pulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.15); } }
+
+/* Stat tick flash (dashboard-plus.js adds .sx-tick on change) */
+.stat-val.sx-tick { animation: tick-flash 0.5s ease; }
+@keyframes tick-flash { 0% { color: #C4B0FF; text-shadow: 0 0 14px rgba(157, 124, 252, 0.8); } }

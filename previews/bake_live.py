@@ -108,6 +108,7 @@ RELS = ''.join('<div class="code-row"><span>%s</span></div>' % r for r in ["v2.9
 src = fill_deep(src, 'releases-list', RELS)
 
 INTERACT = '''
+<script src="dashboard-plus.js"></script>
 <script>
 // Live preview interactivity (preview only — the extension uses popup.js)
 function semexPreviewSwitch(tabName) {
@@ -158,5 +159,6 @@ src = src.replace('</body>', INTERACT)
 
 os.makedirs(OUT, exist_ok=True)
 shutil.copy(os.path.join(POPUP, 'dashboard.css'), os.path.join(OUT, 'dashboard.css'))
+shutil.copy(os.path.join(POPUP, 'dashboard-plus.js'), os.path.join(OUT, 'dashboard-plus.js'))
 open(os.path.join(OUT, 'index.html'), 'w').write(src)
 print('baked previews/live/index.html')
