@@ -20,26 +20,54 @@
         <header class="topnav">
             <div class="logo brand">
                 <div class="sx-logo-mark" aria-hidden="true">
-                    <svg viewBox="0 0 36 36" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <svg viewBox="0 0 38 44" fill="none" xmlns="http://www.w3.org/2000/svg">
                         <defs>
-                            <linearGradient id="lg1" x1="4" y1="4" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-                                <stop offset="0%" stop-color="#a78bff"/>
+                            <linearGradient id="sxgrad" x1="2" y1="2" x2="36" y2="42" gradientUnits="userSpaceOnUse">
+                                <stop offset="0%"   stop-color="#ddd6fe"/>
+                                <stop offset="55%"  stop-color="#a78bfa"/>
                                 <stop offset="100%" stop-color="#6d28d9"/>
                             </linearGradient>
-                            <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
-                                <feGaussianBlur stdDeviation="2" result="blur"/>
-                                <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                            <filter id="sx-glow" x="-25%" y="-25%" width="150%" height="150%">
+                                <feGaussianBlur stdDeviation="1.5" result="b"/>
+                                <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
                             </filter>
                         </defs>
-                        <rect width="36" height="36" rx="10" fill="url(#lg1)" opacity="0.15"/>
-                        <path d="M22 8H14a4 4 0 0 0-4 4 4 4 0 0 0 4 4h4a4 4 0 0 1 4 4 4 4 0 0 1-4 4H10"
-                              stroke="url(#lg1)" stroke-width="2.5" stroke-linecap="round" filter="url(#glow)"/>
-                        <path d="M18 6v2M18 28v2" stroke="url(#lg1)" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+                        <!-- Shadow blade extending from bottom-left (like the logo's drop shadow spike) -->
+                        <path d="M 7,31 L 2,41 L 10,41 Z"
+                              fill="url(#sxgrad)" opacity="0.55"/>
+                        <!-- Main S letterform:
+                             - top-right notch: goes hard right then diagonally back (L 28,4 L 34,4 L 27,12)
+                             - lower-left spike: mirrored via L 4,43 L 10,36
+                             - thick fills matching the bold logo weight -->
+                        <path d="
+                            M 10,21
+                            L 10,10
+                            C 10,6.5 12.5,4 16,4
+                            L 28,4
+                            L 34,4
+                            L 27,12
+                            L 16,12
+                            C 15,12 14,13 14,14.5
+                            L 14,17
+                            C 14,18.5 15.5,20 17,20
+                            L 23,20
+                            C 30,20 36,25 36,32
+                            C 36,39 31,44 24,44
+                            L 10,44
+                            L 4,44
+                            L 11,36
+                            L 24,36
+                            C 27,36 29,34 29,32
+                            C 29,30 27,28 24,28
+                            L 17,28
+                            C 12,28 10,24.5 10,21
+                            Z
+                        " fill="url(#sxgrad)" filter="url(#sx-glow)"/>
                     </svg>
                 </div>
                 <div class="sx-logo-text">
                     <span class="sx-logo-word">SEMEX</span>
-                    <span class="sx-logo-sub">Automation</span>
+                    
                 </div>
             </div>
 
