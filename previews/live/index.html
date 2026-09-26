@@ -310,7 +310,7 @@
                     </div>
                 
                 </div>
-                <div class="sx-switch-row hidden">
+                <div class="sx-switch-row">
                     <div class="glass-head">
                         <div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-6 8-6s8 2 8 6"/></svg></span><span class="glass-title">Payment UA Bypass</span></div>
                         <label class="toggle">
@@ -320,7 +320,7 @@
                     </div>
                     <div class="section-content hidden" id="payment-user-agent-bypass-content">
                         <p class="info-text">Stripe only</p>
-                        <p class="bypass-hint"><code>ua_required</code> error? Disable this bypass.</p>
+                        <p class="bypass-hint">Spoofs a trusted browser UA to Stripe's tokenisation endpoint. Disable if you see <code>ua_required</code> errors.</p>
                     </div>
                 
                 </div>
@@ -360,6 +360,21 @@
                         <p class="bypass-hint" style="color:#ffcc80;">🔒 <b>3DS Bypass is a Premium feature.</b> Upgrade to MONTHLY / YEARLY / LIFETIME in the bot to unlock it. Type <code>/buy</code> in @<span id="three-ds-bot-handle">Semexautoxbot</span>.</p>
                     </div>
                 
+                </div>
+            </div>
+
+            <!-- ══ SUPPORTED GATEWAYS ══ -->
+            <div class="glass sx-gw-strip">
+                <div class="glass-head sx-gw-head">
+                    <div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></span><span class="glass-title">Supported Gateways</span></div>
+                </div>
+                <div class="sx-gw-list">
+                    <div class="sx-gw-chip"><svg class="sx-gw-ico" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg><span>Stripe</span></div>
+                    <div class="sx-gw-chip"><svg class="sx-gw-ico" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg><span>Adyen</span></div>
+                    <div class="sx-gw-chip"><svg class="sx-gw-ico" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg><span>Checkout.com</span></div>
+                    <div class="sx-gw-chip"><svg class="sx-gw-ico" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg><span>Braintree</span></div>
+                    <div class="sx-gw-chip"><svg class="sx-gw-ico" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg><span>Recurly</span></div>
+                    <div class="sx-gw-chip"><svg class="sx-gw-ico" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg><span>Xsolla</span></div>
                 </div>
             </div>
 </section>
