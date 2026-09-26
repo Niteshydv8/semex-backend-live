@@ -2802,25 +2802,20 @@ body::before {
    LOGO REDESIGN + BOT SOURCE TOGGLE
    ============================================================ */
 
-/* actual user logo — dark-on-light image, inverted + colorized for dark UI */
+/* actual logo — violet transparent PNG, no filter hacks needed */
 .sx-logo-mark {
-  width: 36px; height: 36px; flex-shrink: 0;
+  width: 56px; height: 56px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
-  overflow: hidden;
+  filter: drop-shadow(0 0 8px rgba(167,139,250,0.5));
   transition: filter 0.2s;
 }
 .sx-logo-img {
-  width: 48px; height: 48px;
-  object-fit: cover;
-  object-position: center 18%;
-  /* invert dark-on-light → light-on-dark, then shift to violet */
-  filter: invert(1) sepia(1) saturate(2.5) hue-rotate(225deg)
-          drop-shadow(0 0 7px rgba(139,108,255,0.55));
+  width: 56px; height: 56px;
+  object-fit: contain;
   transition: filter 0.2s;
 }
-.sx-logo-mark:hover .sx-logo-img {
-  filter: invert(1) sepia(1) saturate(3.5) hue-rotate(225deg)
-          drop-shadow(0 0 14px rgba(139,108,255,0.8));
+.sx-logo-mark:hover {
+  filter: drop-shadow(0 0 16px rgba(167,139,250,0.85));
 }
 
 .sx-logo-text {

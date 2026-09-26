@@ -134,10 +134,7 @@ src = src.replace('<div id="user-badge" class="user-info-group hidden">', '<div 
 src = src.replace('<div class="user-name" id="user-name">User</div>', '<div class="user-name" id="user-name">nitesh</div>')
 src = src.replace('<span id="user-plan" class="plan-badge"></span>', '<span id="user-plan" class="plan-badge lifetime">Lifetime</span>')
 src = src.replace('id="session-wins-badge" class="wins-badge hidden"', 'id="session-wins-badge" class="wins-badge"')
-src = src.replace('<span class="notif-badge hidden" id="notif-badge">0</span>', '<span class="notif-badge" id="notif-badge">2</span>')
-NOTIFS = ('<div class="notif-item unread clickable"><div><b>Charged hit</b> — 4242 42•• •••• 4242 · $49.99<div class="mono-dim" style="font-size:11px;margin-top:2px;">2m ago</div></div></div>'
-          '<div class="notif-item clickable"><div><b>Extension update</b> — v2.9.12 is live<div class="mono-dim" style="font-size:11px;margin-top:2px;">1h ago</div></div></div>')
-src = src.replace('<div class="notif-empty">No new notifications</div>', NOTIFS)
+# Notification bell stays clean — no fake badge or fake items in preview
 
 INTERACT = '''
 <script src="dashboard-plus.js"></script>
@@ -484,6 +481,53 @@ setTimeout(function() {
   if (num) num.textContent = '5';
 }, 100);
 
+/* ── toast demo strip (preview only) ─────────────────────────── */
+(function() {
+  var strip = document.createElement('div');
+  strip.id = 'sx-toast-demo';
+  strip.style.cssText = [
+    'position:fixed;bottom:20px;right:20px;z-index:99990',
+    'display:flex;flex-direction:column;gap:8px;align-items:flex-end'
+  ].join(';');
+
+  var demos = [
+    { label:'CHARGED — $49.99', ok:true,  sub:'4242 42•• •••• 4242 · Chase Credit · US' },
+    { label:'LIVE — no charge',  ok:null,  sub:'5555 55•• •••• 4444 · Barclays Debit · UK' },
+    { label:'DEAD — declined',   ok:false, sub:'4000 00•• •••• 0002 · card_declined' }
+  ];
+  var colors = {
+    true:  { bg:'#0d2e1a', fg:'#86efac', border:'#22c55e' },
+    false: { bg:'#2d0b0b', fg:'#fca5a5', border:'#ef4444' },
+    'null':{ bg:'#1e1b4b', fg:'#c4b5fd', border:'#7c3aed' }
+  };
+
+  demos.forEach(function(d) {
+    var c = colors[String(d.ok)];
+    var card = document.createElement('div');
+    card.style.cssText = [
+      'background:' + c.bg,
+      'border:1px solid ' + c.border,
+      'color:' + c.fg,
+      'border-radius:10px',
+      'padding:10px 16px',
+      'font:600 13px/1.3 Inter,sans-serif',
+      'box-shadow:0 4px 24px rgba(0,0,0,.5)',
+      'min-width:240px',
+      'cursor:default'
+    ].join(';');
+    card.innerHTML = d.label + '<div style="font-size:11px;font-weight:400;opacity:.75;margin-top:3px">' + d.sub + '</div>';
+    strip.appendChild(card);
+  });
+
+  /* label above */
+  var lbl = document.createElement('div');
+  lbl.style.cssText = 'font:500 10px/1 Inter,sans-serif;letter-spacing:.08em;text-transform:uppercase;color:#6b7280;margin-bottom:2px;text-align:right';
+  lbl.textContent = 'Toast Alerts — Preview';
+  strip.insertBefore(lbl, strip.firstChild);
+
+  document.body.appendChild(strip);
+})();
+
 </script>
 </body>'''
 src = src.replace('</body>', INTERACT)
@@ -491,6 +535,6 @@ src = src.replace('</body>', INTERACT)
 os.makedirs(OUT, exist_ok=True)
 shutil.copy(os.path.join(POPUP, 'dashboard.css'), os.path.join(OUT, 'dashboard.css'))
 shutil.copy(os.path.join(POPUP, 'dashboard-plus.js'), os.path.join(OUT, 'dashboard-plus.js'))
-shutil.copy(os.path.join(POPUP, 'logo-s.jpg'), os.path.join(OUT, 'logo-s.jpg'))
+shutil.copy(os.path.join(POPUP, 'logo-s.png'), os.path.join(OUT, 'logo-s.png'))
 open(os.path.join(OUT, 'index.html'), 'w').write(src)
 print('baked previews/live/index.html')
