@@ -88,7 +88,7 @@ src = fill_deep(src, 'proxy-test-results', PROXY_ROWS)
 ADMIN_STATS = ''.join('<div class="admin-stat-card"><div class="admin-stat-value">%s</div><div class="admin-stat-label">%s</div></div>' % (v,l)
     for l,v in [("Users","128"),("Admins","2"),("Banned","3"),("Charged Hits","412"),("All Hits","1398"),("Unused Codes","35"),("Used Codes","61")])
 src = fill_deep(src, 'admin-stats-grid', ADMIN_STATS)
-src = src.replace('id="admin-role-badge">Loading role…', 'id="admin-role-badge">Role: owner')
+src = re.sub(r'(id="admin-role-badge"[^>]*>)[^<]*', r'\g<1>Role: owner', src)
 ADMIN_USERS = ''.join('<div class="admin-user-row"><div class="admin-user-avatar">%s</div>'
     '<div class="admin-user-info"><div class="admin-user-meta"><span class="admin-user-name">%s</span>'
     '<span class="admin-user-tag">%s</span></div></div>'

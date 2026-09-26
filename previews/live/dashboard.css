@@ -2054,3 +2054,18 @@ button.btn-primary, .btn-primary { background: linear-gradient(180deg, var(--vio
   .nav-pills { order: 3; width: 100%; overflow-x: auto; }
   .topnav { flex-wrap: wrap; }
 }
+
+/* ---- code-review fixes ---- */
+:root { --fg-1: #C9CBE0; }
+
+/* auth overlay is shown/dismissed by popup.js via .active (not .hidden) */
+.auth-overlay { display: none; }
+.auth-overlay.active { display: flex; }
+
+/* keep the only nav visible at intermediate widths; keep it under the overlays */
+@media (max-width: 760px) {
+  .nav-pills { display: flex; overflow-x: auto; }
+}
+@media (max-width: 640px) {
+  .nav-pills { z-index: 2500; }
+}
