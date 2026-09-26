@@ -2687,3 +2687,20 @@ body::before {
   .nav-item.tab:not(.active) { padding: 8px 12px; }
   .nav-item.tab.active { padding: 8px 14px; }
 }
+
+/* ============================================================
+   TOPNAV BALANCE v2 — status cluster lives in the hero row
+   ============================================================ */
+
+/* topnav now carries only: logo | pills | bell + profile + support.
+   Connected/version/wins moved to the hero's right side — the 901-1180px
+   pill compression band stays, and the label-hiding from that band is
+   re-enabled inside the roomy hero so nothing is lost. */
+.hero-status { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; flex-shrink: 0; }
+@media (min-width: 901px) and (max-width: 1180px) {
+  .hero-status #status-footer .sys-text,
+  .hero-status .wins-badge .wins-label { display: inline; }
+}
+@media (max-width: 640px) {
+  .hero-status { align-self: stretch; }
+}

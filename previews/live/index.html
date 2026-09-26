@@ -59,20 +59,7 @@
             </nav>
 
             <div class="nav-actions">
-                <div class="status-footer" id="status-footer">
-                    <div class="sys-stat">
-                        <div class="sys-dot status-connected" id="sys-dot"></div>
-                        <span class="sys-text" id="sys-text">Connected</span>
-                    </div>
-                    <span class="version-text" id="version-text">v2.9.12</span>
-                </div>
 
-                <!-- Session wins streak badge -->
-                <div id="session-wins-badge" class="wins-badge" title="Charged hits this session" data-testid="session-wins-badge">
-                    <svg class="wins-flame" viewBox="0 0 24 24"><path d="M12 2c1 3-1.5 4.5-1.5 7A2.5 2.5 0 0 0 13 11c1.5 0 2-1 2-1 .5 2 2 3 2 5.5A5.5 5.5 0 1 1 6.5 15c0-3 2-4 2.5-6 .3-1.2 0-2.5 3-7z"/></svg>
-                    <span id="session-wins-count">12</span>
-                    <span class="wins-label">wins</span>
-                </div>
 
                 <!-- Notification Bell -->
                 <div class="notif-wrap">
@@ -144,6 +131,21 @@
 
             <div class="hero">
                 <div class="welcome" id="welcomeBox">Welcome back, <b id="page-title">Operator</b></div>
+                <div class="hero-status">
+                <div class="status-footer" id="status-footer">
+                    <div class="sys-stat">
+                        <div class="sys-dot status-connected" id="sys-dot"></div>
+                        <span class="sys-text" id="sys-text">Connected</span>
+                    </div>
+                    <span class="version-text" id="version-text">v2.9.12</span>
+                </div>
+                <!-- Session wins streak badge -->
+                <div id="session-wins-badge" class="wins-badge" title="Charged hits this session" data-testid="session-wins-badge">
+                    <svg class="wins-flame" viewBox="0 0 24 24"><path d="M12 2c1 3-1.5 4.5-1.5 7A2.5 2.5 0 0 0 13 11c1.5 0 2-1 2-1 .5 2 2 3 2 5.5A5.5 5.5 0 1 1 6.5 15c0-3 2-4 2.5-6 .3-1.2 0-2.5 3-7z"/></svg>
+                    <span id="session-wins-count">12</span>
+                    <span class="wins-label">wins</span>
+                </div>
+                </div>
             </div>
 
             <!-- Stats — their rev-row -->
