@@ -1,0 +1,1269 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SEMEX · Admin Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #0A0A0F;
+  --surface: #12121A;
+  --surface-2: #1a1a24;
+  --border: rgba(139, 92, 246, 0.18);
+  --blue: #3B82F6;
+  --purple: #8B5CF6;
+  --pink: #EC4899;
+  --gradient: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 50%, #EC4899 100%);
+  --text: #F5F5F7;
+  --muted: #94A3B8;
+  --success: #22c55e;
+  --danger: #ef4444;
+  --warn: #f59e0b;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: radial-gradient(circle at 10% 10%, #12121A 0%, #0A0A0F 60%, #000 100%);
+  color: var(--text);
+  font-family: 'Space Grotesk', -apple-system, system-ui, sans-serif;
+  min-height: 100vh;
+  padding: 24px;
+}
+::selection { background: var(--purple); color: white; }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: linear-gradient(180deg, #3B82F6, #8B5CF6, #EC4899); border-radius: 6px; }
+
+.container { max-width: 1400px; margin: 0 auto; }
+
+/* Header */
+.header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 24px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 16px; margin-bottom: 24px;
+}
+.brand {
+  font-size: 32px; font-weight: 700; letter-spacing: 1px;
+  background: var(--gradient); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+}
+.brand-sub { color: var(--muted); font-size: 12px; letter-spacing: 3px; }
+.header-right { display: flex; align-items: center; gap: 16px; }
+.status-dot { display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: var(--success); box-shadow: 0 0 12px var(--success); animation: pulse 2s infinite; }
+@keyframes pulse { 0%,100% { opacity: 1 } 50% { opacity: 0.5 } }
+
+/* Login */
+.login-shell { display: flex; align-items: center; justify-content: center; min-height: 80vh; }
+.login-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
+  padding: 40px; width: 400px; box-shadow: 0 20px 60px rgba(139, 92, 246, 0.2);
+}
+.login-card h1 { text-align: center; margin-bottom: 8px; }
+.login-card .sub { text-align: center; color: var(--muted); margin-bottom: 28px; font-size: 13px; }
+
+/* Nav tabs */
+.nav {
+  display: flex; gap: 4px; background: var(--surface); padding: 6px;
+  border-radius: 12px; margin-bottom: 24px; overflow-x: auto;
+  border: 1px solid var(--border);
+}
+.nav button {
+  padding: 10px 20px; background: transparent; border: none; color: var(--muted);
+  font-family: inherit; font-size: 14px; font-weight: 500; cursor: pointer;
+  border-radius: 8px; transition: all 0.2s ease; white-space: nowrap;
+}
+.nav button:hover { color: var(--text); background: rgba(139, 92, 246, 0.08); }
+.nav button.active {
+  background: var(--gradient); color: white; box-shadow: 0 4px 16px rgba(139, 92, 246, 0.4);
+}
+
+/* Panels */
+.panel { display: none; }
+.panel.active { display: block; }
+
+/* Cards / sections */
+.card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+  padding: 24px; margin-bottom: 20px;
+}
+.card h2 { font-size: 18px; margin-bottom: 16px; display: flex; align-items: center; gap: 8px; }
+.card .subtitle { color: var(--muted); font-size: 12px; margin-bottom: 20px; }
+
+/* Stats grid */
+.stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; margin-bottom: 24px; }
+.stat-card {
+  background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+  padding: 20px; position: relative; overflow: hidden;
+}
+.stat-card::before {
+  content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+  background: var(--gradient);
+}
+.stat-label { color: var(--muted); font-size: 11px; letter-spacing: 2px; text-transform: uppercase; margin-bottom: 8px; }
+.stat-value { font-size: 32px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+.stat-value.success { color: var(--success); }
+.stat-value.danger  { color: var(--danger); }
+.stat-value.warn    { color: var(--warn); }
+.stat-value.gradient { background: var(--gradient); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; }
+
+/* Inputs */
+input, textarea, select {
+  background: var(--surface-2); border: 1px solid var(--border); color: var(--text);
+  padding: 10px 14px; border-radius: 10px; font-family: inherit; font-size: 14px;
+  width: 100%; outline: none; transition: all 0.2s ease;
+}
+input:focus, textarea:focus, select:focus {
+  border-color: var(--purple); box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.15);
+}
+label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; letter-spacing: 0.5px; }
+.field { margin-bottom: 14px; }
+.grid { display: grid; gap: 14px; }
+.grid-2 { grid-template-columns: 1fr 1fr; }
+
+/* Buttons */
+.btn {
+  padding: 10px 20px; border: none; border-radius: 10px; font-family: inherit;
+  font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.15s ease;
+  display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+}
+.btn:hover { transform: translateY(-1px); filter: brightness(1.1); }
+.btn-primary { background: var(--gradient); color: white; box-shadow: 0 4px 20px rgba(139, 92, 246, 0.35); }
+.btn-primary:hover { box-shadow: 0 6px 26px rgba(139, 92, 246, 0.55); }
+.btn-danger  { background: var(--danger); color: white; }
+.btn-warn    { background: var(--warn); color: black; }
+.btn-ghost   { background: transparent; border: 1px solid var(--border); color: var(--text); }
+.btn-ghost:hover { background: rgba(139,92,246,0.08); }
+.btn-sm { padding: 6px 12px; font-size: 12px; }
+.btn-full { width: 100%; padding: 12px; }
+
+/* Tables */
+table { width: 100%; border-collapse: collapse; font-size: 13px; }
+th, td { text-align: left; padding: 12px 14px; border-bottom: 1px solid var(--border); }
+th { color: var(--muted); font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; background: var(--surface-2); }
+tr:hover td { background: rgba(139,92,246,0.04); }
+.mono { font-family: 'JetBrains Mono', monospace; font-size: 12px; }
+
+/* Badges */
+.badge {
+  display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11px;
+  font-weight: 600; letter-spacing: 0.5px;
+}
+.badge.success { background: rgba(34,197,94,0.15); color: var(--success); }
+.badge.danger  { background: rgba(239,68,68,0.15); color: var(--danger); }
+.badge.warn    { background: rgba(245,158,11,0.15); color: var(--warn); }
+.badge.info    { background: rgba(59,130,246,0.15); color: var(--blue); }
+.badge.purple  { background: rgba(139,92,246,0.15); color: var(--purple); }
+.badge.pink    { background: rgba(236,72,153,0.15); color: var(--pink); }
+.badge.gray    { background: rgba(148,163,184,0.15); color: var(--muted); }
+
+/* Toast */
+.toast {
+  position: fixed; top: 24px; right: 24px; padding: 14px 20px;
+  border-radius: 12px; background: var(--surface); border: 1px solid var(--border);
+  box-shadow: 0 8px 30px rgba(0,0,0,0.4); font-size: 14px; z-index: 999;
+  transform: translateX(400px); opacity: 0; transition: all 0.3s ease;
+  max-width: 400px;
+}
+.toast.show { transform: translateX(0); opacity: 1; }
+.toast.success { border-color: var(--success); }
+.toast.error   { border-color: var(--danger); }
+
+/* Code block */
+.codes {
+  background: var(--surface-2); padding: 16px; border-radius: 10px;
+  font-family: 'JetBrains Mono', monospace; font-size: 13px; margin-top: 12px;
+  max-height: 220px; overflow-y: auto; border: 1px solid var(--border);
+  color: var(--success);
+}
+
+.avatar {
+  width: 34px; height: 34px; border-radius: 50%; background: var(--surface-2);
+  display: inline-flex; align-items: center; justify-content: center;
+  vertical-align: middle; margin-right: 8px; font-weight: 600; color: var(--muted);
+  overflow: hidden; border: 1px solid var(--border);
+}
+.avatar img { width: 100%; height: 100%; object-fit: cover; }
+
+.checkbox {
+  display: inline-flex; align-items: center; gap: 8px; cursor: pointer;
+  padding: 8px 12px; background: var(--surface-2); border-radius: 8px;
+  border: 1px solid var(--border);
+}
+.checkbox input { width: auto; margin: 0; }
+
+@media (max-width: 768px) {
+  body { padding: 12px; }
+  .header { flex-direction: column; gap: 12px; padding: 16px; }
+  .grid-2 { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="container">
+
+<!-- LOGIN -->
+<div id="login-shell" class="login-shell">
+  <div class="login-card">
+    <h1 class="brand" style="font-size:32px;">SEMEX</h1>
+    <p class="sub">ADMIN DASHBOARD</p>
+    <div id="step-tid">
+      <div class="field">
+        <label>Telegram ID</label>
+        <input id="in-tid" type="text" placeholder="e.g. 5762701937" autocomplete="off">
+      </div>
+      <button class="btn btn-primary btn-full" onclick="requestOTP()">Send OTP</button>
+    </div>
+    <div id="step-otp" style="display:none;">
+      <div class="field">
+        <label>OTP Code</label>
+        <input id="in-otp" type="text" placeholder="6-digit code" maxlength="6" autocomplete="off">
+      </div>
+      <button class="btn btn-primary btn-full" onclick="verifyOTP()">Verify & Login</button>
+      <p style="text-align:center;margin-top:10px;font-size:12px;color:var(--muted);">Check your Telegram DMs</p>
+    </div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard" style="display:none;">
+  <div class="header">
+    <div>
+      <div class="brand">SEMEX</div>
+      <div class="brand-sub">ADMIN DASHBOARD · v1.0</div>
+    </div>
+    <div class="header-right">
+      <span><span class="status-dot"></span> API online</span>
+      <span id="who" style="font-size:13px;color:var(--muted);"></span>
+      <button class="btn btn-ghost btn-sm" onclick="logout()">Logout</button>
+    </div>
+  </div>
+
+  <nav class="nav">
+    <button class="active" data-tab="stats">📊 Stats</button>
+    <button data-tab="users">👥 Users</button>
+    <button data-tab="codes">🎟️ Codes</button>
+    <button data-tab="hits">💎 Hits</button>
+    <button data-tab="broadcast">📣 Broadcast</button>
+    <button data-tab="news">📰 News</button>
+    <button data-tab="extension">🧩 Extension</button>
+    <button data-tab="db">🗄️ Health</button>
+    <button data-tab="sessionrules">⚙️ Session Rules</button>
+  </nav>
+
+  <!-- STATS -->
+  <div id="tab-stats" class="panel active">
+    <div class="stats" id="stats-grid">
+      <div class="stat-card"><div class="stat-label">Users</div><div class="stat-value gradient" id="s-users">—</div></div>
+      <div class="stat-card"><div class="stat-label">Active</div><div class="stat-value success" id="s-active">—</div></div>
+      <div class="stat-card"><div class="stat-label">Banned</div><div class="stat-value danger" id="s-banned">—</div></div>
+      <div class="stat-card"><div class="stat-label">Hits</div><div class="stat-value" id="s-hits">—</div></div>
+      <div class="stat-card"><div class="stat-label">Charged</div><div class="stat-value success" id="s-charged">—</div></div>
+      <div class="stat-card"><div class="stat-label">Codes Free</div><div class="stat-value warn" id="s-codes-free">—</div></div>
+      <div class="stat-card"><div class="stat-label">Codes Used</div><div class="stat-value" id="s-codes-used">—</div></div>
+    </div>
+    <div class="card">
+      <h2>API endpoints check</h2>
+      <div id="health-list" class="grid"></div>
+    </div>
+  </div>
+
+  <!-- USERS -->
+  <div id="tab-users" class="panel">
+    <div class="card">
+      <h2>All users</h2>
+      <p class="subtitle">Ban, unban, revoke sessions, mute from group.</p>
+      <div id="users-table"></div>
+    </div>
+  </div>
+
+  <!-- CODES -->
+  <div id="tab-codes" class="panel">
+    <div class="card">
+      <h2>Generate redeem codes</h2>
+      <div class="grid grid-2">
+        <div>
+          <div class="field"><label>Duration (days)</label>
+            <select id="c-days">
+              <option value="1">1 day (TRIAL)</option>
+              <option value="7" selected>7 days (WEEKLY)</option>
+              <option value="10">10 days (PLUS)</option>
+              <option value="30">30 days (MONTHLY)</option>
+              <option value="90">90 days (MONTHLY)</option>
+              <option value="365">365 days (YEARLY)</option>
+              <option value="-1">Lifetime (VIP)</option>
+            </select>
+          </div>
+        </div>
+        <div>
+          <div class="field"><label>Quantity (1-500)</label>
+            <input id="c-qty" type="number" min="1" max="500" value="1"></div>
+        </div>
+      </div>
+      <div class="field"><label>Note (optional)</label>
+        <input id="c-note" type="text" placeholder="e.g. Facebook giveaway batch"></div>
+      <button class="btn btn-primary" onclick="genCodes()">Generate codes</button>
+      <div id="gen-actions" style="display:none;margin-top:12px;gap:8px;">
+        <button class="btn btn-ghost btn-sm" onclick="copyGenCodes()">📋 Copy all</button>
+        <button class="btn btn-ghost btn-sm" onclick="downloadGenCodes('txt')">⬇️ Download .txt</button>
+        <button class="btn btn-ghost btn-sm" onclick="downloadGenCodes('csv')">⬇️ Download .csv</button>
+      </div>
+      <div id="gen-out" class="codes" style="display:none;"></div>
+      <p style="color:var(--muted);font-size:12px;margin-top:8px;">⚠️ Full codes are shown only once — copy or download them now. Old codes cannot be recovered (only a hash is stored).</p>
+    </div>
+    <div class="card">
+      <h2>Existing codes</h2>
+      <div style="margin-bottom:12px;display:flex;gap:8px;">
+        <button class="btn btn-ghost btn-sm active-filter" data-filter="unused" onclick="filterCodes('unused')">Unused</button>
+        <button class="btn btn-ghost btn-sm" data-filter="used" onclick="filterCodes('used')">Used</button>
+        <button class="btn btn-ghost btn-sm" data-filter="all" onclick="filterCodes('all')">All</button>
+      </div>
+      <div id="codes-table"></div>
+    </div>
+  </div>
+
+  <!-- HITS -->
+  <div id="tab-hits" class="panel">
+    <div class="card">
+      <h2>🔎 User card lookup</h2>
+      <p class="subtitle">Search a Telegram user ID to pull their stored CHARGED + LIVE cards. Rows tagged <span class="badge danger">RECOVERED</span> were re-ingested from the admin-log channel by the failsafe.</p>
+      <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+        <input id="uc-id" type="text" inputmode="numeric" placeholder="Telegram user ID e.g. 123456789" style="flex:1;min-width:220px;" />
+        <button class="primary" onclick="lookupUserCards()">Search</button>
+      </div>
+      <div id="uc-result"></div>
+    </div>
+    <div class="card">
+      <h2>All hits</h2>
+      <p class="subtitle">Full history across all users. Click a row to see the screenshot.</p>
+      <div id="hits-table"></div>
+    </div>
+  </div>
+
+  <!-- BROADCAST -->
+  <div id="tab-broadcast" class="panel">
+    <div class="card">
+      <h2>Broadcast message</h2>
+      <p class="subtitle">Send a Telegram message to all users via the bot.</p>
+      <div class="field"><label>Message (supports HTML)</label>
+        <textarea id="bc-msg" rows="6" placeholder="<b>SEMEX Update</b>&#10;&#10;New feature dropping tomorrow..."></textarea>
+      </div>
+      <div class="field" style="display:flex;gap:12px;flex-wrap:wrap;">
+        <label class="checkbox"><input id="bc-admins" type="checkbox"><span>Include admins</span></label>
+        <label class="checkbox"><input id="bc-expired" type="checkbox"><span>Include expired users</span></label>
+      </div>
+      <div class="field"><label>Only plans (optional, comma-separated)</label>
+        <input id="bc-plans" type="text" placeholder="WEEKLY, MONTHLY, VIP"></div>
+      <div style="display:flex;gap:12px;">
+        <button class="btn btn-ghost" onclick="previewBroadcast()">Preview count</button>
+        <button class="btn btn-primary" onclick="sendBroadcast()">Send broadcast</button>
+      </div>
+      <div id="bc-out" style="margin-top:16px;font-size:13px;color:var(--muted);"></div>
+    </div>
+  </div>
+
+  <!-- NEWS -->
+  <div id="tab-news" class="panel">
+    <div class="card">
+      <h2>Post news</h2>
+      <p class="subtitle">Shown in extension "News" tab to all users.</p>
+      <div class="field"><label>Title</label><input id="n-title" type="text" placeholder="Update v1.2"></div>
+      <div class="field"><label>Body</label><textarea id="n-body" rows="4" placeholder="Details..."></textarea></div>
+      <div class="field"><label class="checkbox"><input id="n-imp" type="checkbox"><span>Important</span></label></div>
+      <button class="btn btn-primary" onclick="postNews()">Post news</button>
+    </div>
+  </div>
+
+  <!-- EXTENSION -->
+  <div id="tab-extension" class="panel">
+    <div class="card">
+      <h2>Extension version manager</h2>
+      <p class="subtitle">Publish new builds, mark the latest, and set the minimum required version (older extensions get paywalled).</p>
+
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
+        <button class="btn btn-ghost btn-sm" onclick="loadExtensions()">🔄 Refresh</button>
+        <button class="btn btn-ghost btn-sm" onclick="cleanupInvalid()" title="Delete rows whose version isn't a real semver (e.g. bare '3').">🧹 Cleanup invalid</button>
+        <button class="btn btn-ghost btn-sm" onclick="loadCurrentVersionInfo()">📌 Show current min/latest</button>
+      </div>
+      <div id="ext-current-info" style="font-size:13px;color:var(--muted);margin-bottom:14px;"></div>
+
+      <h3 style="margin-top:8px;">📤 Upload new version</h3>
+      <div class="field"><label>Version (semver — e.g. 2.4.0)</label>
+        <input id="ext-version" type="text" placeholder="2.4.0" pattern="\d+\.\d+(\.\d+)?"></div>
+      <div class="field"><label>Notes (optional, shown in Telegram broadcast)</label>
+        <textarea id="ext-notes" rows="2" placeholder="Adds paywall for outdated extensions..."></textarea></div>
+      <div class="field"><label>Zip file (.zip)</label>
+        <input id="ext-file" type="file" accept=".zip"></div>
+      <div class="field" style="display:flex;gap:12px;flex-wrap:wrap;">
+        <label class="checkbox"><input id="ext-make-min" type="checkbox" checked><span>Also mark as MINIMUM required (paywalls older builds)</span></label>
+        <label class="checkbox"><input id="ext-broadcast" type="checkbox" checked><span>Broadcast to all users via Telegram</span></label>
+      </div>
+      <button class="btn btn-primary" onclick="uploadExtension()">🚀 Publish new version</button>
+      <div id="ext-upload-out" style="margin-top:12px;font-size:13px;color:var(--muted);"></div>
+    </div>
+
+    <div class="card">
+      <h2>Published versions</h2>
+      <p class="subtitle">All published builds. ⭐ = latest served by /get. 🔒 = minimum required (older extensions blocked).</p>
+      <div id="ext-list"></div>
+    </div>
+  </div>
+
+  <!-- SESSION RULES -->
+  <div id="tab-sessionrules" class="panel">
+    <div class="card">
+      <h2>⚙️ Session Rules — Braintree Gateway</h2>
+      <p class="subtitle">Per-merchant override config for Braintree CVV bypass, card replacement, and status detection. Editing here updates the running rules served to all extensions.</p>
+
+      <h3 style="font-size:15px;margin-bottom:10px;margin-top:4px;">🔑 CVV Removal (xhrBypass)</h3>
+      <div class="field"><label>CVV field name in Braintree JSON body</label>
+        <input id="bt-cvv-field" type="text" placeholder="cvv" value="cvv">
+      </div>
+      <div class="field"><label>Credit card JSON paths (one per line — dot-notation)</label>
+        <textarea id="bt-cc-paths" rows="3" placeholder="variables.input.creditCard&#10;variables.input.payment.creditCard&#10;creditCard">variables.input.creditCard
+variables.input.payment.creditCard
+creditCard</textarea>
+      </div>
+      <div class="field"><label>URL-encoded CVV targets (one per line)</label>
+        <textarea id="bt-url-targets" rows="2" placeholder="credit_card%5Bcvv%5D&#10;credit_card[cvv]">credit_card%5Bcvv%5D
+credit_card[cvv]</textarea>
+      </div>
+
+      <h3 style="font-size:15px;margin-bottom:10px;margin-top:16px;">🔄 Card Replacement field mappings</h3>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+        <div class="field"><label>Card number field</label><input id="bt-cr-number" type="text" value="number"></div>
+        <div class="field"><label>CVV field</label><input id="bt-cr-cvv" type="text" value="cvv"></div>
+        <div class="field"><label>Expiry month field</label><input id="bt-cr-month" type="text" value="expirationMonth"></div>
+        <div class="field"><label>Expiry year field</label><input id="bt-cr-year" type="text" value="expirationYear"></div>
+      </div>
+
+      <h3 style="font-size:15px;margin-bottom:10px;margin-top:16px;">📊 Status Detection Patterns</h3>
+      <div class="field"><label>GraphQL tokenize fields (one per line)</label>
+        <textarea id="bt-gql-tok" rows="2" placeholder="tokenizeCreditCard">tokenizeCreditCard</textarea>
+      </div>
+      <div class="field"><label>GraphQL charge/transaction fields (one per line)</label>
+        <textarea id="bt-gql-charge" rows="2" placeholder="chargePaymentMethod&#10;createTransaction">chargePaymentMethod
+createTransaction</textarea>
+      </div>
+      <div class="field"><label>GraphQL success statuses (one per line, UPPERCASE)</label>
+        <textarea id="bt-gql-succ" rows="3" placeholder="AUTHORIZED&#10;SETTLED&#10;SUBMITTED_FOR_SETTLEMENT">AUTHORIZED
+SETTLED
+SUBMITTED_FOR_SETTLEMENT</textarea>
+      </div>
+      <div class="field"><label>Transaction success statuses (one per line, lowercase)</label>
+        <textarea id="bt-txn-succ" rows="3" placeholder="authorized&#10;settled&#10;submitted_for_settlement">authorized
+settled
+submitted_for_settlement</textarea>
+      </div>
+      <div class="field"><label>Transaction failure statuses (one per line, lowercase)</label>
+        <textarea id="bt-txn-fail" rows="3" placeholder="processor_declined&#10;gateway_rejected&#10;failed">processor_declined
+gateway_rejected
+failed</textarea>
+      </div>
+      <div class="field"><label>CCN (live-card) message patterns (one per line, lowercase substring match)</label>
+        <textarea id="bt-ccn-pats" rows="3" placeholder="insufficient funds&#10;insufficient fund&#10;not enough funds">insufficient funds
+insufficient fund
+not enough funds</textarea>
+      </div>
+
+      <h3 style="font-size:15px;margin-bottom:10px;margin-top:16px;">🌐 URL / Domain patterns</h3>
+      <div class="field"><label>Intercept URL patterns (one per line — substring match)</label>
+        <textarea id="bt-url-pats" rows="4" placeholder="braintree-api.com&#10;braintreegateway.com&#10;client.bin.paypal.com&#10;/braintree">braintree-api.com
+braintreegateway.com
+client.bin.paypal.com
+/braintree</textarea>
+      </div>
+
+      <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;">
+        <button class="btn btn-primary" onclick="exportBraintreeRules()">📋 Copy JSON to clipboard</button>
+        <button class="btn btn-ghost btn-sm" onclick="resetBraintreeRules()">↩️ Reset to defaults</button>
+      </div>
+      <div id="bt-rules-out" style="margin-top:12px;font-size:13px;color:var(--muted);"></div>
+
+      <div class="field" style="margin-top:16px;">
+        <label>Live JSON preview (read-only)</label>
+        <textarea id="bt-json-preview" rows="10" readonly style="font-family:'JetBrains Mono',monospace;font-size:12px;background:var(--surface-2);color:var(--muted);resize:vertical;"></textarea>
+      </div>
+    </div>
+  </div>
+
+  <!-- HEALTH -->
+  <div id="tab-db" class="panel">
+    <div class="card">
+      <h2>API health & endpoints</h2>
+      <p class="subtitle">All 30+ endpoints, live status check.</p>
+      <button class="btn btn-ghost btn-sm" onclick="checkHealth()">Refresh</button>
+      <div id="full-health" class="codes" style="max-height:600px;color:var(--text);"></div>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
+</div>
+<script>
+/* ============================================================
+   SEMEX Admin Dashboard - Vanilla JS
+   ============================================================ */
+const API = (function(){
+  // If served from same origin (recommended), use relative
+  return "";
+})();
+let TOKEN = localStorage.getItem("semex_admin_token") || null;
+let FP = localStorage.getItem("semex_admin_fp") || null;
+if (!FP) {
+  FP = "admin-" + Math.random().toString(36).slice(2) + "-" + Date.now().toString(36);
+  localStorage.setItem("semex_admin_fp", FP);
+}
+let PENDING_TID = null;
+
+function toast(msg, kind) {
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.className = "toast show " + (kind || "");
+  setTimeout(() => t.classList.remove("show"), 3200);
+}
+
+async function api(path, opts) {
+  opts = opts || {};
+  const headers = opts.headers || {};
+  headers["Content-Type"] = "application/json";
+  if (TOKEN) {
+    headers["Authorization"] = "Bearer " + TOKEN;
+    headers["X-Fingerprint"] = FP;
+  }
+  let r = await fetch(API + path, { ...opts, headers });
+  // Handle expired access token → try refresh once
+  if (r.status === 401) {
+    const refresh = localStorage.getItem("semex_admin_refresh");
+    if (refresh) {
+      try {
+        const rr = await fetch(API + "/api/auth/refresh", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ refreshToken: refresh })
+        });
+        if (rr.ok) {
+          const data = await rr.json();
+          if (data.accessToken) {
+            TOKEN = data.accessToken;
+            localStorage.setItem("semex_admin_token", TOKEN);
+            headers["Authorization"] = "Bearer " + TOKEN;
+            r = await fetch(API + path, { ...opts, headers });
+          }
+        }
+      } catch (e) {}
+    }
+  }
+  if (!r.ok) {
+    let msg = "Request failed (" + r.status + ")";
+    try {
+      const j = await r.json();
+      // FastAPI can return `detail` as string OR nested object/array (validation errors).
+      // Always stringify to avoid "[object Object]" bleeding into toasts.
+      if (j && j.detail !== undefined) {
+        if (typeof j.detail === "string") {
+          msg = j.detail;
+        } else if (Array.isArray(j.detail)) {
+          msg = j.detail.map(d => (d && d.msg) ? d.msg : JSON.stringify(d)).join("; ");
+        } else if (typeof j.detail === "object") {
+          msg = j.detail.message || j.detail.error || JSON.stringify(j.detail);
+        }
+      } else if (j && j.message) {
+        msg = j.message;
+      }
+    } catch(e){}
+    if (r.status === 401) { logout(); }
+    throw new Error(msg);
+  }
+  return r.json();
+}
+
+async function requestOTP() {
+  const tid = document.getElementById("in-tid").value.trim();
+  if (!/^\d{6,15}$/.test(tid)) { toast("Enter a numeric Telegram ID", "error"); return; }
+  try {
+    await api("/api/auth/request-otp", {
+      method: "POST", body: JSON.stringify({ telegramId: parseInt(tid), fingerprint: FP })
+    });
+    PENDING_TID = parseInt(tid);
+    document.getElementById("step-tid").style.display = "none";
+    document.getElementById("step-otp").style.display = "block";
+    document.getElementById("in-otp").focus();
+    toast("OTP sent to your Telegram", "success");
+  } catch (e) { toast(e.message, "error"); }
+}
+
+async function verifyOTP() {
+  const otp = document.getElementById("in-otp").value.trim();
+  if (!/^\d{6}$/.test(otp)) { toast("Enter the 6-digit OTP", "error"); return; }
+  try {
+    const r = await api("/api/auth/verify-otp", {
+      method: "POST",
+      body: JSON.stringify({
+        telegramId: PENDING_TID, otp, fingerprint: FP,
+        deviceInfo: { userAgent: navigator.userAgent, platform: navigator.platform, from: "admin-dashboard" }
+      })
+    });
+    if (!r.user || !r.user.isAdmin) { toast("Not an admin account", "error"); return; }
+    TOKEN = r.accessToken;
+    localStorage.setItem("semex_admin_token", TOKEN);
+    localStorage.setItem("semex_admin_refresh", r.refreshToken || "");
+    localStorage.setItem("semex_admin_user", JSON.stringify(r.user));
+    showDashboard(r.user);
+  } catch (e) { toast(e.message, "error"); }
+}
+
+function logout() {
+  localStorage.removeItem("semex_admin_token");
+  localStorage.removeItem("semex_admin_refresh");
+  localStorage.removeItem("semex_admin_user");
+  location.reload();
+}
+
+function showDashboard(user) {
+  document.getElementById("login-shell").style.display = "none";
+  document.getElementById("dashboard").style.display = "block";
+  const handle = user.username ? "@" + user.username : (user.firstName || "admin");
+  document.getElementById("who").textContent = handle;
+  loadStats();
+  bindTabs();
+}
+
+function bindTabs() {
+  document.querySelectorAll(".nav button").forEach(btn => {
+    btn.addEventListener("click", () => {
+      document.querySelectorAll(".nav button").forEach(b => b.classList.remove("active"));
+      document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+      btn.classList.add("active");
+      const tab = btn.getAttribute("data-tab");
+      document.getElementById("tab-" + tab).classList.add("active");
+      if (tab === "users") loadUsers();
+      else if (tab === "codes") { loadCodes("unused"); }
+      else if (tab === "hits") loadHits();
+      else if (tab === "extension") { loadExtensions(); loadCurrentVersionInfo(); }
+      else if (tab === "db") checkHealth();
+      else if (tab === "sessionrules") initBraintreeRules();
+    });
+  });
+}
+
+/* ---- Session Rules: Braintree ---- */
+const BT_DEFAULTS = {
+  cvvField: "cvv",
+  ccPaths: "variables.input.creditCard\nvariables.input.payment.creditCard\ncreditCard",
+  urlTargets: "credit_card%5Bcvv%5D\ncredit_card[cvv]",
+  crNumber: "number", crCvv: "cvv", crMonth: "expirationMonth", crYear: "expirationYear",
+  gqlTok: "tokenizeCreditCard",
+  gqlCharge: "chargePaymentMethod\ncreateTransaction",
+  gqlSucc: "AUTHORIZED\nSETTLED\nSUBMITTED_FOR_SETTLEMENT",
+  txnSucc: "authorized\nsettled\nsubmitted_for_settlement",
+  txnFail: "processor_declined\ngateway_rejected\nfailed",
+  ccnPats: "insufficient funds\ninsufficient fund\nnot enough funds",
+  urlPats: "braintree-api.com\nbraintreegateway.com\nclient.bin.paypal.com\n/braintree"
+};
+
+function initBraintreeRules() {
+  updateBraintreePreview();
+  ["bt-cvv-field","bt-cc-paths","bt-url-targets","bt-cr-number","bt-cr-cvv","bt-cr-month","bt-cr-year",
+   "bt-gql-tok","bt-gql-charge","bt-gql-succ","bt-txn-succ","bt-txn-fail","bt-ccn-pats","bt-url-pats"]
+    .forEach(id => {
+      const el = document.getElementById(id);
+      if (el) el.addEventListener("input", updateBraintreePreview);
+    });
+}
+
+function readBraintreeRules() {
+  const g = id => (document.getElementById(id) || {}).value || "";
+  const lines = s => s.split("\n").map(x => x.trim()).filter(Boolean);
+  return {
+    xhrBypass: { braintree: {
+      action: "BRAINTREE_GRAPHQL_REMOVE", enabled: true,
+      cvvField: g("bt-cvv-field").trim() || "cvv",
+      creditCardPaths: lines(g("bt-cc-paths")),
+      urlEncodedTargets: lines(g("bt-url-targets")),
+      domains: ["braintree-api.com", "braintreegateway.com", "client.bin.paypal.com"]
+    }},
+    cardReplacementParams: { braintree: {
+      creditCardPaths: lines(g("bt-cc-paths")),
+      number: g("bt-cr-number").trim() || "number",
+      cvv: g("bt-cr-cvv").trim() || "cvv",
+      exp_month: g("bt-cr-month").trim() || "expirationMonth",
+      exp_year: g("bt-cr-year").trim() || "expirationYear"
+    }},
+    paymentTracking: { braintree: {
+      domains: ["braintree-api.com", "braintreegateway.com", "client.bin.paypal.com"],
+      urlPatterns: lines(g("bt-url-pats")),
+      graphql: {
+        tokenizeFields: lines(g("bt-gql-tok")),
+        successFields: lines(g("bt-gql-charge")),
+        successStatuses: lines(g("bt-gql-succ"))
+      },
+      ccnIndicators: { messagePatterns: lines(g("bt-ccn-pats")) },
+      restSuccessField: "success",
+      transactionSuccessStatuses: lines(g("bt-txn-succ")),
+      transactionFailureStatuses: lines(g("bt-txn-fail"))
+    }}
+  };
+}
+
+function updateBraintreePreview() {
+  const el = document.getElementById("bt-json-preview");
+  if (el) el.value = JSON.stringify(readBraintreeRules(), null, 2);
+}
+
+function exportBraintreeRules() {
+  const json = JSON.stringify(readBraintreeRules(), null, 2);
+  navigator.clipboard.writeText(json).then(() => {
+    toast("Braintree rules JSON copied to clipboard", "success");
+  }).catch(() => {
+    const el = document.getElementById("bt-rules-out");
+    if (el) { el.textContent = json; el.style.whiteSpace = "pre"; }
+  });
+}
+
+function resetBraintreeRules() {
+  const set = (id, val) => { const el = document.getElementById(id); if (el) el.value = val; };
+  set("bt-cvv-field", BT_DEFAULTS.cvvField);
+  set("bt-cc-paths", BT_DEFAULTS.ccPaths);
+  set("bt-url-targets", BT_DEFAULTS.urlTargets);
+  set("bt-cr-number", BT_DEFAULTS.crNumber);
+  set("bt-cr-cvv", BT_DEFAULTS.crCvv);
+  set("bt-cr-month", BT_DEFAULTS.crMonth);
+  set("bt-cr-year", BT_DEFAULTS.crYear);
+  set("bt-gql-tok", BT_DEFAULTS.gqlTok);
+  set("bt-gql-charge", BT_DEFAULTS.gqlCharge);
+  set("bt-gql-succ", BT_DEFAULTS.gqlSucc);
+  set("bt-txn-succ", BT_DEFAULTS.txnSucc);
+  set("bt-txn-fail", BT_DEFAULTS.txnFail);
+  set("bt-ccn-pats", BT_DEFAULTS.ccnPats);
+  set("bt-url-pats", BT_DEFAULTS.urlPats);
+  updateBraintreePreview();
+  toast("Braintree rules reset to defaults", "success");
+}
+
+/* ---- Stats ---- */
+async function loadStats() {
+  try {
+    const s = await api("/api/admin/stats");
+    document.getElementById("s-users").textContent = s.users.total;
+    document.getElementById("s-active").textContent = s.users.active;
+    document.getElementById("s-banned").textContent = s.users.banned;
+    document.getElementById("s-hits").textContent = s.hits.total;
+    document.getElementById("s-charged").textContent = s.hits.charged;
+    document.getElementById("s-codes-free").textContent = s.codes.unused;
+    document.getElementById("s-codes-used").textContent = s.codes.used;
+    // v2.9.0 — no longer run the 16-endpoint health sweep on every stats load;
+    // it made every dashboard refresh feel slow. Health runs on the DB tab.
+  } catch (e) { toast(e.message, "error"); }
+}
+
+async function checkHealth(compact) {
+  const endpoints = [
+    ["GET", "/api/health"],
+    ["GET", "/api/public/bot"],
+    ["GET", "/api/site-config"],
+    ["GET", "/api/bin/424242"],
+    ["GET", "/api/auth/session"],
+    ["GET", "/api/user/me"],
+    ["GET", "/api/user/hits"],
+    ["GET", "/api/user/bins"],
+    ["GET", "/api/user/proxies"],
+    ["GET", "/api/user/devices"],
+    ["GET", "/api/user/settings"],
+    ["GET", "/api/news"],
+    ["GET", "/api/admin/stats"],
+    ["GET", "/api/admin/users"],
+    ["GET", "/api/admin/codes"],
+    ["GET", "/api/admin/hits"]
+  ];
+  // v2.9.0 — parallel probes with per-request timeout instead of a serial
+  // for/await chain (16 sequential fetches = seconds of waiting).
+  const results = await Promise.all(endpoints.map(async ([m, p]) => {
+    const headers = {};
+    if (TOKEN && p !== "/api/health" && p !== "/api/public/bot" && p !== "/api/site-config" && p !== "/api/news" && !p.startsWith("/api/bin/")) {
+      headers["Authorization"] = "Bearer " + TOKEN;
+      headers["X-Fingerprint"] = FP;
+    }
+    try {
+      const ctrl = new AbortController();
+      const to = setTimeout(() => ctrl.abort(), 8000);
+      const r = await fetch(API + p, { method: m, headers, signal: ctrl.signal });
+      clearTimeout(to);
+      return { m, p, ok: r.ok, status: r.status };
+    } catch (e) { return { m, p, ok: false, status: 0 }; }
+  }));
+  if (compact) {
+    const cont = document.getElementById("health-list");
+    cont.innerHTML = results.map(r =>
+      `<div style="display:flex;justify-content:space-between;padding:6px 10px;background:var(--surface-2);border-radius:6px;font-family:monospace;font-size:12px;">
+        <span>${r.m} ${r.p}</span>
+        <span class="badge ${r.ok ? 'success' : 'danger'}">${r.status || 'ERR'}</span>
+      </div>`
+    ).join("");
+  } else {
+    const cont = document.getElementById("full-health");
+    cont.innerHTML = results.map(r =>
+      `<div>${r.ok ? '✅' : '❌'} <span style="color:${r.ok ? 'var(--success)' : 'var(--danger)'}">[${r.status}]</span> ${r.m} ${r.p}</div>`
+    ).join("");
+  }
+}
+
+/* ---- Users ---- */
+async function loadUsers() {
+  try {
+    const r = await api("/api/admin/users?limit=500");
+    const rows = r.users.map(u => {
+      const exp = u.planExpiresAt ? new Date(u.planExpiresAt).toISOString().slice(0,10) : (u.isAdmin ? '<span class="badge purple">ADMIN</span>' : '—');
+      const badge = u.isBanned ? '<span class="badge danger">BANNED</span>' :
+                    u.isAdmin ? '<span class="badge purple">ADMIN</span>' :
+                    u.plan === "VIP" ? '<span class="badge pink">VIP</span>' :
+                    `<span class="badge info">${u.plan || 'TRIAL'}</span>`;
+      const avatar = u.photoUrl ? `<img src="${u.photoUrl}" style="width:34px;height:34px;border-radius:50%;vertical-align:middle;margin-right:8px;">` :
+                     `<span class="avatar">${(u.firstName||u.username||'?')[0].toUpperCase()}</span>`;
+      return `<tr>
+        <td>${avatar} <b>${u.firstName || ''} ${u.lastName || ''}</b><br><small style="color:var(--muted)">${u.username ? '@'+u.username : ''} · <code>${u.telegramId}</code></small></td>
+        <td>${badge}</td>
+        <td>${exp}</td>
+        <td>${u.hitCount || 0}</td>
+        <td>${u.chargedCount || 0}</td>
+        <td>
+          ${u.isBanned
+            ? `<button class="btn btn-warn btn-sm" onclick="unbanUser(${u.telegramId})">Unban</button>`
+            : (u.isAdmin ? '' : `<button class="btn btn-danger btn-sm" onclick="banUser(${u.telegramId})">Ban</button>`)}
+          ${u.isAdmin ? '' : `<button class="btn btn-ghost btn-sm" onclick="revokeSessions(${u.telegramId})">Kick devices</button>`}
+          ${u.isAdmin ? '' : `<button class="btn btn-sm ${u.publicMuted ? 'btn-warn' : 'btn-ghost'}" onclick="muteGroup(${u.telegramId}, ${!u.publicMuted})" title="${u.publicMuted ? 'Unmute from group channel' : 'Mute from group channel'}">${u.publicMuted ? '🔇 Muted' : '🔊 Mute Group'}</button>`}
+        </td>
+      </tr>`;
+    }).join("");
+    document.getElementById("users-table").innerHTML = `
+      <table><thead><tr><th>User</th><th>Plan</th><th>Expires</th><th>Hits</th><th>Charged</th><th>Actions</th></tr></thead><tbody>${rows || '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:32px;">No users yet</td></tr>'}</tbody></table>`;
+  } catch (e) { toast(e.message, "error"); }
+}
+async function banUser(tid) {
+  const reason = prompt("Ban reason?", "Abuse"); if (!reason) return;
+  try { await api("/api/admin/users/ban", { method: "POST", body: JSON.stringify({ telegramId: tid, reason }) }); toast("User banned", "success"); loadUsers(); }
+  catch (e) { toast(e.message, "error"); }
+}
+async function unbanUser(tid) {
+  try { await api("/api/admin/users/unban", { method: "POST", body: JSON.stringify({ telegramId: tid }) }); toast("User unbanned", "success"); loadUsers(); }
+  catch (e) { toast(e.message, "error"); }
+}
+async function extendUser(tid) {
+  const d = prompt("Extend by how many days? (-1 for lifetime)", "7");
+  if (!d) return;
+  const days = parseInt(d);
+  if (isNaN(days)) return;
+  try { const r = await api("/api/admin/users/extend", { method: "POST", body: JSON.stringify({ telegramId: tid, days }) }); toast(`Extended to ${r.planExpiresAt || 'lifetime'}`, "success"); loadUsers(); }
+  catch (e) { toast(e.message, "error"); }
+}
+async function revokeSessions(tid) {
+  if (!confirm("Kick ALL devices for this user?")) return;
+  try { const r = await api("/api/admin/users/revoke-sessions", { method: "POST", body: JSON.stringify({ telegramId: tid }) }); toast(`Kicked ${r.count} devices`, "success"); }
+  catch (e) { toast(e.message, "error"); }
+}
+async function muteGroup(tid, mute) {
+  const action = mute ? "Mute this user from the group channel?" : "Unmute this user?";
+  if (!confirm(action)) return;
+  try {
+    await api("/api/admin/users/public-mute", { method: "POST", body: JSON.stringify({ telegramId: tid, muted: mute }) });
+    toast(mute ? "User muted from group channel" : "User unmuted", "success");
+    loadUsers();
+  } catch (e) { toast(e.message, "error"); }
+}
+
+/* ---- Codes ---- */
+let _lastGenCodes = [];
+let _lastGenMeta = { planTag: "", days: 0 };
+async function genCodes() {
+  const days = parseInt(document.getElementById("c-days").value);
+  const qty = parseInt(document.getElementById("c-qty").value);
+  const note = document.getElementById("c-note").value.trim();
+  try {
+    const r = await api("/api/admin/codes/generate", {
+      method: "POST", body: JSON.stringify({ days, quantity: qty, note: note || null })
+    });
+    _lastGenCodes = r.codes || [];
+    _lastGenMeta = { planTag: r.planTag, days };
+    const out = document.getElementById("gen-out");
+    out.style.display = "block";
+    out.textContent = _lastGenCodes.join("\n");
+    const actions = document.getElementById("gen-actions");
+    if (actions) actions.style.display = _lastGenCodes.length ? "flex" : "none";
+    toast(`Generated ${r.count} codes (${r.planTag})`, "success");
+    loadCodes(currentCodesFilter);
+  } catch (e) { toast(e.message, "error"); }
+}
+function copyGenCodes() {
+  if (!_lastGenCodes.length) return;
+  const text = _lastGenCodes.join("\n");
+  navigator.clipboard.writeText(text)
+    .then(() => toast(`Copied ${_lastGenCodes.length} codes`, "success"))
+    .catch(() => toast("Copy failed — select the text manually", "error"));
+}
+function downloadGenCodes(fmt) {
+  if (!_lastGenCodes.length) return;
+  const stamp = new Date().toISOString().slice(0, 19).replace(/[:T]/g, "-");
+  let content, mime, ext;
+  if (fmt === "csv") {
+    content = "code,plan,duration_days\n" +
+      _lastGenCodes.map(c => `${c},${_lastGenMeta.planTag},${_lastGenMeta.days}`).join("\n");
+    mime = "text/csv"; ext = "csv";
+  } else {
+    content = _lastGenCodes.join("\n");
+    mime = "text/plain"; ext = "txt";
+  }
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `SEMEX_codes_${_lastGenMeta.planTag}_${stamp}.${ext}`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  toast(`Downloaded ${_lastGenCodes.length} codes (.${ext})`, "success");
+}
+let currentCodesFilter = "unused";
+function filterCodes(f) {
+  currentCodesFilter = f;
+  document.querySelectorAll("#tab-codes [data-filter]").forEach(b => b.classList.toggle("active-filter", b.getAttribute("data-filter") === f));
+  loadCodes(f);
+}
+async function loadCodes(filter) {
+  filter = filter || "unused";
+  let q = "?limit=200";
+  if (filter === "unused") q += "&used=false";
+  else if (filter === "used") q += "&used=true";
+  try {
+    const r = await api("/api/admin/codes" + q);
+    const rows = r.codes.map(c => {
+      const used = c.used ? `<span class="badge gray">used by ${c.usedBy || '?'}</span>` : '<span class="badge success">UNUSED</span>';
+      const dur = c.durationDays < 0 ? '∞' : `${c.durationDays}d`;
+      return `<tr>
+        <td class="mono">${c.preview}</td>
+        <td>${dur} <span class="badge info">${c.planTag}</span></td>
+        <td>${used}</td>
+        <td>${new Date(c.createdAt).toLocaleString()}</td>
+        <td>${c.note || ''}</td>
+        <td>${c.used ? '' : `<button class="btn btn-danger btn-sm" onclick="deleteCode('${c.id}')">Delete</button>`}</td>
+      </tr>`;
+    }).join("");
+    document.getElementById("codes-table").innerHTML = `
+      <table><thead><tr><th>Code</th><th>Duration</th><th>Status</th><th>Created</th><th>Note</th><th></th></tr></thead><tbody>${rows || '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:32px;">No codes</td></tr>'}</tbody></table>`;
+  } catch (e) { toast(e.message, "error"); }
+}
+async function deleteCode(id) {
+  if (!confirm("Delete this code?")) return;
+  try { await api("/api/admin/codes/" + id, { method: "DELETE" }); toast("Deleted", "success"); loadCodes(currentCodesFilter); }
+  catch (e) { toast(e.message, "error"); }
+}
+
+/* ---- User card lookup ---- */
+function esc(v) {
+  if (v === null || v === undefined) return '—';
+  return String(v).replace(/[&<>"']/g, c => ({ '&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;' }[c]));
+}
+function ucCardRows(list) {
+  if (!list.length) return '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:20px;">None</td></tr>';
+  return list.map(h => `<tr>
+    <td class="mono">${esc(h.card)}</td>
+    <td>${esc(h.bin_bank || h.bank)}</td>
+    <td>${esc(h.site)}</td>
+    <td>${esc(h.response)}</td>
+    <td>${h.recovered ? '<span class="badge danger">RECOVERED</span>' : '<span class="badge success">OK</span>'}</td>
+    <td>${h.created_at ? esc(new Date(h.created_at).toLocaleString()) : '—'}</td>
+  </tr>`).join("");
+}
+async function lookupUserCards() {
+  const raw = (document.getElementById("uc-id").value || "").trim();
+  const el = document.getElementById("uc-result");
+  if (!/^\d+$/.test(raw)) { toast("Enter a numeric Telegram user ID", "error"); return; }
+  el.innerHTML = '<p class="subtitle">Loading…</p>';
+  try {
+    const r = await api("/api/admin/user-cards?telegram_id=" + raw);
+    if (!r.found && r.charged.length === 0 && r.live.length === 0) {
+      el.innerHTML = '<p class="subtitle">No user or cards found for that ID.</p>';
+      return;
+    }
+    const u = r.user || {};
+    const head = r.found
+      ? `<div style="margin-bottom:12px;">👤 <b>${u.telegram_username ? '@' + esc(u.telegram_username) : esc(u.telegram_first_name || 'Unknown')}</b>
+           <span class="mono" style="color:var(--muted);">(${esc(u.telegram_id)})</span>
+           &nbsp;·&nbsp; Plan: <span class="badge info">${esc(u.plan || 'TRIAL')}</span>
+           &nbsp;·&nbsp; Charged: <b>${Number(r.counts.charged)}</b> &nbsp; Live: <b>${Number(r.counts.live)}</b></div>`
+      : `<div style="margin-bottom:12px;color:var(--muted);">No user profile row — showing recovered cards only (${r.counts.charged + r.counts.live}).</div>`;
+    const tbl = (title, list) => `
+      <h3 style="margin:14px 0 6px;">${title} <span style="color:var(--muted);font-weight:400;">(${list.length})</span></h3>
+      <table><thead><tr><th>Card</th><th>Bank</th><th>Site</th><th>Response</th><th>Source</th><th>Time</th></tr></thead>
+      <tbody>${ucCardRows(list)}</tbody></table>`;
+    el.innerHTML = head + tbl("💎 Charged", r.charged) + tbl("🔥 Live", r.live);
+  } catch (e) { el.innerHTML = ''; toast(e.message, "error"); }
+}
+
+/* ---- Hits ---- */
+async function loadHits() {
+  try {
+    const r = await api("/api/admin/hits?limit=200");
+    const rows = r.hits.map(h => {
+      const status = (h.status || '').toUpperCase();
+      const cls = status === 'CHARGED' ? 'success' : status.includes('LIVE') ? 'info' : 'danger';
+      return `<tr>
+        <td class="mono">${h.telegram_id}</td>
+        <td><span class="badge ${cls}">${status}</span></td>
+        <td>${h.hostname || '—'}</td>
+        <td>${h.gateway || '—'}</td>
+        <td class="mono">${(h.card_number || '').slice(0,4)}••••${(h.card_number || '').slice(-4)}</td>
+        <td>${h.amount || '—'} ${h.currency || ''}</td>
+        <td>${new Date(h.created_at).toLocaleString()}</td>
+      </tr>`;
+    }).join("");
+    document.getElementById("hits-table").innerHTML = `
+      <table><thead><tr><th>User</th><th>Status</th><th>Site</th><th>Gateway</th><th>Card</th><th>Amount</th><th>Time</th></tr></thead><tbody>${rows || '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:32px;">No hits yet</td></tr>'}</tbody></table>`;
+  } catch (e) { toast(e.message, "error"); }
+}
+
+/* ---- Broadcast ---- */
+async function previewBroadcast() {
+  const includeAdmins = document.getElementById("bc-admins").checked;
+  const includeExpired = document.getElementById("bc-expired").checked;
+  const plans = document.getElementById("bc-plans").value.split(",").map(s => s.trim()).filter(Boolean);
+  try {
+    const r = await api("/api/admin/broadcast/preview", {
+      method: "POST", body: JSON.stringify({
+        include_admins: includeAdmins, include_expired: includeExpired,
+        only_plans: plans.length ? plans : null
+      })
+    });
+    document.getElementById("bc-out").innerHTML = `Will send to <b>${r.count}</b> users.`;
+  } catch (e) { toast(e.message, "error"); }
+}
+async function sendBroadcast() {
+  const message = document.getElementById("bc-msg").value.trim();
+  if (!message) { toast("Message empty", "error"); return; }
+  if (!confirm("Send this broadcast?")) return;
+  const includeAdmins = document.getElementById("bc-admins").checked;
+  const includeExpired = document.getElementById("bc-expired").checked;
+  const plans = document.getElementById("bc-plans").value.split(",").map(s => s.trim()).filter(Boolean);
+  try {
+    const r = await api("/api/admin/broadcast", {
+      method: "POST", body: JSON.stringify({
+        message, include_admins: includeAdmins, include_expired: includeExpired,
+        only_plans: plans.length ? plans : null
+      })
+    });
+    document.getElementById("bc-out").innerHTML = `✅ Sent: <b>${r.sent}</b> · Failed: <b>${r.failed}</b>`;
+    toast(`Broadcast sent to ${r.sent} users`, "success");
+  } catch (e) { toast(e.message, "error"); }
+}
+
+/* ---- News ---- */
+async function postNews() {
+  const title = document.getElementById("n-title").value.trim();
+  const body = document.getElementById("n-body").value.trim();
+  const important = document.getElementById("n-imp").checked;
+  if (!title || !body) { toast("Fill title and body", "error"); return; }
+  try {
+    await api("/api/admin/news", { method: "POST", body: JSON.stringify({ title, body, important }) });
+    toast("News posted", "success");
+    document.getElementById("n-title").value = "";
+    document.getElementById("n-body").value = "";
+    document.getElementById("n-imp").checked = false;
+  } catch (e) { toast(e.message, "error"); }
+}
+
+/* ---- Extension Version Manager ---- */
+function _fmtBytes(n) {
+  if (!n) return "-";
+  if (n < 1024) return n + " B";
+  if (n < 1024*1024) return (n/1024).toFixed(1) + " KB";
+  return (n/1024/1024).toFixed(2) + " MB";
+}
+
+async function loadCurrentVersionInfo() {
+  const el = document.getElementById("ext-current-info");
+  if (!el) return;
+  el.textContent = "Loading…";
+  try {
+    const r = await fetch(API + "/api/public/version", { cache: "no-store" });
+    const j = await r.json();
+    el.innerHTML =
+      "<b>Latest served:</b> <code>v" + (j.latestVersion || "?") + "</code>  " +
+      "<b>Minimum required:</b> <code>v" + (j.minVersion || "?") + "</code>  " +
+      "<span style='opacity:0.6;'>(older extensions are paywalled)</span>";
+  } catch (e) {
+    el.textContent = "Failed to load current version info.";
+  }
+}
+
+async function loadExtensions() {
+  const list = document.getElementById("ext-list");
+  list.innerHTML = "<div style='opacity:0.6;padding:12px;'>Loading…</div>";
+  try {
+    const r = await api("/api/admin/extension/versions");
+    const rows = r.releases || [];
+    if (!rows.length) {
+      list.innerHTML = "<div style='opacity:0.6;padding:12px;'>No versions published yet. Upload the first zip above.</div>";
+      return;
+    }
+    let html = "<table style='width:100%;border-collapse:collapse;font-size:13px;'>";
+    html += "<thead><tr style='text-align:left;border-bottom:1px solid rgba(255,255,255,0.1);color:var(--muted);'>";
+    html += "<th style='padding:8px 6px;'>Version</th><th style='padding:8px 6px;'>Size</th><th style='padding:8px 6px;'>Flags</th><th style='padding:8px 6px;'>Published</th><th style='padding:8px 6px;'>DL</th><th style='padding:8px 6px;'>Actions</th>";
+    html += "</tr></thead><tbody>";
+    for (const rel of rows) {
+      const badges = [
+        rel.isLatest ? "<span style='color:#ffb86b;'>⭐ latest</span>" : "",
+        rel.isMinimum ? "<span style='color:#6bffb8;'>🔒 min</span>" : "",
+        rel.obfuscated ? "<span style='opacity:0.6;'>obf</span>" : ""
+      ].filter(Boolean).join(" · ");
+      html += "<tr style='border-bottom:1px solid rgba(255,255,255,0.05);'>";
+      html += "<td style='padding:8px 6px;font-family:ui-monospace,monospace;font-weight:600;'>v" + (rel.version || "?") + "</td>";
+      html += "<td style='padding:8px 6px;'>" + _fmtBytes(rel.sizeBytes) + "</td>";
+      html += "<td style='padding:8px 6px;'>" + (badges || "-") + "</td>";
+      html += "<td style='padding:8px 6px;'>" + (rel.publishedAt ? new Date(rel.publishedAt).toLocaleString() : "-") + "</td>";
+      html += "<td style='padding:8px 6px;'>" + (rel.downloadCount || 0) + "</td>";
+      html += "<td style='padding:8px 6px;display:flex;gap:6px;flex-wrap:wrap;'>";
+      if (!rel.isLatest) html += "<button class='btn btn-ghost btn-sm' onclick=\"makeLatest('" + rel.id + "')\">⭐ Latest</button>";
+      if (!rel.isMinimum) html += "<button class='btn btn-ghost btn-sm' onclick=\"makeMinimum('" + rel.id + "')\">🔒 Min</button>";
+      html += "<button class='btn btn-ghost btn-sm' onclick=\"broadcastRelease('" + rel.id + "')\">📣 Broadcast</button>";
+      html += "<button class='btn btn-ghost btn-sm' onclick=\"deleteRelease('" + rel.id + "','" + (rel.version || "") + "')\" style='color:var(--danger);'>🗑</button>";
+      html += "</td></tr>";
+    }
+    html += "</tbody></table>";
+    list.innerHTML = html;
+  } catch (e) {
+    list.innerHTML = "<div style='color:var(--danger);padding:12px;'>" + e.message + "</div>";
+  }
+}
+
+async function uploadExtension() {
+  const version = document.getElementById("ext-version").value.trim();
+  const notes = document.getElementById("ext-notes").value.trim();
+  const file = document.getElementById("ext-file").files[0];
+  const makeMin = document.getElementById("ext-make-min").checked;
+  const broadcast = document.getElementById("ext-broadcast").checked;
+  const out = document.getElementById("ext-upload-out");
+  if (!/^\d+\.\d+(\.\d+)?(\.\d+)?$/.test(version)) {
+    toast("Version must be semver (e.g. 2.4.0)", "error"); return;
+  }
+  if (!file) { toast("Pick a .zip file", "error"); return; }
+  out.textContent = "Uploading… " + _fmtBytes(file.size);
+  try {
+    const fd = new FormData();
+    fd.append("version", version);
+    if (notes) fd.append("notes", notes);
+    fd.append("make_minimum", makeMin ? "true" : "false");
+    fd.append("auto_broadcast", broadcast ? "true" : "false");
+    fd.append("file", file);
+    // Multipart upload can't go through api() (it forces JSON Content-Type),
+    // but it still needs the same auth headers + one-shot 401 refresh retry.
+    const doUpload = () => fetch(API + "/api/admin/extension/publish", {
+      method: "POST",
+      headers: { "Authorization": "Bearer " + TOKEN, "X-Fingerprint": FP },
+      body: fd,
+    });
+    let r = await doUpload();
+    if (r.status === 401) {
+      const refresh = localStorage.getItem("semex_admin_refresh");
+      if (refresh) {
+        try {
+          const rr = await fetch(API + "/api/auth/refresh", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ refreshToken: refresh })
+          });
+          if (rr.ok) {
+            const data = await rr.json();
+            if (data.accessToken) {
+              TOKEN = data.accessToken;
+              localStorage.setItem("semex_admin_token", TOKEN);
+              r = await doUpload();
+            }
+          }
+        } catch (e) {}
+      }
+      if (r.status === 401) { logout(); throw new Error("Session expired — please log in again."); }
+    }
+    if (!r.ok) {
+      let msg = "Upload failed (" + r.status + ")";
+      try { const j = await r.json(); if (j && j.detail) msg = (typeof j.detail === "string") ? j.detail : JSON.stringify(j.detail); } catch(e){}
+      throw new Error(msg);
+    }
+    const j = await r.json();
+    toast("Published v" + version + " ✓", "success");
+    out.textContent = "✅ v" + version + " uploaded. Broadcast queued: " + (j.broadcastQueued || 0) + " users.";
+    document.getElementById("ext-version").value = "";
+    document.getElementById("ext-notes").value = "";
+    document.getElementById("ext-file").value = "";
+    loadExtensions();
+    loadCurrentVersionInfo();
+  } catch (e) {
+    out.textContent = "❌ " + e.message;
+    toast(e.message, "error");
+  }
+}
+
+async function makeLatest(id) {
+  if (!confirm("Mark this version as the LATEST served by /get?")) return;
+  try {
+    await api("/api/admin/extension/versions/" + id + "/make-latest", { method: "POST" });
+    toast("Marked as latest ✓", "success");
+    loadExtensions(); loadCurrentVersionInfo();
+  } catch (e) { toast(e.message, "error"); }
+}
+
+async function makeMinimum(id) {
+  if (!confirm("Set this as the MINIMUM required version? Every older extension will be paywalled.")) return;
+  try {
+    const j = await api("/api/admin/extension/versions/" + id + "/make-minimum", { method: "POST" });
+    toast("Minimum set to v" + j.version + " 🔒", "success");
+    loadExtensions(); loadCurrentVersionInfo();
+  } catch (e) { toast(e.message, "error"); }
+}
+
+async function deleteRelease(id, version) {
+  if (!confirm("Delete v" + version + "? This cannot be undone.")) return;
+  try {
+    await api("/api/admin/extension/versions/" + id, { method: "DELETE" });
+    toast("Deleted v" + version, "success");
+    loadExtensions(); loadCurrentVersionInfo();
+  } catch (e) { toast(e.message, "error"); }
+}
+
+async function broadcastRelease(id) {
+  if (!confirm("Broadcast this version to ALL users via Telegram DM?")) return;
+  try {
+    // FastAPI requires a JSON body for this route (BroadcastReleaseBody) —
+    // calling it bodiless returned 422 and the broadcast never fired.
+    const j = await api("/api/admin/extension/versions/" + id + "/broadcast", { method: "POST", body: JSON.stringify({}) });
+    toast("Broadcast queued: " + (j.queued || 0) + " users", "success");
+  } catch (e) { toast(e.message, "error"); }
+}
+
+async function cleanupInvalid() {
+  if (!confirm("Delete every version row whose version isn't semver (like bare '3')? Safe to run anytime.")) return;
+  try {
+    const j = await api("/api/admin/extension/cleanup-invalid", { method: "POST" });
+    if (j.removed_count === 0) {
+      toast("No invalid rows found — DB is clean ✓", "success");
+    } else {
+      toast("Deleted " + j.removed_count + " invalid row(s)", "success");
+    }
+    loadExtensions(); loadCurrentVersionInfo();
+  } catch (e) { toast(e.message, "error"); }
+}
+
+/* ---- Bootstrap ---- */
+(async function boot(){
+  if (!TOKEN) return;
+  try {
+    const s = await api("/api/auth/session");
+    if (s.user && s.user.isAdmin) showDashboard(s.user);
+    else { logout(); }
+  } catch (e) { logout(); }
+})();
+
+document.getElementById("in-tid").addEventListener("keypress", e => { if (e.key === "Enter") requestOTP(); });
+document.getElementById("in-otp").addEventListener("keypress", e => { if (e.key === "Enter") verifyOTP(); });
+</script>
+</body>
+</html>

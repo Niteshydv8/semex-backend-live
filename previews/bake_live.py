@@ -573,5 +573,9 @@ os.makedirs(OUT, exist_ok=True)
 shutil.copy(os.path.join(POPUP, 'dashboard.css'), os.path.join(OUT, 'dashboard.css'))
 shutil.copy(os.path.join(POPUP, 'dashboard-plus.js'), os.path.join(OUT, 'dashboard-plus.js'))
 shutil.copy(os.path.join(POPUP, 'logo-s.png'), os.path.join(OUT, 'logo-s.png'))
+# Copy admin panel so it's accessible from the preview hub
+ADMIN_SRC = os.path.join(ROOT, 'backend', 'static', 'admin.html')
+if os.path.exists(ADMIN_SRC):
+    shutil.copy(ADMIN_SRC, os.path.join(OUT, 'admin.html'))
 open(os.path.join(OUT, 'index.html'), 'w').write(src)
 print('baked previews/live/index.html')
