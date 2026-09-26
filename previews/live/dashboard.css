@@ -2665,3 +2665,25 @@ body::before {
   .history-actions .btn { padding: 6px 10px; font-size: 11.5px; }
   .hit-row-top { gap: 7px; }
 }
+
+/* ============================================================
+   TOPNAV BALANCE — single profile chip, Support never clipped
+   ============================================================ */
+
+/* identity lives in the topnav now; hero is greeting-only */
+.hero { margin-bottom: 20px; }
+
+/* tighter right cluster */
+.nav-actions { gap: 6px; }
+.wins-badge { gap: 5px; }
+.support-link { padding: 8px 14px; white-space: nowrap; }
+
+/* medium widths (901–1180px, above the 900px wrap breakpoint):
+   shrink labels so the whole cluster fits and Support stays on screen */
+@media (min-width: 901px) and (max-width: 1180px) {
+  #status-footer .sys-text { display: none; }
+  .wins-badge .wins-label { display: none; }
+  #version-text { padding: 4px 8px; }
+  .nav-item.tab:not(.active) { padding: 8px 12px; }
+  .nav-item.tab.active { padding: 8px 14px; }
+}
