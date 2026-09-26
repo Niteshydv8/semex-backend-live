@@ -2216,3 +2216,23 @@ input:focus, select:focus, textarea:focus {
 
 /* review polish: anchor the shine sweep to light pill buttons */
 .pill-btn.light { position: relative; }
+
+/* ============================================================
+   LIQUID METAL sheen — CSS emulation of the 21st.dev
+   liquid-metal shader button (violet-branded): a slow metallic
+   band flows continuously under the hover shine sweep.
+   ============================================================ */
+.btn-primary, .pill-btn.light {
+  background:
+    linear-gradient(100deg, transparent 35%, rgba(255, 255, 255, 0.20) 46%, rgba(196, 176, 255, 0.32) 50%, rgba(255, 255, 255, 0.20) 54%, transparent 65%),
+    linear-gradient(180deg, rgba(142, 107, 255, 0.85), rgba(124, 92, 252, 0.72));
+  background-size: 250% 100%, 100% 100%;
+  animation: metal-flow 4.5s linear infinite;
+}
+@keyframes metal-flow {
+  from { background-position: 130% 0, 0 0; }
+  to { background-position: -130% 0, 0 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .btn-primary, .pill-btn.light { animation: none !important; }
+}
