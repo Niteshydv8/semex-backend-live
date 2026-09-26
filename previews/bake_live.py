@@ -28,8 +28,8 @@ for el, v in [('total-cards','47'),('stats-charged','12'),('stats-ccn','5'),('st
     src = re.sub(r'(id="%s"[^>]*>)[^<]*' % el, r'\g<1>%s' % v, src)
 
 # Reveal owner-only admin nav + danger zone so everything is clickable
-src = src.replace('class="tab hidden" data-tab="admin"', 'class="tab" data-tab="admin"')
-src = src.replace('class="section admin-danger-zone hidden"', 'class="section admin-danger-zone"')
+src = src.replace('class="nav-item tab hidden" data-tab="admin"', 'class="nav-item tab" data-tab="admin"')
+src = src.replace('class="glass span-2 admin-danger-zone hidden"', 'class="glass span-2 admin-danger-zone"')
 
 def fill_deep(src, el_id, mock):
     m = re.search(r'<div[^>]*id="%s"[^>]*>' % re.escape(el_id), src)
@@ -73,7 +73,7 @@ for name,code,meta,badge in [("US Visa Platinum","424242","VISA · Chase · Unit
 src = fill_deep(src, 'saved-bins-list', BINS)
 
 # Proxy connected state + list
-src = src.replace('id="proxy-status-display" class="hidden proxy-status-card"', 'id="proxy-status-display" class="proxy-status-card"')
+src = src.replace('class="glass hidden proxy-status-card" id="proxy-status-display"', 'class="glass proxy-status-card" id="proxy-status-display"')
 src = src.replace('id="proxy-test-results" class="hidden proxy-results"', 'id="proxy-test-results" class="proxy-results"')
 src = src.replace('id="proxy-geo-flag" class="proxy-flag">🌍', 'id="proxy-geo-flag" class="proxy-flag">🇩🇪')
 src = src.replace('id="proxy-geo-country" class="proxy-country">Not Connected', 'id="proxy-geo-country" class="proxy-country">Germany')
@@ -110,14 +110,16 @@ src = fill_deep(src, 'releases-list', RELS)
 INTERACT = '''
 <script>
 // Live preview interactivity (preview only — the extension uses popup.js)
+function semexPreviewSwitch(tabName) {
+  document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
+  var panel = document.getElementById(tabName + '-tab');
+  if (panel) panel.classList.add('active');
+  document.querySelectorAll('.tab').forEach(function(t) { t.classList.toggle('active', t.dataset.tab === tabName); });
+}
 document.querySelectorAll('[data-tab]').forEach(function(btn) {
-  btn.addEventListener('click', function() {
-    document.querySelectorAll('.tab-panel').forEach(function(p) { p.classList.remove('active'); });
-    var panel = document.getElementById(btn.dataset.tab + '-tab');
-    if (panel) panel.classList.add('active');
-    document.querySelectorAll('.tab').forEach(function(t) { t.classList.toggle('active', t === btn); });
-  });
+  btn.addEventListener('click', function() { semexPreviewSwitch(btn.dataset.tab); });
 });
+if (location.hash.length > 1) semexPreviewSwitch(location.hash.slice(1));
 document.querySelectorAll('.hit-row-top, .tx-header').forEach(function(h) {
   h.addEventListener('click', function() {
     var body = h.parentElement.querySelector('.hit-row-body');
