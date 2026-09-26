@@ -2802,15 +2802,26 @@ body::before {
    LOGO REDESIGN + BOT SOURCE TOGGLE
    ============================================================ */
 
-/* new inline-SVG logo mark */
+/* actual user logo — dark-on-light image, inverted + colorized for dark UI */
 .sx-logo-mark {
   width: 36px; height: 36px; flex-shrink: 0;
   display: flex; align-items: center; justify-content: center;
-  filter: drop-shadow(0 0 8px rgba(139,108,255,0.45));
+  overflow: hidden;
   transition: filter 0.2s;
 }
-.sx-logo-mark:hover { filter: drop-shadow(0 0 14px rgba(139,108,255,0.7)); }
-.sx-logo-mark svg { width: 36px; height: 36px; }
+.sx-logo-img {
+  width: 48px; height: 48px;
+  object-fit: cover;
+  object-position: center 18%;
+  /* invert dark-on-light → light-on-dark, then shift to violet */
+  filter: invert(1) sepia(1) saturate(2.5) hue-rotate(225deg)
+          drop-shadow(0 0 7px rgba(139,108,255,0.55));
+  transition: filter 0.2s;
+}
+.sx-logo-mark:hover .sx-logo-img {
+  filter: invert(1) sepia(1) saturate(3.5) hue-rotate(225deg)
+          drop-shadow(0 0 14px rgba(139,108,255,0.8));
+}
 
 .sx-logo-text {
   display: flex; flex-direction: column; gap: 0; line-height: 1;
