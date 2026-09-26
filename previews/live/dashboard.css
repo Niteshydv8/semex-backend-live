@@ -2139,3 +2139,77 @@ button.btn-primary, .btn-primary { background: linear-gradient(180deg, var(--vio
   .rev-bar, .btn-primary::after, .saved-bins-empty, .news-loading,
   .notif-badge:not(.hidden), .stat-val.sx-tick { animation: none !important; }
 }
+
+/* ============================================================
+   LIQUID GLASS BUTTONS — 21st.dev liquid-glass/metal button
+   treatment adapted to vanilla CSS: layered inset highlights,
+   glass depth, hover brightness, pressed physics, shine sweep.
+   ============================================================ */
+:root {
+  --liquid-shadow:
+    0 0 6px rgba(0, 0, 0, 0.03),
+    0 2px 6px rgba(0, 0, 0, 0.10),
+    inset 3px 3px 0.5px -3.5px rgba(255, 255, 255, 0.10),
+    inset -3px -3px 0.5px -3.5px rgba(255, 255, 255, 0.30),
+    inset 1px 1px 1px -0.5px rgba(255, 255, 255, 0.35),
+    inset -1px -1px 1px -0.5px rgba(255, 255, 255, 0.22),
+    inset 0 0 6px 6px rgba(255, 255, 255, 0.04),
+    inset 0 0 2px 2px rgba(255, 255, 255, 0.03),
+    0 0 12px rgba(0, 0, 0, 0.15);
+}
+
+/* neutral liquid glass on every button flavor */
+.btn, .pill-btn, .mode-btn, .filter-btn, .saved-bin-btn, .admin-btn,
+.hit-copy-btn, .tx-copy-btn, .circle-btn, .news-refresh-btn {
+  background: rgba(255, 255, 255, 0.06);
+  border: 1px solid rgba(255, 255, 255, 0.10);
+  box-shadow: var(--liquid-shadow);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* violet liquid glass — primary */
+.btn-primary, .pill-btn.light {
+  background: linear-gradient(180deg, rgba(142, 107, 255, 0.85), rgba(124, 92, 252, 0.72));
+  border: 1px solid rgba(157, 124, 252, 0.45);
+  box-shadow: var(--liquid-shadow), 0 4px 18px rgba(124, 92, 252, 0.35);
+  color: #fff;
+  overflow: hidden; /* contain the shine sweep */
+}
+/* border beam moves inside so the shine can clip safely */
+.btn-primary::after { inset: 0; }
+/* shine sweep on hover (MetalButton ShineEffect) */
+.btn-primary::before, .pill-btn.light::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; z-index: 0;
+  background: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, 0.28) 50%, transparent 70%);
+  transform: translateX(-130%); transition: transform 0.55s ease; pointer-events: none;
+}
+.btn-primary:hover::before, .pill-btn.light:hover::before { transform: translateX(130%); }
+.btn-primary > *, .pill-btn.light > * { position: relative; z-index: 1; }
+
+/* red liquid glass — danger */
+.btn-danger {
+  background: linear-gradient(180deg, rgba(248, 113, 113, 0.20), rgba(248, 113, 113, 0.12));
+  border: 1px solid rgba(248, 113, 113, 0.40);
+  color: #FCA5A5;
+  box-shadow: var(--liquid-shadow), 0 4px 16px rgba(248, 113, 113, 0.16);
+}
+
+/* metal-button physics: hover brighten, pressed sink */
+.btn:hover, .pill-btn:hover, .mode-btn:hover, .filter-btn:hover,
+.saved-bin-btn:hover, .admin-btn:hover, .circle-btn:hover { filter: brightness(1.10); }
+.btn:active, .pill-btn:active, .mode-btn:active, .filter-btn:active,
+.saved-bin-btn:active, .admin-btn:active, .circle-btn:active {
+  transform: translateY(1.5px) scale(0.98);
+  filter: brightness(0.94);
+}
+
+/* inputs get a hint of the same inset glass depth */
+input, select, textarea { box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.28); }
+input:focus, select:focus, textarea:focus {
+  box-shadow: inset 0 1px 3px rgba(0, 0, 0, 0.28), 0 0 0 3px rgba(124, 92, 252, 0.20);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-primary::before, .pill-btn.light::before { transition: none; }
+}
