@@ -64,249 +64,125 @@ body { font-family: 'DM Sans', sans-serif; background: #f8f9fa; min-height: 100v
 .powered { text-align: center; font-size: 12px; color: #94a3b8; }
 .powered span { color: #635BFF; font-weight: 600; }
 
-/* ── SEMEX Overlay — APEX redesign ── */
-:root {
-  --sx-purple: #7C5CFC;
-  --sx-purple-hi: #9B7BFF;
-  --sx-pink:   #EC4899;
-  --sx-green:  #00D084;
-  --sx-blue:   #38BDF8;
-  --sx-red:    #F87171;
-  --sx-amber:  #FBBF24;
-  --sx-bg:     #0b0c18;
-  --sx-card:   #0f1020;
-  --sx-border: rgba(255,255,255,0.07);
-  --sx-mut:    rgba(255,255,255,0.35);
-  --sx-soft:   rgba(255,255,255,0.55);
-}
-
-@keyframes pulse { 0%,100%{opacity:1}50%{opacity:.3} }
-@keyframes scan  { 0%{background-position:0 0}100%{background-position:0 100%} }
+/* ── SEMEX Overlay — Jetix layout ── */
+@keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:.4} }
 
 .semex-overlay {
   position: absolute; bottom: 20px; left: 20px;
-  z-index: 999; font-family: 'DM Sans', sans-serif; contain: layout style;
+  z-index: 999;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 13px; color: #e2e8f0; line-height: 1.4;
+  user-select: none;
 }
 
-/* ── Panel shell ── */
+/* ── Full panel ── */
 .overlay-full {
-  width: 228px;
-  background: var(--sx-bg);
-  border: 1px solid var(--sx-border);
+  display: flex; flex-direction: column;
+  width: 300px;
+  background: rgba(15,23,42,0.95);
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(255,255,255,0.1);
   border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
   overflow: hidden;
-  color: white;
-  box-shadow:
-    0 0 0 1px rgba(124,92,252,0.15),
-    0 24px 64px rgba(0,0,0,0.7),
-    inset 0 1px 0 rgba(255,255,255,0.05);
 }
 
-/* ── Header ── */
-.sx-header {
-  background: linear-gradient(180deg, #13142b 0%, #0e0f1e 100%);
-  padding: 10px 11px 9px;
+/* header */
+.full-header {
   display: flex; align-items: center; justify-content: space-between;
-  border-bottom: 1px solid var(--sx-border);
+  padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,0.06);
 }
-.sx-brand { display: flex; align-items: center; gap: 7px; }
-.sx-logo {
-  width: 24px; height: 24px; border-radius: 7px; flex-shrink: 0;
-  background: linear-gradient(135deg, var(--sx-purple), var(--sx-pink));
+.full-brand { display: flex; align-items: center; gap: 8px; }
+.full-brand-logo {
+  width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
+  background: linear-gradient(135deg, #8B5CF6, #EC4899);
   display: flex; align-items: center; justify-content: center;
-  font-size: 10px; font-weight: 900; color: white;
-  box-shadow: 0 4px 12px rgba(124,92,252,0.45);
+  color: #fff; font-weight: 700; font-size: 14px;
 }
-.sx-wordmark { font-size: 12px; font-weight: 800; color: white; letter-spacing: 0.04em; }
-.sx-version  { font-size: 9px; color: var(--sx-mut); font-weight: 500; letter-spacing: 0.02em; }
-.sx-hbtns { display: flex; gap: 3px; }
-.sx-hbtn {
-  width: 22px; height: 22px; border-radius: 6px;
-  border: 1px solid rgba(255,255,255,0.07); background: rgba(255,255,255,0.04);
-  color: var(--sx-mut); font-size: 11px; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  transition: background 0.15s, color 0.15s;
+.full-brand-text { display: flex; flex-direction: column; }
+.full-brand-name { font-weight: 700; font-size: 14px; color: #fff; }
+.full-brand-tag  { font-size: 10px; color: #64748b; }
+.header-btns { display: flex; gap: 4px; }
+.header-btn {
+  padding: 4px 8px; border: none; border-radius: 6px;
+  background: rgba(255,255,255,0.06); color: #94a3b8;
+  font-size: 11px; cursor: pointer; transition: all 0.2s;
 }
-.sx-hbtn:hover { background: rgba(255,255,255,0.09); color: rgba(255,255,255,0.75); }
+.header-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
 
-/* ── Status row ── */
-.sx-status {
-  display: flex; align-items: center; justify-content: space-between;
-  padding: 7px 11px;
-  background: rgba(124,92,252,0.04);
-  border-bottom: 1px solid var(--sx-border);
-}
-.sx-status-left { display: flex; align-items: center; gap: 6px; }
-.sx-dot {
-  width: 6px; height: 6px; border-radius: 50%;
-  background: var(--sx-blue); animation: pulse 1.6s infinite;
-  box-shadow: 0 0 6px rgba(56,189,248,0.7);
-}
-.sx-status-text { font-size: 10.5px; color: rgba(255,255,255,0.7); font-weight: 500; }
-.sx-type-badge {
-  font-size: 8.5px; font-weight: 800; letter-spacing: 0.08em;
-  padding: 2px 7px; border-radius: 4px;
-  background: rgba(124,92,252,0.18); border: 1px solid rgba(124,92,252,0.3);
-  color: var(--sx-purple-hi);
-}
+/* body */
+.full-body { padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
 
-/* ── Stats grid: 2 × 2 ── */
-.sx-stats {
-  display: grid; grid-template-columns: 1fr 1fr;
-  border-bottom: 1px solid var(--sx-border);
-}
-.sx-stat {
-  display: flex; flex-direction: column; align-items: center;
-  padding: 9px 0 8px; gap: 2px;
-  border-right: 1px solid var(--sx-border);
-  border-bottom: 1px solid var(--sx-border);
-}
-.sx-stat:nth-child(2), .sx-stat:nth-child(4) { border-right: none; }
-.sx-stat:nth-child(3), .sx-stat:nth-child(4) { border-bottom: none; }
-.sx-stat-lbl {
-  font-size: 8px; font-weight: 700; letter-spacing: 0.1em;
-  text-transform: uppercase; color: var(--sx-mut);
-}
-.sx-stat-val {
-  font-size: 20px; font-weight: 700; font-family: 'JetBrains Mono', monospace;
-  line-height: 1;
-}
-.sx-stat-val.c-white  { color: #fff; }
-.sx-stat-val.c-green  { color: var(--sx-green); text-shadow: 0 0 10px rgba(0,208,132,0.4); }
-.sx-stat-val.c-blue   { color: var(--sx-blue);  text-shadow: 0 0 10px rgba(56,189,248,0.4); }
-.sx-stat-val.c-red    { color: var(--sx-red);   text-shadow: 0 0 10px rgba(248,113,113,0.4); }
-
-/* ── Mode toggle ── */
-.sx-mode {
-  display: flex; padding: 8px 11px;
-  border-bottom: 1px solid var(--sx-border);
-  background: rgba(255,255,255,0.01);
-}
-.sx-mode-track {
-  flex: 1; display: flex;
-  background: rgba(255,255,255,0.04); border: 1px solid var(--sx-border);
-  border-radius: 7px; overflow: hidden;
-}
-.sx-mode-opt {
-  flex: 1; padding: 4px 0; border: none; background: transparent;
-  color: var(--sx-mut); font-size: 10.5px; font-weight: 700;
-  letter-spacing: 0.05em; cursor: pointer; font-family: 'DM Sans', sans-serif;
-  transition: background 0.15s, color 0.15s;
-}
-.sx-mode-opt.active {
-  background: linear-gradient(135deg, rgba(124,92,252,0.35), rgba(124,92,252,0.2));
-  color: var(--sx-purple-hi);
-  border-radius: 6px;
-}
-
-/* ── Active card chip ── */
-.sx-card {
-  margin: 8px 11px;
-  background: linear-gradient(135deg, #1a1830 0%, #151326 100%);
-  border: 1px solid rgba(124,92,252,0.2);
-  border-radius: 9px; padding: 8px 10px;
-  display: flex; align-items: center; justify-content: space-between;
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
-}
-.sx-card-left { display: flex; flex-direction: column; gap: 2px; }
-.sx-card-tag { font-size: 8px; font-weight: 700; letter-spacing: 0.08em; color: var(--sx-mut); text-transform: uppercase; }
-.sx-card-num {
-  font-family: 'JetBrains Mono', monospace; font-size: 11px;
-  font-weight: 600; color: #fff; letter-spacing: 0.06em;
-}
-.sx-card-btns { display: flex; gap: 4px; }
-.sx-card-btn {
-  width: 22px; height: 22px; border-radius: 6px;
-  border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.05);
-  color: var(--sx-mut); font-size: 10px; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-}
-
-/* ── CC List ── */
-.sx-list {
-  padding: 0 11px 8px; display: flex; flex-direction: column; gap: 3px;
-}
-.sx-list-item {
+/* status */
+.full-status {
   display: flex; align-items: center; gap: 8px;
-  padding: 5px 8px; border-radius: 7px;
-  background: rgba(255,255,255,0.025);
-  border-left: 2.5px solid transparent;
+  padding: 8px 10px; border-radius: 8px;
+  background: rgba(255,255,255,0.04);
 }
-.sx-list-item.is-use  { border-left-color: var(--sx-purple); }
-.sx-list-item.is-live { border-left-color: var(--sx-green); }
-.sx-list-item.is-dead { border-left-color: rgba(255,255,255,0.12); }
-.sx-list-num {
-  flex: 1; font-family: 'JetBrains Mono', monospace; font-size: 9.5px;
-  color: rgba(255,255,255,0.65);
-}
-.sx-list-tag { font-size: 8px; font-weight: 800; letter-spacing: 0.07em; }
-.sx-list-tag.use  { color: var(--sx-purple-hi); }
-.sx-list-tag.live { color: var(--sx-green); }
-.sx-list-tag.dead { color: rgba(255,255,255,0.2); }
+.full-status-icon { font-size: 16px; }
+.full-status-text { font-size: 12px; font-weight: 500; }
 
-/* ── Controls ── */
-.sx-ctrl {
-  display: flex; gap: 5px; padding: 0 11px 10px;
-}
-.sx-btn-pause {
-  flex: 1; padding: 8px 0; border-radius: 8px; border: none;
-  background: linear-gradient(135deg, #9B7BFF 0%, #7C5CFC 60%, #6346E0 100%);
-  color: white; font-size: 11.5px; font-weight: 700; cursor: pointer;
-  font-family: 'DM Sans', sans-serif;
-  display: flex; align-items: center; justify-content: center; gap: 5px;
-  box-shadow: 0 4px 16px rgba(124,92,252,0.4);
-  letter-spacing: 0.01em;
-}
-.sx-btn-stop {
-  width: 34px; border-radius: 8px;
-  border: 1px solid rgba(248,113,113,0.25);
-  background: rgba(248,113,113,0.08);
-  color: var(--sx-red); font-size: 12px;
-  cursor: pointer; display: flex; align-items: center; justify-content: center;
-}
-.sx-btn-lock {
-  width: 34px; border-radius: 8px;
-  border: 1px solid var(--sx-border);
+/* stats */
+.full-stats {
+  display: flex; align-items: center; position: relative;
+  padding: 6px 8px; border-radius: 8px;
   background: rgba(255,255,255,0.03);
-  color: var(--sx-mut); font-size: 12px;
-  cursor: pointer; display: flex; align-items: center; justify-content: center;
 }
+.stat-item { flex: 1; text-align: center; }
+.stat-label { display: block; font-size: 9px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
+.stat-value { display: block; font-size: 16px; font-weight: 700; color: #e2e8f0; }
+.stat-value.charged { color: #10b981; }
+.stat-value.live    { color: #f59e0b; }
+.stat-value.dead    { color: #ef4444; }
+.stat-div { width: 1px; height: 24px; background: rgba(255,255,255,0.08); }
 
-/* ── Footer info strip ── */
-.sx-footer {
-  border-top: 1px solid var(--sx-border);
-  background: rgba(0,0,0,0.2);
-  padding: 5px 11px;
-  display: grid; grid-template-columns: 1fr 1fr;
-  gap: 2px 0;
+/* details */
+.full-details { display: flex; flex-direction: column; gap: 4px; }
+.detail-row {
+  display: flex; justify-content: space-between; align-items: center;
+  font-size: 11px; padding: 2px 0;
 }
-.sx-fi {
-  font-size: 8.5px; color: var(--sx-mut);
-  font-family: 'JetBrains Mono', monospace;
-}
-.sx-fi b { color: rgba(255,255,255,0.65); font-weight: 500; }
-.sx-fi.full { grid-column: 1 / -1; }
+.detail-row span:first-child { color: #64748b; }
+.detail-val { color: #e2e8f0; font-weight: 500; font-family: 'Courier New', monospace; }
 
-/* ── Pill (minimized) ── */
+/* controls */
+.full-controls { display: flex; gap: 6px; padding-top: 4px; }
+.ctrl-btn {
+  flex: 1; padding: 7px 0; border: none; border-radius: 8px;
+  font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;
+  display: flex; align-items: center; justify-content: center; gap: 4px;
+}
+.ctrl-btn.start  { background: #10b981; color: #fff; }
+.ctrl-btn.start:hover { background: #059669; }
+.ctrl-btn.pause  { background: #f59e0b; color: #000; }
+.ctrl-btn.pause:hover { background: #d97706; }
+.ctrl-btn.stop   { background: rgba(239,68,68,0.15); color: #ef4444; flex: 0 0 36px; }
+.ctrl-btn.stop:hover { background: rgba(239,68,68,0.25); }
+.ctrl-btn.blur   { background: rgba(255,255,255,0.06); color: #94a3b8; flex: 0 0 36px; }
+.ctrl-btn.blur:hover { background: rgba(255,255,255,0.12); color: #fff; }
+
+/* ── Pill ── */
 .overlay-pill {
   display: inline-flex; align-items: center; gap: 8px;
-  background: rgba(11,12,24,0.95);
-  border: 1px solid rgba(255,255,255,0.08);
-  border-radius: 999px; padding: 6px 14px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(124,92,252,0.12);
-  margin-left: 12px; cursor: pointer; vertical-align: middle;
+  padding: 6px 10px;
+  background: rgba(15,23,42,0.92);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255,255,255,0.1);
+  border-radius: 24px;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+  cursor: pointer; margin-left: 12px; vertical-align: middle;
 }
 .pill-logo {
-  width: 22px; height: 22px; border-radius: 50%;
-  background: linear-gradient(135deg, var(--sx-purple), var(--sx-pink));
+  width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0;
+  background: linear-gradient(135deg, #8B5CF6, #EC4899);
   display: flex; align-items: center; justify-content: center;
-  font-size: 9px; font-weight: 900; color: white; flex-shrink: 0;
+  color: #fff; font-weight: 700; font-size: 12px;
 }
-.pill-text { font-size: 11px; color: rgba(255,255,255,0.75); font-weight: 500; }
 .pill-dot-sm {
-  width: 6px; height: 6px; border-radius: 50%; background: var(--sx-green);
-  animation: pulse 1.6s infinite; box-shadow: 0 0 5px rgba(0,208,132,0.6);
+  width: 6px; height: 6px; border-radius: 50%;
+  background: #10b981; animation: pulse-dot 2s infinite; flex-shrink: 0;
 }
+.pill-text { font-size: 12px; font-weight: 500; }
 
 /* ── Embed Popup — Jetix-style (exact match from extension) ── */
 @keyframes semex-ep-in {
@@ -424,119 +300,102 @@ body { font-family: 'DM Sans', sans-serif; background: #f8f9fa; min-height: 100v
     <div class="powered">Powered by <span>semex</span> | Terms | Privacy</div>
   </div>
 
-  <!-- SEMEX Overlay — APEX redesign (Full state) -->
+  <!-- SEMEX Overlay — Jetix layout -->
   <div class="semex-overlay" style="position:absolute;bottom:20px;left:20px;">
     <div style="position:relative">
       <div class="overlay-full">
 
         <!-- Header -->
-        <div class="sx-header">
-          <div class="sx-brand">
-            <div class="sx-logo">S</div>
-            <div>
-              <div class="sx-wordmark">SEMEX</div>
-              <div class="sx-version">v5.0.0</div>
+        <div class="full-header">
+          <div class="full-brand">
+            <div class="full-brand-logo">S</div>
+            <div class="full-brand-text">
+              <div class="full-brand-name">SEMEX</div>
+              <div class="full-brand-tag">Automation v5.0.0</div>
             </div>
           </div>
-          <div class="sx-hbtns">
-            <button class="sx-hbtn" title="Settings">⚙</button>
-            <button class="sx-hbtn" title="Minimize">−</button>
+          <div class="header-btns">
+            <button class="header-btn">⚙</button>
+            <button class="header-btn">−</button>
           </div>
         </div>
 
-        <!-- Status -->
-        <div class="sx-status">
-          <div class="sx-status-left">
-            <div class="sx-dot"></div>
-            <span class="sx-status-text">Waiting response…</span>
-          </div>
-          <span class="sx-type-badge">CHECKOUT</span>
-        </div>
+        <!-- Body -->
+        <div class="full-body">
 
-        <!-- Stats 2×2 grid -->
-        <div class="sx-stats">
-          <div class="sx-stat">
-            <div class="sx-stat-lbl">ATT</div>
-            <div class="sx-stat-val c-white">1</div>
+          <!-- Status -->
+          <div class="full-status">
+            <div class="full-status-icon">⏳</div>
+            <div class="full-status-text">Waiting response…</div>
           </div>
-          <div class="sx-stat">
-            <div class="sx-stat-lbl">CHD</div>
-            <div class="sx-stat-val c-green">0</div>
-          </div>
-          <div class="sx-stat">
-            <div class="sx-stat-lbl">LIVE</div>
-            <div class="sx-stat-val c-blue">0</div>
-          </div>
-          <div class="sx-stat">
-            <div class="sx-stat-lbl">DEAD</div>
-            <div class="sx-stat-val c-red">0</div>
-          </div>
-        </div>
 
-        <!-- Mode toggle -->
-        <div class="sx-mode">
-          <div class="sx-mode-track">
-            <button class="sx-mode-opt">BIN</button>
-            <button class="sx-mode-opt active">CC</button>
+          <!-- Stats row -->
+          <div class="full-stats">
+            <div class="stat-item">
+              <span class="stat-label">Attempts</span>
+              <span class="stat-value">1</span>
+            </div>
+            <div class="stat-div"></div>
+            <div class="stat-item">
+              <span class="stat-label">Charged</span>
+              <span class="stat-value charged">0</span>
+            </div>
+            <div class="stat-div"></div>
+            <div class="stat-item">
+              <span class="stat-label">Live</span>
+              <span class="stat-value live">0</span>
+            </div>
+            <div class="stat-div"></div>
+            <div class="stat-item">
+              <span class="stat-label">Dead</span>
+              <span class="stat-value dead">0</span>
+            </div>
           </div>
-        </div>
 
-        <!-- Active card chip -->
-        <div class="sx-card">
-          <div class="sx-card-left">
-            <div class="sx-card-tag">Active Card</div>
-            <div class="sx-card-num">411111 •••• 1111</div>
+          <!-- Details -->
+          <div class="full-details">
+            <div class="detail-row">
+              <span>Card</span>
+              <span class="detail-val">411111 •••• 1111</span>
+            </div>
+            <div class="detail-row">
+              <span>Mode</span>
+              <span class="detail-val">CC List</span>
+            </div>
+            <div class="detail-row">
+              <span>Type</span>
+              <span class="detail-val">LAND</span>
+            </div>
+            <div class="detail-row">
+              <span>IP</span>
+              <span class="detail-val">2405:acc8:…</span>
+            </div>
+            <div class="detail-row">
+              <span>Time</span>
+              <span class="detail-val">00:08</span>
+            </div>
           </div>
-          <div class="sx-card-btns">
-            <button class="sx-card-btn" title="Swap">⇄</button>
-            <button class="sx-card-btn" title="Lock">🔒</button>
-          </div>
-        </div>
 
-        <!-- CC List -->
-        <div class="sx-list">
-          <div class="sx-list-item is-use">
-            <span class="sx-list-num">4111 •••• 1111</span>
-            <span class="sx-list-tag use">USE</span>
+          <!-- Controls -->
+          <div class="full-controls">
+            <button class="ctrl-btn pause">⏸ Pause</button>
+            <button class="ctrl-btn stop">⏹</button>
+            <button class="ctrl-btn blur">🔒</button>
           </div>
-          <div class="sx-list-item is-live">
-            <span class="sx-list-num">5200 •••• 2587</span>
-            <span class="sx-list-tag live">LIVE</span>
-          </div>
-          <div class="sx-list-item is-dead">
-            <span class="sx-list-num">4532 •••• 7943</span>
-            <span class="sx-list-tag dead">DEAD</span>
-          </div>
-        </div>
 
-        <!-- Controls -->
-        <div class="sx-ctrl">
-          <button class="sx-btn-pause">⏸ Pause</button>
-          <button class="sx-btn-stop">⏹</button>
-          <button class="sx-btn-lock">🔒</button>
         </div>
-
-        <!-- Footer info -->
-        <div class="sx-footer">
-          <div class="sx-fi">TYPE:<b>LAND</b></div>
-          <div class="sx-fi">ATTS:<b>1</b></div>
-          <div class="sx-fi">SPD:<b>–</b></div>
-          <div class="sx-fi">TIME:<b>00:08</b></div>
-          <div class="sx-fi full">IP:<b>2405:acc8:1234:…</b></div>
-        </div>
-
       </div>
       <span class="tab-label">← Full (expanded) state</span>
     </div>
   </div>
 
   <!-- Pill state demo -->
-  <div style="position:absolute;bottom:220px;left:20px;display:flex;align-items:center">
+  <div style="position:absolute;bottom:310px;left:20px;display:flex;align-items:center">
     <div style="position:relative">
       <div class="overlay-pill">
         <div class="pill-logo">S</div>
         <div class="pill-dot-sm"></div>
-        <span class="pill-text">Ready</span>
+        <span class="pill-text">Processing #1</span>
       </div>
       <span class="tab-label">← Pill (minimized) state</span>
     </div>
