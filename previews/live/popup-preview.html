@@ -1,0 +1,1017 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SEMEX — Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link rel="stylesheet"
+        href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap">
+    <link rel="stylesheet" href="dashboard.css?v=5">
+</head>
+
+<body>
+    <div class="panel container app-container">
+
+        <!-- ══ TOP NAV (PixelZero topnav) ══ -->
+        <header class="topnav">
+            <div class="logo brand">
+                <div class="sx-logo-mark" aria-hidden="true">
+                    <img src="logo-s.png" class="sx-logo-img" alt="">
+                </div>
+                <div class="sx-logo-text">
+                    <span class="sx-logo-word">SEMEX</span>
+                    
+                </div>
+            </div>
+
+            <nav class="nav-pills tabs" data-testid="sidebar-nav">
+                <button class="nav-item tab active" data-tab="bypass" data-testid="nav-bypass">
+                    <svg viewBox="0 0 24 24" class="nav-ico"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg>
+                    <span>Dashboard</span>
+                </button>
+                <button class="nav-item tab" data-tab="history" data-testid="nav-history">
+                    <svg viewBox="0 0 24 24" class="nav-ico"><path d="M3 3v18h18"/><path d="m7 14 4-4 3 3 5-6"/></svg>
+                    <span>Hits</span>
+                </button>
+                <button class="nav-item tab" data-tab="bins" data-testid="nav-bins">
+                    <svg viewBox="0 0 24 24" class="nav-ico"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18M7 15h3"/></svg>
+                    <span>Bins</span>
+                </button>
+                <button class="nav-item tab" data-tab="captcha" data-testid="nav-captcha">
+                    <svg viewBox="0 0 24 24" class="nav-ico"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6l-8-4z"/><path d="m9 12 2 2 4-4"/></svg>
+                    <span>Captcha</span>
+                </button>
+                <button class="nav-item tab" data-tab="proxy" data-testid="nav-proxy">
+                    <svg viewBox="0 0 24 24" class="nav-ico"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 3 2.5 15 0 18M12 3c-2.5 3-2.5 15 0 18"/></svg>
+                    <span>Proxy</span>
+                </button>
+                <button class="nav-item tab" data-tab="settings" data-testid="nav-settings">
+                    <svg viewBox="0 0 24 24" class="nav-ico"><circle cx="12" cy="12" r="3"/><path d="M19 12a7 7 0 0 0-.1-1l2-1.6-2-3.4-2.4 1a7 7 0 0 0-1.7-1L14.5 3h-4l-.3 2.9a7 7 0 0 0-1.7 1l-2.4-1-2 3.4 2 1.6a7 7 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 1.7 1l.3 2.9h4l.3-2.9a7 7 0 0 0 1.7-1l2.4 1 2-3.4-2-1.6c.1-.3.1-.7.1-1z"/></svg>
+                    <span>Settings</span>
+                </button>
+                <button class="nav-item tab hidden" data-tab="news" data-testid="nav-news">
+                    <svg viewBox="0 0 24 24" class="nav-ico"><path d="M4 4h16v16H4z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>
+                    <span>News</span>
+                </button>
+                <button class="nav-item tab hidden" data-tab="admin" data-testid="nav-admin" id="nav-admin">
+                    <svg viewBox="0 0 24 24" class="nav-ico"><path d="M12 2 4 5v6c0 5 3.5 8.5 8 11 4.5-2.5 8-6 8-11V5l-8-3z"/><path d="M9 12h6M12 9v6"/></svg>
+                    <span>Admin</span>
+                </button>
+            </nav>
+
+            <div class="nav-actions">
+
+
+                <!-- Notification Bell -->
+                <div class="notif-wrap">
+                    <button id="notif-bell" class="circle-btn notif-bell" title="Notifications" data-testid="notif-bell">
+                        <svg viewBox="0 0 24 24">
+                            <path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"></path>
+                        </svg>
+                        <span class="notif-badge hidden" id="notif-badge">0</span>
+                    </button>
+                </div>
+
+                <!-- User Badge -->
+                <div id="user-badge" class="user-info-group hidden">
+                    <div class="user-badge-row" id="user-badge-container" title="User">
+                        <img id="user-avatar" src="../icons/default-avatar.png" class="user-avatar">
+                        <div class="user-meta">
+                            <div class="user-name" id="user-name">User</div>
+                            <span id="user-plan" class="plan-badge"></span>
+                        </div>
+                        <button id="logout-btn" class="circle-btn logout-btn" title="Logout" data-testid="logout-btn">
+                            <svg viewBox="0 0 24 24"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><path d="m16 17 5-5-5-5M21 12H9"/></svg>
+                        </button>
+                        <div class="user-tooltip" id="user-tooltip">
+                            <span id="tooltip-username">User</span>
+                        </div>
+                    </div>
+                </div>
+
+                <a href="https://t.me/Semexautoxbot" target="_blank" class="pill-btn support-link" data-testid="contact-support">Support</a>
+            </div>
+        </header>
+
+        <!-- Notification Dropdown -->
+        <div class="notif-dropdown hidden" id="notif-dropdown">
+            <div class="notif-dropdown-header">
+                <span>Notifications</span>
+                <span class="notif-clear-all" id="notif-clear-all" data-testid="notif-clear-all">Clear All</span>
+            </div>
+            <div class="notif-list" id="notif-list">
+                <div class="notif-empty">No new notifications</div>
+            </div>
+        </div>
+
+        <!-- Announcement Banner -->
+        <div class="announcement-banner hidden" id="announcement-banner">
+            <div class="announcement-icon">
+                <svg viewBox="0 0 24 24"><path d="M3 11l18-5v12L3 14v-3zM11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg>
+            </div>
+            <div class="announcement-text" id="announcement-text">Announcement message here</div>
+            <button class="announcement-dismiss" id="announcement-dismiss" title="Dismiss"
+                data-testid="announcement-dismiss">&times;</button>
+        </div>
+
+        <!-- Subscription Status Banner -->
+        <div class="trial-banner hidden" id="trial-banner">
+            <div class="trial-banner-content">
+                <div class="trial-icon" id="trial-icon">
+                    <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>
+                </div>
+                <div class="trial-info">
+                    <div class="trial-title" id="trial-title">Premium Active</div>
+                    <div class="trial-countdown" id="trial-countdown">Loading...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══ DASHBOARD (PixelZero section-home) ══ -->
+        <section class="section tab-panel active" id="bypass-tab">
+
+            <div class="hero">
+                <div class="welcome" id="welcomeBox">Welcome back, <b id="page-title">Operator</b></div>
+                <div class="hero-status">
+                <div class="status-footer" id="status-footer">
+                    <div class="sys-stat">
+                        <div class="sys-dot" id="sys-dot"></div>
+                        <span class="sys-text" id="sys-text">Connecting...</span>
+                    </div>
+                    <span class="version-text" id="version-text">v...</span>
+                </div>
+                <!-- Session wins streak badge -->
+                <div id="session-wins-badge" class="wins-badge hidden" title="Charged hits this session" data-testid="session-wins-badge">
+                    <svg class="wins-flame" viewBox="0 0 24 24"><path d="M12 2c1 3-1.5 4.5-1.5 7A2.5 2.5 0 0 0 13 11c1.5 0 2-1 2-1 .5 2 2 3 2 5.5A5.5 5.5 0 1 1 6.5 15c0-3 2-4 2.5-6 .3-1.2 0-2.5 3-7z"/></svg>
+                    <span id="session-wins-count">0</span>
+                    <span class="wins-label">wins</span>
+                </div>
+                </div>
+            </div>
+
+            <!-- Stats — their rev-row -->
+            <div class="stats rev-row" id="stats-section">
+                <div class="rev-left stat" data-stat="total">
+                    <div class="rev-label stat-label">Total Attempts</div>
+                    <div class="rev-big"><span class="stat-val blue" id="total-cards">0</span></div>
+                </div>
+                <div class="rev-chart">
+                    <div class="rev-graph">
+                        <div class="stat" data-stat="charged">
+                            <div class="rev-stat-lab stat-label"><span class="pct">Charged</span></div>
+                            <div class="rev-other-val stat-val green" id="stats-charged">0</div>
+                        </div>
+                        <div class="stat" data-stat="live">
+                            <div class="rev-stat-lab stat-label"><span class="pct">Live</span></div>
+                            <div class="rev-other-val stat-val purple" id="stats-ccn">0</div>
+                            <div class="rev-bars" aria-hidden="true" style="height:30px;margin-top:8px;">
+                                <i class="rev-bar" style="height:35%"></i><i class="rev-bar" style="height:55%"></i><i class="rev-bar" style="height:42%"></i><i class="rev-bar" style="height:70%"></i><i class="rev-bar" style="height:50%"></i><i class="rev-bar" style="height:82%"></i><i class="rev-bar" style="height:64%"></i><i class="rev-bar" style="height:92%"></i><i class="rev-bar" style="height:58%"></i><i class="rev-bar" style="height:76%"></i><i class="rev-bar" style="height:66%"></i><i class="rev-bar" style="height:88%"></i><i class="rev-bar" style="height:74%"></i><i class="rev-bar" style="height:96%"></i>
+                            </div>
+                        </div>
+                        <div class="rev-other stat" data-stat="dead">
+                            <div class="rev-stat-lab stat-label">Dead</div>
+                            <div class="rev-other-val stat-val red" id="stats-dead">0</div>
+                        </div>
+                    </div>
+                    <div class="rev-dates"><span>Real-time</span><span>session</span></div>
+                </div>
+            </div>
+
+            <!-- Quick Status — mirrors of key settings so nothing needs a tab switch -->
+            <div class="glass sx-qs-strip" id="sx-qs-strip">
+                <div class="sx-qs-chip"><span class="sx-qs-dot" id="sx-qs-proxy-dot"></span><span class="sx-qs-label">Proxy</span><span class="sx-qs-val" id="sx-qs-proxy">&hellip;</span></div>
+                <div class="sx-qs-chip"><span class="sx-qs-dot violet"></span><span class="sx-qs-label">Captcha</span><span class="sx-qs-val" id="sx-qs-captcha">&hellip;</span></div>
+                <div class="sx-qs-chip"><span class="sx-qs-dot violet"></span><span class="sx-qs-label">Active BIN</span><span class="sx-qs-val mono" id="sx-qs-bin">&hellip;</span></div>
+                <div class="sx-qs-chip"><span class="sx-qs-dot violet"></span><span class="sx-qs-label">CC List</span><span class="sx-qs-val" id="sx-qs-cclist">&hellip;</span></div>
+            </div>
+            <div class="grid-2 sx-home-grid">
+<div class="glass">
+                    <div class="glass-head">
+                        <div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18"/></svg></span><span class="glass-title">Input Method</span></div>
+                        <div class="mode-toggle">
+                            <button class="mode-btn active" id="bin-mode-btn" data-mode="bin" type="button">BIN</button>
+                            <button class="mode-btn" id="cc-list-mode-btn" data-mode="ccList" type="button">CC List</button>
+                        </div>
+                    </div>
+                    <div class="section-content" id="bin-mode-content">
+                        <div class="bin-cvv-row">
+                            <div class="bin-group">
+                                <label for="bin-input">BIN</label>
+                                <div class="bin-input-wrap">
+                                    <input type="text" id="bin-input" placeholder="44304400" autocomplete="off"
+                                        spellcheck="false">
+                                </div>
+                            </div>
+                            <div class="cvv-group">
+                                <label for="cvv-input">CVV</label>
+                                <input type="text" id="cvv-input" placeholder="RND" maxlength="4"
+                                    autocomplete="off" spellcheck="false">
+                            </div>
+                        </div>
+                        <div class="expiry-selectors">
+                            <div class="expiry-group">
+                                <label for="expiry-month-select">Expiry Month</label>
+                                <select id="expiry-month-select">
+                                    <option value="RND">RND</option>
+                                    <option value="01">01</option>
+                                    <option value="02">02</option>
+                                    <option value="03">03</option>
+                                    <option value="04">04</option>
+                                    <option value="05">05</option>
+                                    <option value="06">06</option>
+                                    <option value="07">07</option>
+                                    <option value="08">08</option>
+                                    <option value="09">09</option>
+                                    <option value="10">10</option>
+                                    <option value="11">11</option>
+                                    <option value="12">12</option>
+                                </select>
+                            </div>
+                            <div class="expiry-group">
+                                <label for="expiry-year-select">Expiry Year</label>
+                                <select id="expiry-year-select">
+                                    <option value="RND">RND</option>
+                                </select>
+                            </div>
+                        </div>
+                        <p class="bypass-hint"><code>RND</code> = Random value generated per card. AMEX BINs (34/37) auto-detected.</p>
+                        <div class="btn-row" style="margin-top:14px;">
+                            <button type="button" id="save-bin-btn" data-testid="save-bin-btn"
+                                title="Save this BIN to your cloud profile" class="btn btn-primary btn-mini-gradient">Save BIN</button>
+                            <button type="button" id="reset-bin-btn" data-testid="reset-bin-btn"
+                                title="Clear BIN, expiry and CVV back to defaults" class="btn small-button">Reset</button>
+                        </div>
+                    </div>
+                    <div id="cc-list-mode-content" class="section-content hidden">
+                        <div class="cc-list-header">
+                            <label for="cc-list-input">CC List</label>
+                            <span class="cc-badge gallery-badge" id="cc-list-counter">0 cards</span>
+                        </div>
+                        <textarea id="cc-list-input"
+                            placeholder="Paste cards (any format: pipe, colon, space, comma)&#10;Luhn validation + expired filter applied automatically"></textarea>
+                        <p class="bypass-hint">Supports: <code>4242...|12|25|123</code> or <code>4242... 12 25 123</code></p>
+                    </div>
+                </div>
+
+<div class="glass">
+                <div class="glass-head">
+                    <div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg></span><span class="glass-title">Last Hit</span></div>
+                </div>
+                <div id="last-hit-result"></div>
+            </div>
+            </div>
+
+            <!-- All bypass levers, consolidated — no more giant toggle cards -->
+            <div class="glass sx-switches">
+                <div class="glass-head sx-switches-head"><div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6l-8-4z"/><path d="m9 12 2 2 4-4"/></svg></span><span class="glass-title">Bypass Switches</span></div><span class="sx-qs-hint">All levers, one place</span></div>
+                <div class="sx-switch-row">
+                    <div class="glass-head">
+                        <div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span><span class="glass-title">Card Replacement</span></div>
+                        <label class="toggle">
+                            <input type="checkbox" id="card-replacement-toggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="section-content hidden" id="card-replacement-content">
+                        <div class="gateway-selector">
+                            <label class="gateway-option"><input type="checkbox" id="card-replacement-stripe" data-gateway="stripe"><span>Stripe</span></label>
+                            <label class="gateway-option"><input type="checkbox" id="card-replacement-adyen" data-gateway="adyen"><span>Adyen</span></label>
+                            <label class="gateway-option"><input type="checkbox" id="card-replacement-checkout" data-gateway="checkout"><span>Checkout.com</span></label>
+                            <label class="gateway-option"><input type="checkbox" id="card-replacement-recurly" data-gateway="recurly"><span>Recurly</span></label>
+                            <label class="gateway-option"><input type="checkbox" id="card-replacement-xsolla" data-gateway="xsolla"><span>Xsolla</span></label>
+                            <label class="gateway-option"><input type="checkbox" id="card-replacement-braintree" data-gateway="braintree"><span>Braintree</span></label>
+                        </div>
+                        <p class="bypass-hint">Auto-uses next card from CC List when one fails. Required for <strong>Automation Mode</strong>.</p>
+                        <div id="card-replacement-hint" class="hint warning hidden">Add BIN or CC List above to use Card Replacement.</div>
+                    </div>
+                
+                </div>
+                <div class="sx-switch-row">
+                    <div class="glass-head">
+                        <div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg></span><span class="glass-title">CVV Bypass</span></div>
+                        <label class="toggle">
+                            <input type="checkbox" id="cvv-bypass-toggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="section-content hidden" id="cvv-bypass-content">
+                        <div class="gateway-selector">
+                            <label class="gateway-option"><input type="checkbox" id="cvv-stripe" data-gateway="stripe"><span>Stripe</span></label>
+                            <label class="gateway-option"><input type="checkbox" id="cvv-adyen" data-gateway="adyen"><span>Adyen</span></label>
+                            <label class="gateway-option"><input type="checkbox" id="cvv-checkout" data-gateway="checkout"><span>Checkout.com</span></label>
+                            <label class="gateway-option"><input type="checkbox" id="cvv-recurly" data-gateway="recurly"><span>Recurly</span></label>
+                            <label class="gateway-option"><input type="checkbox" id="cvv-xsolla" data-gateway="xsolla"><span>Xsolla</span></label>
+                        </div>
+                        <p class="bypass-hint"><code>cvc_required</code> error? Disable this bypass for that gateway.</p>
+                    </div>
+                
+                </div>
+                <div class="sx-switch-row">
+                    <div class="glass-head">
+                        <div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-6 8-6s8 2 8 6"/></svg></span><span class="glass-title">Payment UA Bypass</span></div>
+                        <label class="toggle">
+                            <input type="checkbox" id="payment-user-agent-bypass-toggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="section-content hidden" id="payment-user-agent-bypass-content">
+                        <p class="info-text">Stripe only</p>
+                        <p class="bypass-hint">Spoofs a trusted browser UA to Stripe's tokenisation endpoint. Disable if you see <code>ua_required</code> errors.</p>
+                    </div>
+                
+                </div>
+                <div class="sx-switch-row hidden">
+                    <div class="glass-head">
+                        <div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6l-8-4z"/></svg></span><span class="glass-title">Stripe Security Bypass</span></div>
+                        <label class="toggle">
+                            <input type="checkbox" id="stripe-security-bypass-toggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="section-content hidden" id="stripe-security-bypass-content">
+                        <div class="gateway-selector">
+                            <label class="gateway-option"><input type="checkbox" id="security-pasted" checked><span>Pasted Fields</span></label>
+                            <label class="gateway-option"><input type="checkbox" id="security-timing" checked><span>Time Tracking</span></label>
+                            <label class="gateway-option"><input type="checkbox" id="security-tracking" checked><span>Tracking IDs</span></label>
+                            <label class="gateway-option"><input type="checkbox" id="security-zip" checked><span>Zip Code</span></label>
+                        </div>
+                        <p class="info-text">Stripe only</p>
+                        <p class="bypass-hint">Advanced: Makes automation harder to detect. Keep default <strong>ON</strong> recommended.</p>
+                    </div>
+                
+                </div>
+                <div class="sx-switch-row" id="three-ds-bypass-section">
+                    <div class="glass-head">
+                        <div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><path d="m9 12 2 2 4-4"/><circle cx="12" cy="12" r="9"/></svg></span><span class="glass-title">3DS Bypass <span class="premium-badge" id="three-ds-bypass-lock" style="display:none;">🔒 PREMIUM</span></span></div>
+                        <label class="toggle">
+                            <input type="checkbox" id="three-ds-bypass-toggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                    <div class="section-content hidden" id="three-ds-bypass-content">
+                        <p class="info-text">Stripe only</p>
+                        <p class="bypass-hint">Experimental: <code>3ds_bypass_failed</code> is normal sometimes. Card will be re-added to list on 3DS fail.</p>
+                    </div>
+                    <div class="section-content" id="three-ds-bypass-locked-note" style="display:none;">
+                        <p class="bypass-hint" style="color:#ffcc80;">🔒 <b>3DS Bypass is a Premium feature.</b> Upgrade to MONTHLY / YEARLY / LIFETIME in the bot to unlock it. Type <code>/buy</code> in @<span id="three-ds-bot-handle">Semexautoxbot</span>.</p>
+                    </div>
+                
+                </div>
+            </div>
+
+            <!-- ══ SUPPORTED GATEWAYS ══ -->
+            <div class="glass sx-gw-strip">
+                <div class="glass-head sx-gw-head">
+                    <div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg></span><span class="glass-title">Supported Gateways</span></div>
+                </div>
+                <div class="sx-gw-list">
+                    <div class="sx-gw-chip"><svg class="sx-gw-ico" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg><span>Stripe</span></div>
+                    <div class="sx-gw-chip"><svg class="sx-gw-ico" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg><span>Adyen</span></div>
+                    <div class="sx-gw-chip"><svg class="sx-gw-ico" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg><span>Checkout.com</span></div>
+                    <div class="sx-gw-chip"><svg class="sx-gw-ico" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg><span>Braintree</span></div>
+                    <div class="sx-gw-chip"><svg class="sx-gw-ico" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg><span>Recurly</span></div>
+                    <div class="sx-gw-chip"><svg class="sx-gw-ico" viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/></svg><span>Xsolla</span></div>
+                </div>
+            </div>
+</section>
+
+        <!-- ══ HITS (PixelZero section-transactions) ══ -->
+        <section class="section tab-panel" id="history-tab">
+            <div class="sec-head">
+                <div class="sec-title">Hits</div>
+                <div class="sec-sub">Live log of every attempt</div>
+            </div>
+            <div class="glass" style="padding:20px;">
+                <div class="glass-head">
+                    <div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="m7 14 4-4 3 3 5-6"/></svg></span><span class="glass-title">Transaction Log</span></div>
+                    <div class="history-actions">
+                        <button type="button" class="btn btn-blur active" id="historyBlurToggle" data-testid="history-blur-toggle">
+                            <span id="historyBlurIcon">◉</span> <span id="historyBlurText">Unblur</span>
+                        </button>
+                        <button type="button" class="btn btn-copy" id="historyCopyBtn" data-testid="history-copy-btn">Copy</button>
+                        <button type="button" class="btn btn-export" id="historyExportBtn" data-testid="history-export-btn">Export</button>
+                        <button type="button" class="btn btn-danger" id="historyClearBtn" data-testid="history-clear-btn">Clear</button>
+                    </div>
+                </div>
+                <div class="history-filters seg" id="historyFilterContainer">
+                    <button type="button" class="filter-btn active" data-filter="all">All</button>
+                    <button type="button" class="filter-btn" data-filter="charged">Charged</button>
+                    <button type="button" class="filter-btn" data-filter="live">Live</button>
+                    <button type="button" class="filter-btn" data-filter="dead">Dead</button>
+                </div>
+                <div class="history-list txn-list blurred" id="historyList">
+                    <div class="empty-state">
+                        <div class="empty-icon">—</div>
+                        <div>No transactions yet</div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ══ NEWS ══ -->
+        <section class="section tab-panel" id="news-tab">
+            <div class="sec-head">
+                <div class="sec-title">News</div>
+                <div class="sec-sub">Latest news &amp; BINs</div>
+            </div>
+            <div class="glass" style="padding:20px;">
+                <div class="glass-head">
+                    <div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span><span class="glass-title">Latest News &amp; BINs</span></div>
+                    <button class="btn news-refresh-btn" id="news-refresh-btn" title="Refresh" data-testid="news-refresh-btn">Refresh</button>
+                </div>
+                <div class="news-list" id="news-list">
+                    <div class="news-loading">Loading...</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ══ BINS (PixelZero section-cards) ══ -->
+        <section class="section tab-panel" id="bins-tab">
+            <div class="sec-head">
+                <div class="sec-title">Bins</div>
+                <div class="sec-sub">Your named BINs — synced across devices, auto-detected brand/type/bank/country</div>
+            </div>
+            <div class="glass" style="padding:20px;">
+                <div class="glass-head">
+                    <div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="12" rx="2"/><path d="M3 10h18M7 15h3"/></svg></span><span class="glass-title">Saved BINs</span></div>
+                    <div style="display:flex;align-items:center;gap:10px;flex-wrap:wrap;">
+                        <input type="search" id="saved-bins-search" class="form-input" placeholder="Search BIN, name, bank, country…" data-testid="saved-bins-search" style="min-width:220px;width:auto;">
+                        <button id="saved-bins-add-btn" class="btn btn-primary btn-mini-gradient" data-testid="saved-bins-add-btn">+ Save current BIN</button>
+                        <button id="saved-bins-refresh-btn" class="btn small-button" data-testid="saved-bins-refresh-btn">Refresh</button>
+                        <span id="saved-bins-sync-status" class="mono-dim" style="font-size:11px;white-space:nowrap;" data-testid="saved-bins-sync-status"></span>
+                    </div>
+                </div>
+                <div id="saved-bins-list" class="saved-bins-list bin-list-scroll" data-testid="saved-bins-list">
+                    <div class="saved-bins-empty">Loading your saved BINs…</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ══ CAPTCHA ══ -->
+        <section class="section tab-panel" id="captcha-tab">
+            <div class="sec-head">
+                <div class="sec-title">Captcha</div>
+                <div class="sec-sub">Solving providers and per-type behavior</div>
+            </div>
+            <div class="glass" style="padding:20px;">
+                <div class="glass-head">
+                    <div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6l-8-4z"/><path d="m9 12 2 2 4-4"/></svg></span><span class="glass-title">Captcha Solving</span></div>
+                    <label class="toggle">
+                        <input type="checkbox" id="captcha-solving-toggle">
+                        <span class="toggle-slider"></span>
+                    </label>
+                </div>
+                <div class="section-content hidden" id="captcha-solving-content">
+                    <p class="bypass-hint"><strong>Cloudflare Warning:</strong> Auto-pauses on Cloudflare challenge pages to prevent infinite loops.</p>
+
+                    <div class="subsection">
+                        <div class="subsection-header">
+                            <h3>Captcha API</h3>
+                            <span id="nopecha-status-badge" class="status-pill badge badge-neutral">Not Set</span>
+                        </div>
+                        <div class="subsection-content">
+                            <div class="form-group"><label class="form-label" for="captcha-provider">Provider</label>
+                                <select id="captcha-provider">
+                                    <option value="2captcha">2Captcha</option>
+                                    <option value="nopecha">NopeCHA</option>
+                                </select>
+                            </div>
+                            <div class="form-group"><label class="form-label" for="nopecha-api-key">API Key</label>
+                                <input type="text" id="nopecha-api-key" placeholder="Enter your API key" autocomplete="off" spellcheck="false">
+                            </div>
+                            <p class="bypass-hint">Key from <a href="https://2captcha.com" target="_blank">2captcha.com</a> or <a href="https://nopecha.com" target="_blank">nopecha.com</a> — it must match the selected provider. Required for hCaptcha token solving.</p>
+                        </div>
+                    </div>
+
+                    <div class="subsection">
+                        <div class="subsection-header">
+                            <h3>hCaptcha</h3>
+                            <label class="toggle">
+                                <input type="checkbox" id="hcaptcha-enabled">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="subsection-content hidden" id="hcaptcha-content">
+                            <p class="bypass-hint warn-text">Enable only on checkout pages. Enabling on all pages may cause Cloudflare infinite loops!</p>
+                            <div class="toggle-row"><div class="toggle-name">Tap-based solving (auto-click checkbox)</div><input type="checkbox" id="hcaptcha-tap-based" checked></div>
+                            <div class="toggle-row"><div class="toggle-name">Auto-solve via token API (needs API key)</div><input type="checkbox" id="hcaptcha-2captcha" checked></div>
+                            <div class="toggle-row"><div class="toggle-name">Fallback to manual if image challenge appears</div><input type="checkbox" id="hcaptcha-fallback-manual" checked></div>
+                        </div>
+                    </div>
+
+                    <div class="subsection">
+                        <div class="subsection-header">
+                            <h3>reCAPTCHA v2</h3>
+                            <label class="toggle">
+                                <input type="checkbox" id="recaptcha-enabled">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <div class="subsection-content hidden" id="recaptcha-content">
+                            <div class="toggle-row"><div class="toggle-name">Auto-open (click checkbox automatically)</div><input type="checkbox" id="recaptcha-auto-open" checked></div>
+                            <div class="toggle-row"><div class="toggle-name">Auto-solve image challenges via API</div><input type="checkbox" id="recaptcha-auto-solve" checked></div>
+                            <p class="bypass-hint">Auto-solve requires NopeCHA API key above</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- ══ PROXY (PixelZero section-proxy) ══ -->
+        <section class="section tab-panel" id="proxy-tab">
+            <div class="sec-head">
+                <div class="sec-title">Proxy</div>
+                <div class="sec-sub">Route browser traffic through a proxy</div>
+            </div>
+
+            <div class="glass span-2" style="padding:20px;margin-bottom:16px;">
+                <div class="glass-head">
+                    <div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 3 2.5 15 0 18M12 3c-2.5 3-2.5 15 0 18"/></svg></span><span class="glass-title">Add Proxy</span></div>
+                    <div style="display:flex;align-items:center;gap:10px;">
+                        <div id="current-ip-display" class="hidden mono-dim">Current IP: <span class="loading-dots">...</span></div>
+                        <label class="toggle" title="Proxy rotation">
+                            <input type="checkbox" id="proxy-rotation-toggle">
+                            <span class="toggle-slider"></span>
+                        </label>
+                    </div>
+                </div>
+                <div class="form-group"><label class="form-label" for="proxy-input">Proxy Address</label>
+                    <input type="text" id="proxy-input" placeholder="host:port or host:port:user:pass" autocomplete="off" spellcheck="false">
+                </div>
+                <div class="proxy-controls-row">
+                    <div class="proxy-type-field">
+                        <label class="form-label" for="proxy-type-select">Type</label>
+                        <select id="proxy-type-select">
+                            <option value="http">HTTP/S</option>
+                            <option value="socks4">SOCKS4</option>
+                            <option value="socks5">SOCKS5</option>
+                        </select>
+                    </div>
+                    <button id="test-proxy-btn" class="btn small-button" data-testid="test-proxy-btn">Test</button>
+                    <button id="activate-proxy-btn" class="btn btn-primary" data-testid="activate-proxy-btn">Connect</button>
+                    <button id="disable-proxy-btn" class="btn btn-danger" data-testid="disable-proxy-btn">Disconnect</button>
+                </div>
+                <div class="toggle-row" style="margin-top:8px;"><div class="toggle-name">Auto save live proxy</div><input type="checkbox" id="auto-save-live" checked></div>
+
+                <div id="proxy-test-results" class="hidden proxy-results"></div>
+
+                <div class="subsection hidden" id="rotation-settings">
+                    <div class="form-group"><label class="form-label" for="rotation-mode">Rotation Mode</label>
+                        <select id="rotation-mode" class="full-width">
+                            <option value="sequential">Sequential</option>
+                            <option value="random">Random</option>
+                        </select>
+                    </div>
+                    <div class="form-group"><label class="form-label" for="rotation-interval">Interval (minutes)</label>
+                        <input type="number" id="rotation-interval" min="1" value="5" class="full-width">
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass hidden proxy-status-card" id="proxy-status-display" style="padding:20px;margin-bottom:16px;">
+                <div class="glass-head">
+                    <div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5 8 12 8 12s8-7 8-12a8 8 0 0 0-8-8z"/></svg></span><span class="glass-title">Proxy Status</span></div>
+                </div>
+                <div class="proxy-status-inner">
+                    <span id="proxy-geo-flag" class="proxy-flag">🌍</span>
+                    <div>
+                        <div id="proxy-geo-country" class="proxy-country">Not Connected</div>
+                        <div id="proxy-geo-ip" class="proxy-ip">-</div>
+                    </div>
+                    <div class="proxy-status-right">
+                        <div id="proxy-geo-latency" class="proxy-latency">-</div>
+                        <div id="proxy-geo-city" class="proxy-city">-</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="glass" style="padding:20px;margin-bottom:16px;">
+                <div class="glass-head">
+                    <div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg></span><span class="glass-title">Saved Proxies</span></div>
+                </div>
+                <div id="saved-proxy-list"></div>
+            </div>
+
+            <!-- Check My IP — their IP Lookup widget layout -->
+            <div class="glass ipl-wrap" style="padding:20px;">
+                <div class="glass-head">
+                    <div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m21 21-4-4"/></svg></span><span class="glass-title">Check My IP</span></div>
+                    <span class="ip-check-hint">Detects VPN / proxy / fraud risk</span>
+                </div>
+                <div class="ip-check-row ipl-actions">
+                    <input type="text" id="ip-check-input" placeholder="Enter IP (or leave blank for your own)" autocomplete="off" spellcheck="false" data-testid="ip-check-input">
+                    <button id="ip-check-btn" class="pill-btn light" data-testid="ip-check-btn">Look Up</button>
+                </div>
+                <div id="ip-check-result" class="ip-check-result ipl-result hidden" data-testid="ip-check-result"></div>
+            </div>
+        </section>
+
+        <!-- ══ SETTINGS (PixelZero section-settings) ══ -->
+        <section class="section tab-panel" id="settings-tab">
+            <div class="sec-head">
+                <div class="sec-title">Settings</div>
+                <div class="sec-sub">Identity, preferences and automation behavior</div>
+            </div>
+            <div class="grid-2">
+
+                <div class="glass span-2" style="padding:20px;">
+                    <div class="glass-head"><div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><path d="m22 2-7 20-4-9-9-4z"/><path d="M22 2 11 13"/></svg></span><span class="glass-title">Notifications</span></div><span class="mono-dim" style="font-size:11px;">Where hit alerts are delivered</span></div>
+                    <!-- Bot source toggle -->
+                    <div class="sx-bot-toggle-wrap">
+                        <button class="sx-bot-opt active" id="sx-bot-opt-server" type="button">
+                            <svg viewBox="0 0 16 16" fill="none" width="14" height="14"><path d="m14 1-5 13-2.5-5.5L1 6z" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"/></svg>
+                            SEMEX Bot
+                        </button>
+                        <button class="sx-bot-opt" id="sx-bot-opt-own" type="button">
+                            <svg viewBox="0 0 16 16" fill="none" width="14" height="14"><circle cx="8" cy="8" r="6" stroke="currentColor" stroke-width="1.3"/><path d="M8 5v3l2 1" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/></svg>
+                            Own Bot
+                        </button>
+                    </div>
+                    <!-- SEMEX Bot pane -->
+                    <div id="sx-bot-server-pane">
+                        <p class="info-text" style="margin:0;">Hit alerts (Charged + Live) are delivered by the SEMEX bot directly to your Telegram account. No setup needed — login connects you automatically.</p>
+                    </div>
+                    <!-- Own Bot pane -->
+                    <div id="sx-bot-own-pane" class="hidden">
+                        <div class="form-group"><label class="form-label" for="sx-tg-token">Bot Token</label>
+                            <input type="password" id="sx-tg-token" class="form-input" placeholder="123456:ABC-DEF1234ghIkl-zyx57W2v1u123ew11" autocomplete="off" spellcheck="false">
+                        </div>
+                        <div class="form-group"><label class="form-label" for="sx-tg-uid">Your Telegram User ID</label>
+                            <input type="text" id="sx-tg-uid" class="form-input" placeholder="e.g. 123456789 — get it from @userinfobot" autocomplete="off" spellcheck="false">
+                        </div>
+                        <div class="proxy-row" style="align-items:center;gap:10px;margin-top:4px;">
+                            <button id="sx-tg-test" class="btn btn-primary small-button" type="button">Send Test DM</button>
+                            <span id="sx-tg-status" class="redeem-status hidden"></span>
+                        </div>
+                        <p class="info-text" style="margin-top:8px;">Your bot DMs you directly. Stored on this device only. Get your User ID from <b>@userinfobot</b> on Telegram.</p>
+                    </div>
+                </div>
+
+                <div class="glass hidden" style="padding:20px;">
+                    <div class="glass-head"><div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="2"/><path d="m21 15-4.5-4.5L9 18"/></svg></span><span class="glass-title">Screenshot Settings</span></div></div>
+                    <div class="toggle-row"><div><div class="toggle-name">Save screenshots locally</div><div class="toggle-desc">When OFF, you receive text notifications only</div></div><input type="checkbox" id="screenshot-save-locally" checked></div>
+                    <div class="slider-block">
+                        <label class="form-label" for="screenshot-delay">Screenshot Delay: <span id="screenshot-delay-value" class="accent-pink pct">1.0s</span></label>
+                        <input type="range" id="screenshot-delay" min="0" max="30" step="1" value="10">
+                        <div class="slider-scale"><span>0.0s (instant)</span><span>3.0s (max)</span></div>
+                        <p class="info-text">Wait this long AFTER a charged hit before capturing screenshot (lets page fully render).</p>
+                    </div>
+                </div>
+
+                <div class="glass" style="padding:20px;">
+                    <div class="glass-head"><div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><path d="M12 3v3M18.4 5.6l-2.1 2.1M21 12h-3M18.4 18.4l-2.1-2.1M12 18v3M7.8 16.3l-2.1 2.1M6 12H3M7.8 7.7 5.6 5.6"/></svg></span><span class="glass-title">Celebration Effects</span></div></div>
+                    <div class="toggle-row"><div><div class="toggle-name">Confetti on CHARGED hit</div><div class="toggle-desc">Bursts confetti across the page when a card charges</div></div>
+                        <input type="checkbox" id="celebration-confetti" checked data-testid="celebration-confetti-toggle"></div>
+                    <div class="toggle-row"><div><div class="toggle-name">Sound on CHARGED / LIVE hit</div><div class="toggle-desc">Plays a short success chime on winning hits</div></div>
+                        <input type="checkbox" id="celebration-sound" checked data-testid="celebration-sound-toggle"></div>
+                    <div class="slider-block" id="celebration-volume-block">
+                        <label class="form-label" for="celebration-volume">Sound Volume: <span id="celebration-volume-value" class="accent-pink pct">100%</span></label>
+                        <input type="range" id="celebration-volume" min="0" max="100" step="5" value="100" data-testid="celebration-volume">
+                        <div class="slider-scale"><span>Mute</span><span>Max</span></div>
+                    </div>
+                </div>
+
+                <div class="glass" style="padding:20px;">
+                    <div class="glass-head"><div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 1-5 5L4 17v3h3l5.7-5.7a4 4 0 0 1 5-5l-2.6 2.6-1.4-1.4 2.6-2.6z"/></svg></span><span class="glass-title">Danger Zone</span></div></div>
+                    <div class="subsection hidden">
+                        <div class="subsection-header"><h3>Address Generator</h3></div>
+                        <div class="subsection-content">
+                            <div class="toggle-row"><div class="toggle-name">Use proxy country for address generation</div><input type="checkbox" id="address-follow-proxy"></div>
+                            <div class="gen-country-row">
+                                <label class="form-label" for="address-country-select">Country</label>
+                                <div class="proxy-row">
+                                    <select id="address-country-select">
+                                        <option value="US">🇺🇸 United States</option>
+                                        <option value="UK">🇬🇧 United Kingdom</option>
+                                        <option value="CA">🇨🇦 Canada</option>
+                                        <option value="AU">🇦🇺 Australia</option>
+                                        <option value="DE">🇩🇪 Germany</option>
+                                        <option value="FR">🇫🇷 France</option>
+                                        <option value="ES">🇪🇸 Spain</option>
+                                        <option value="IT">🇮🇹 Italy</option>
+                                        <option value="NL">🇳🇱 Netherlands</option>
+                                        <option value="SE">🇸🇪 Sweden</option>
+                                        <option value="CUSTOM">Custom...</option>
+                                    </select>
+                                    <input type="text" id="address-country-custom" placeholder="XX" maxlength="2" class="country-custom">
+                                    <label class="checkbox-label inline-check"><input type="checkbox" id="address-country-random"><span>Random?</span></label>
+                                </div>
+                            </div>
+                            <button id="generate-address-btn" class="btn small-button" data-testid="generate-address-btn">Generate Address</button>
+                            <div id="address-result" class="hidden gen-result"></div>
+                        </div>
+                    </div>
+                    <div class="subsection hidden">
+                        <div class="subsection-header"><h3>User Generator</h3></div>
+                        <div class="subsection-content">
+                            <p class="info-text">Generates user info based on address country</p>
+                            <button id="generate-user-btn" class="btn small-button" data-testid="generate-user-btn">Generate User</button>
+                            <div id="user-result" class="hidden gen-result"></div>
+                        </div>
+                    </div>
+                    <div class="subsection">
+                        <div class="subsection-header"><h3>Danger Zone</h3></div>
+                        <div class="subsection-content">
+                            <button id="reset-stats-btn" class="btn btn-danger btn-full-danger" data-testid="reset-stats-btn">Reset Statistics</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass span-2 hidden" style="padding:20px;">
+                    <div class="glass-head"><div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="m7 14 4-4 3 3 5-6"/></svg></span><span class="glass-title">Payment Tracking</span></div>
+                        <label class="toggle"><input type="checkbox" id="payment-tracking-toggle"><span class="toggle-slider"></span></label></div>
+                    <div class="section-content hidden" id="payment-tracking-content">
+                        <div class="subsection">
+                            <div class="subsection-header"><h3>Gateways</h3></div>
+                            <div class="subsection-content">
+                                <div class="gateway-selector">
+                                    <label class="gateway-option"><input type="checkbox" id="pt-stripe" checked><span>Stripe</span></label>
+                                    <label class="gateway-option"><input type="checkbox" id="pt-adyen"><span>Adyen</span></label>
+                                    <label class="gateway-option"><input type="checkbox" id="pt-checkout"><span>Checkout.com</span></label>
+                                    <label class="gateway-option"><input type="checkbox" id="pt-recurly"><span>Recurly</span></label>
+                                    <label class="gateway-option"><input type="checkbox" id="pt-xsolla"><span>Xsolla</span></label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="subsection">
+                            <div class="subsection-header"><h3>Notifications</h3></div>
+                            <div class="subsection-content">
+                                <div class="toggle-row"><div class="toggle-name">Show popup/toast notifications</div><input type="checkbox" id="pt-show-toast" checked></div>
+                                <div class="toggle-row"><div class="toggle-name">Show only CHARGED/LIVE (hide DEAD)</div><input type="checkbox" id="pt-only-success" checked></div>
+                                <div class="inline-field-num">
+                                    <label class="form-label" for="pt-dismiss-time">Auto-dismiss after (seconds)</label>
+                                    <input type="number" id="pt-dismiss-time" min="1" max="30" value="5">
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass" style="padding:20px;">
+                    <div class="glass-head"><div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><path d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg></span><span class="glass-title">Form Filling</span></div>
+                        <label class="toggle"><input type="checkbox" id="form-filling-toggle" checked><span class="toggle-slider"></span></label></div>
+                    <p class="info-text" style="margin-bottom:12px;">Stripe Checkout pages always auto-fill. Toggle controls other sites.</p>
+                    <div class="form-group"><label class="form-label" for="form-filling-custom-email">Email (for checkout)</label>
+                        <div class="proxy-row">
+                            <input type="email" id="form-filling-custom-email" value="support@semex.pro" autocomplete="off" spellcheck="false" class="form-input">
+                            <label class="checkbox-label inline-check"><input type="checkbox" id="form-filling-random-email"><span>Random</span></label>
+                        </div>
+                        <p class="info-text">Used if checkout page email field is empty</p>
+                    </div>
+                    <div class="form-group"><label class="form-label" for="form-filling-custom-name">Billing Name (for checkout)</label>
+                        <div class="proxy-row">
+                            <input type="text" id="form-filling-custom-name" value="SEMEX" autocomplete="off" spellcheck="false" class="form-input">
+                            <label class="checkbox-label inline-check"><input type="checkbox" id="form-filling-random-name"><span>Random</span></label>
+                        </div>
+                        <p class="info-text">Used as cardholder name during automation</p>
+                    </div>
+                    <div class="toggle-row"><div><div class="toggle-name">Auto-fill on detect (no overlay)</div><div class="toggle-desc">Silently fills card fields ~1 second after a checkout is detected — overlay is never shown</div></div>
+                        <input type="checkbox" id="form-filling-auto-fill"></div>
+                    <div class="toggle-row"><div><div class="toggle-name">Random billing address</div><div class="toggle-desc">Country follows the card BIN country, or the Address Country setting</div></div>
+                        <input type="checkbox" id="form-filling-random-address"></div>
+                </div>
+
+                <div class="glass hidden" style="padding:20px;">
+                    <div class="glass-head"><div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><path d="M12 2 4 6v6c0 5 3.5 8 8 10 4.5-2 8-5 8-10V6l-8-4z"/><path d="m9 12 2 2 4-4"/></svg></span><span class="glass-title">Stealth Protection</span></div>
+                        <label class="toggle"><input type="checkbox" id="af-master" checked data-testid="af-master-toggle"><span class="toggle-slider"></span></label></div>
+                    <div class="section-content hidden">
+                        <p class="info-text" style="margin-bottom:8px;">Rotate the device identity Stripe Radar / Sift / Kount use to cluster attempts. All patches gated by the master switch above.</p>
+                        <div class="toggle-row"><div class="toggle-name">Canvas fingerprint noise</div><input type="checkbox" id="af-canvas" checked data-testid="af-canvas"></div>
+                        <div class="toggle-row"><div class="toggle-name">WebGL renderer / vendor spoof</div><input type="checkbox" id="af-webgl" checked data-testid="af-webgl"></div>
+                        <div class="toggle-row"><div class="toggle-name">AudioContext noise</div><input type="checkbox" id="af-audio" checked data-testid="af-audio"></div>
+                        <div class="toggle-row"><div class="toggle-name">User-Agent / language / hardware</div><input type="checkbox" id="af-navigator" checked data-testid="af-navigator"></div>
+                        <div class="toggle-row"><div class="toggle-name">Timezone spoof (match proxy geo)</div><input type="checkbox" id="af-timezone" checked data-testid="af-timezone"></div>
+                        <div class="toggle-row"><div class="toggle-name">WebRTC leak protection</div><input type="checkbox" id="af-webrtc" checked data-testid="af-webrtc"></div>
+                        <div class="toggle-row"><div><div class="toggle-name">Auto-clear checkout site data on Start</div><div class="toggle-desc">Wipes cookies + localStorage + IndexedDB + cache for the checkout origin. Your other logins are untouched.</div></div><input type="checkbox" id="af-autoclear" checked data-testid="af-autoclear"></div>
+                        <div class="toggle-row"><div class="toggle-name">Rotate identity on Start</div><input type="checkbox" id="af-bump-start" checked data-testid="af-bump-start"></div>
+                        <div class="toggle-row"><div class="toggle-name">Rotate identity per attempt</div><input type="checkbox" id="af-bump-attempt" checked data-testid="af-bump-attempt"></div>
+                    </div>
+                </div>
+
+                <div class="glass span-2 hidden" style="padding:20px;">
+                    <div class="glass-head"><div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg></span><span class="glass-title">Retry Timing Jitter</span></div>
+                        <label class="toggle"><input type="checkbox" id="retry-jitter-toggle" checked data-testid="retry-jitter-toggle"><span class="toggle-slider"></span></label></div>
+                    <div class="section-content">
+                        <p class="info-text">Randomised gap between attempts so the cadence doesn't fingerprint as a bot.</p>
+                        <div class="slider-block">
+                            <label class="form-label" for="retry-jitter-min">Min delay: <span id="retry-jitter-min-value" class="accent-pink pct">2.0s</span></label>
+                            <input type="range" id="retry-jitter-min" min="500" max="15000" step="250" value="2000" data-testid="retry-jitter-min">
+                        </div>
+                        <div class="slider-block">
+                            <label class="form-label" for="retry-jitter-max">Max delay: <span id="retry-jitter-max-value" class="accent-pink pct">9.0s</span></label>
+                            <input type="range" id="retry-jitter-max" min="1000" max="30000" step="250" value="9000" data-testid="retry-jitter-max">
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+        <!-- ══ ADMIN (owner/admin only) ══ -->
+        <section class="section tab-panel" id="admin-tab">
+            <div class="sec-head">
+                <div class="sec-title">Admin</div>
+                <div class="sec-sub">Live counts and controls across all users</div>
+            </div>
+            <div class="grid-2">
+
+                <div class="glass span-2" id="admin-stats-section" style="padding:20px;">
+                    <div class="glass-head"><div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><path d="M3 3v18h18"/><path d="m7 14 4-4 3 3 5-6"/></svg></span><span class="glass-title">Stats Overview</span></div><span class="mono-dim" style="font-size:11px;">Live counts across all users</span></div>
+                    <div id="admin-stats-grid" class="admin-stats-grid" data-testid="admin-stats-grid">
+                        <div class="mono-dim" style="padding:8px;">Loading…</div>
+                    </div>
+                </div>
+
+                <div class="glass span-2" style="padding:20px;">
+                    <div class="glass-head"><div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 3.5-6 8-6s8 2 8 6"/></svg></span><span class="glass-title">User Management</span></div>
+                        <div style="display:flex;align-items:center;gap:10px;">
+                            <span class="mono-dim" id="admin-role-badge" style="font-size:11px;">Loading role…</span>
+                            <input type="search" id="admin-user-search" class="form-input" placeholder="Search by ID, username, name…" data-testid="admin-user-search" style="min-width:220px;width:auto;">
+                            <button id="admin-refresh-btn" class="btn small-button" data-testid="admin-refresh-btn">Refresh</button>
+                        </div>
+                    </div>
+                    <div id="admin-users-list" class="admin-users-list" data-testid="admin-users-list">
+                        <div class="mono-dim" style="padding:16px;">Loading users…</div>
+                    </div>
+                </div>
+
+                <div class="glass owner-only" id="admin-codes-section" style="padding:20px;">
+                    <div class="glass-head"><div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><path d="M20 12v8H4v-8M2 7h20v5H2zM12 7v13"/></svg></span><span class="glass-title">Redeem Codes</span></div>
+                        <button id="codes-refresh-btn" class="btn small-button" data-testid="codes-refresh-btn">Refresh</button></div>
+                    <div class="proxy-row" style="gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+                        <input type="number" id="codes-days" placeholder="Days (30, 365, -1 = lifetime)" class="form-input" value="30" min="-1" data-testid="codes-days" style="width:200px;">
+                        <input type="number" id="codes-quantity" placeholder="Qty" class="form-input" value="5" min="1" max="500" data-testid="codes-qty" style="width:80px;">
+                        <input type="text" id="codes-note" placeholder="Note (optional)" class="form-input" data-testid="codes-note" style="min-width:180px;">
+                        <button id="codes-generate-btn" class="btn btn-primary btn-mini-gradient" data-testid="codes-generate-btn">+ Generate</button>
+                    </div>
+                    <div id="codes-list" class="codes-list" data-testid="codes-list">
+                        <div class="mono-dim" style="padding:16px;">Loading codes…</div>
+                    </div>
+                </div>
+
+                <div class="glass" style="padding:20px;">
+                    <div class="glass-head"><div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><path d="M13 2 3 14h7l-1 8 10-12h-7l1-8z"/></svg></span><span class="glass-title">Charged Hits Feed</span></div>
+                        <button id="hits-refresh-btn" class="btn small-button" data-testid="hits-refresh-btn">Refresh</button></div>
+                    <div id="all-hits-list" class="tx-card-list" data-testid="all-hits-list">
+                        <div class="mono-dim" style="padding:16px;">Loading hits…</div>
+                    </div>
+                </div>
+
+                <div class="glass span-2 owner-only" id="admin-broadcast-section" style="padding:20px;">
+                    <div class="glass-head"><div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><path d="M3 11l18-5v12L3 14v-3zM11.6 16.8a3 3 0 1 1-5.8-1.6"/></svg></span><span class="glass-title">Broadcast Announcement</span></div><span class="mono-dim" style="font-size:11px;">Telegram DM to every active user</span></div>
+                    <textarea id="broadcast-message" class="form-input" placeholder="Type your announcement… (HTML allowed)" rows="4" data-testid="broadcast-message" style="width:100%;"></textarea>
+                    <div class="proxy-row" style="gap:12px;margin-top:8px;flex-wrap:wrap;">
+                        <label class="checkbox-label"><input type="checkbox" id="broadcast-inc-admins" data-testid="broadcast-inc-admins"><span>Include admins</span></label>
+                        <label class="checkbox-label"><input type="checkbox" id="broadcast-inc-expired" data-testid="broadcast-inc-expired"><span>Include expired plans</span></label>
+                        <button id="broadcast-preview-btn" class="btn small-button" data-testid="broadcast-preview-btn">Preview count</button>
+                        <button id="broadcast-send-btn" class="btn btn-primary btn-mini-gradient" data-testid="broadcast-send-btn">Send now</button>
+                    </div>
+                    <div id="broadcast-status" class="mono-dim" style="margin-top:8px;"></div>
+                </div>
+
+                <div class="glass span-2 owner-only" id="admin-news-section" style="padding:20px;">
+                    <div class="glass-head"><div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><path d="M4 4h16v16H4z"/><path d="M8 8h8M8 12h8M8 16h5"/></svg></span><span class="glass-title">News Posts</span></div><span class="mono-dim" style="font-size:11px;">Shown in the News tab of every user's dashboard</span></div>
+                    <div class="proxy-row" style="gap:8px;flex-wrap:wrap;margin-bottom:8px;">
+                        <input type="text" id="news-title" class="form-input" placeholder="Title" data-testid="news-title" style="min-width:200px;">
+                        <label class="checkbox-label"><input type="checkbox" id="news-important" data-testid="news-important"><span>Important</span></label>
+                    </div>
+                    <textarea id="news-body" class="form-input" placeholder="Post body (HTML allowed)" rows="3" data-testid="news-body" style="width:100%;"></textarea>
+                    <div style="margin-top:8px;">
+                        <button id="news-post-btn" class="btn btn-primary btn-mini-gradient" data-testid="news-post-btn">+ Publish</button>
+                    </div>
+                    <div id="news-list-admin" class="codes-list" data-testid="news-list-admin" style="margin-top:12px;">
+                        <div class="mono-dim" style="padding:16px;">Loading news…</div>
+                    </div>
+                </div>
+
+                <div class="glass span-2 owner-only" id="admin-releases-section" style="padding:20px;">
+                    <div class="glass-head"><div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><path d="M12 3v12m0 0 4-4m-4 4-4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg></span><span class="glass-title">Extension Releases</span></div>
+                        <button id="releases-refresh-btn" class="btn small-button" data-testid="releases-refresh-btn">Refresh</button></div>
+                    <div class="proxy-row" style="gap:8px;flex-wrap:wrap;margin-bottom:12px;align-items:flex-start;">
+                        <input type="text" id="release-version" class="form-input" placeholder="Version (e.g. 2.3.0)" data-testid="release-version" style="width:180px;">
+                        <input type="file" id="release-file" accept=".zip,application/zip" data-testid="release-file" class="form-input" style="min-width:220px;">
+                        <textarea id="release-notes" class="form-input" placeholder="Release notes (optional, HTML allowed)" rows="2" data-testid="release-notes" style="flex:1;min-width:260px;"></textarea>
+                        <button id="release-upload-btn" class="btn btn-primary btn-mini-gradient" data-testid="release-upload-btn">🚀 Upload &amp; Publish</button>
+                        <button id="release-rebuild-btn" class="btn small-button" data-testid="release-rebuild-btn" title="Server rebuilds the extension from source with obfuscation and auto-publishes as the latest release. No terminal needed.">🔧 Auto build &amp; publish (obfuscated)</button>
+                    </div>
+                    <div id="release-warning" class="mono-dim" style="margin-bottom:10px;color:#ffcc80;display:none;"></div>
+                    <div id="releases-list" class="codes-list" data-testid="releases-list">
+                        <div class="mono-dim" style="padding:12px;">Loading releases…</div>
+                    </div>
+                </div>
+
+                <!-- Danger zone — OWNER-ONLY database nuke -->
+                <div class="glass span-2 admin-danger-zone hidden" id="admin-danger-zone" style="padding:20px;">
+                    <div class="glass-head"><div class="glass-head-l"><span class="glass-dot"><svg class="ico" viewBox="0 0 24 24"><path d="M12 9v4M12 17h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/></svg></span><span class="glass-title">Danger Zone</span></div><span class="mono-dim" style="font-size:11px;">Owner-only. Non-reversible.</span></div>
+                    <button id="admin-nuke-btn" class="btn btn-danger btn-full-danger" data-testid="admin-nuke-btn">🔥 Nuke Database (type NUKE to confirm)</button>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <!-- Alert Modal -->
+    <div id="modal-overlay" class="modal-overlay hidden">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="modal-title">Warning</h3>
+                <button class="modal-close" id="modal-close">&times;</button>
+            </div>
+            <div class="modal-body"><p id="modal-message"></p></div>
+            <div class="modal-footer">
+                <button class="modal-btn modal-btn-primary" id="modal-ok">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Confirm Modal -->
+    <div id="confirm-modal-overlay" class="modal-overlay hidden">
+        <div class="modal">
+            <div class="modal-header">
+                <h3 id="confirm-modal-title">Confirm</h3>
+                <button class="modal-close" id="confirm-modal-close">&times;</button>
+            </div>
+            <div class="modal-body"><p id="confirm-modal-message"></p></div>
+            <div class="modal-footer">
+                <button class="modal-btn" id="confirm-modal-cancel">Cancel</button>
+                <button class="modal-btn modal-btn-primary" id="confirm-modal-ok">OK</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Auth Modal (Telegram Login) -->
+    <div id="auth-modal" class="auth-overlay">
+        <!-- cursor-tracking glow spot -->
+        <div class="auth-cursor-glow" id="auth-cursor-glow"></div>
+        <!-- floating atmosphere orbs -->
+        <div class="auth-orb auth-orb-1"></div>
+        <div class="auth-orb auth-orb-2"></div>
+        <div class="auth-orb auth-orb-3"></div>
+
+        <div class="auth-scene">
+            <div class="auth-card auth-card-3d" id="auth-card-3d">
+                <div class="auth-emblem-wrap">
+                    <div class="auth-emblem" id="auth-emblem">
+                        <div class="auth-emblem-ring"></div>
+                        <div class="auth-emblem-ring auth-emblem-ring-outer"></div>
+                        <img src="logo-s.png" alt="SEMEX" class="auth-logo">
+                    </div>
+                </div>
+                <h2 class="auth-title" id="auth-title">Welcome to SEMEX</h2>
+                <p class="auth-subtitle" id="auth-subtitle">Login in one click — or use without logging in.</p>
+
+                <div id="auth-step-start">
+                    <button class="tg-login-btn" id="auth-btn-telegram" data-testid="auth-telegram-login">
+                        <svg class="tg-icon" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M11.94 2a10 10 0 1 0 10 10 10 10 0 0 0-10-10zm4.95 6.9-1.66 7.83c-.12.56-.46.7-.93.43l-2.57-1.9-1.24 1.2a.65.65 0 0 1-.52.25l.19-2.63 4.79-4.33c.21-.18-.05-.29-.32-.11l-5.92 3.73-2.55-.8c-.55-.17-.56-.55.12-.82l9.97-3.84c.46-.17-.86.11.65.99z"/></svg>
+                        <span>Login with Telegram</span>
+                    </button>
+                    <a href="#" class="auth-link auth-guest-btn" id="auth-link-skip" data-testid="auth-skip">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg>
+                        <span>Use as guest</span>
+                    </a>
+                    <p class="auth-hint">You'll be redirected to our official Telegram bot to authorize this device.</p>
+                </div>
+
+                <div id="auth-step-waiting" class="hidden">
+                    <div class="auth-spinner" aria-hidden="true"></div>
+                    <p class="auth-waiting-text">Waiting for authorization…<br><span>Tap <b>Authorize</b> in Telegram, then reopen this window.</span></p>
+                    <p class="auth-countdown-text" id="auth-countdown-text"></p>
+                    <a href="#" class="auth-link hidden" id="auth-link-reopen">Reopen in Telegram ↗</a>
+                    <a href="#" class="auth-link" id="auth-link-cancel">Cancel</a>
+                </div>
+
+                <div id="auth-step-redeem" class="hidden">
+                    <p class="auth-waiting-text">🔒 <b>Activation required</b><br><span>Enter your invite code to unlock SEMEX.</span></p>
+                    <input type="text" id="auth-redeem-input" class="telegram-id-input" placeholder="SEMEX-XXXX-XXXX" autocomplete="off" data-testid="auth-redeem-input">
+                    <button class="auth-btn" id="auth-btn-redeem" data-testid="auth-btn-redeem">Activate</button>
+                    <div id="auth-redeem-status" class="auth-error hidden"></div>
+                </div>
+
+
+                <div id="auth-error" class="auth-error hidden"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Maintenance Mode Overlay -->
+    <div id="maintenance-overlay" class="maintenance-overlay hidden">
+        <div class="maintenance-card">
+            <div class="maintenance-icon">
+                <svg viewBox="0 0 24 24"><path d="M14.7 6.3a4 4 0 0 1-5 5L4 17v3h3l5.7-5.7a4 4 0 0 1 5-5l-2.6 2.6-1.4-1.4 2.6-2.6z"/></svg>
+            </div>
+            <h2 class="maintenance-title">Under Maintenance</h2>
+            <p class="maintenance-message" id="maintenance-message">Server is temporarily unavailable. Please try again later.</p>
+            <button class="maintenance-retry-btn" id="maintenance-retry-btn" data-testid="maintenance-retry">Retry</button>
+        </div>
+    </div>
+
+    <script src="../crypto/encryption.js"></script>
+    <script src="../shared/server-client.js"></script>
+    <script src="../storage/cache-manager.js"></script>
+    <script src="popup.js"></script>
+    <script src="dashboard-plus.js?v=5"></script>
+</body>
+
+</html>
