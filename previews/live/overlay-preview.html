@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SEMEX Overlay Preview</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: 'DM Sans', sans-serif; background: #f8f9fa; min-height: 100vh; display: flex; }
+
+/* ── Mock checkout page (left side) ── */
+.checkout-bg {
+  flex: 1;
+  background: #fff;
+  display: flex;
+  position: relative;
+  overflow: hidden;
+}
+.checkout-left {
+  width: 420px;
+  background: #1a1a2e;
+  padding: 48px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  color: white;
+}
+.merchant-logo { font-size: 22px; font-weight: 700; color: #a78bfa; }
+.product-name { font-size: 18px; font-weight: 600; }
+.product-price { font-size: 36px; font-weight: 700; }
+.product-sub { font-size: 12px; color: rgba(255,255,255,0.5); }
+.checkout-right {
+  flex: 1;
+  padding: 48px 40px;
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  max-width: 500px;
+}
+.wallet-btns { display: flex; gap: 10px; }
+.wallet-btn {
+  flex: 1; height: 44px; border-radius: 8px; border: none; cursor: pointer;
+  font-size: 14px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.wallet-btn.apple { background: #000; color: #fff; }
+.wallet-btn.link  { background: #00D96E; color: #000; }
+.divider { text-align: center; color: #94a3b8; font-size: 13px; position: relative; }
+.divider::before, .divider::after {
+  content: ''; position: absolute; top: 50%; width: 45%; height: 1px; background: #e2e8f0;
+}
+.divider::before { left: 0; } .divider::after { right: 0; }
+.section-label { font-size: 14px; font-weight: 600; color: #1e293b; }
+.field-group { display: flex; flex-direction: column; gap: 12px; }
+.field { border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; font-size: 14px; color: #334155; background: #fff; }
+.field-row { display: flex; gap: 10px; }
+.field-row .field { flex: 1; }
+.card-field { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #6b7280; }
+.pay-btn {
+  background: #635BFF; color: white; border: none; border-radius: 8px;
+  padding: 14px; font-size: 15px; font-weight: 600; cursor: pointer; width: 100%;
+  font-family: 'DM Sans', sans-serif;
+}
+.powered { text-align: center; font-size: 12px; color: #94a3b8; }
+.powered span { color: #635BFF; font-weight: 600; }
+
+/* ── SEMEX Overlay ── */
+:root {
+  --sx-bg: rgba(10,11,20,0.97);
+  --sx-surface: rgba(255,255,255,0.05);
+  --sx-border: rgba(255,255,255,0.10);
+  --sx-purple: #8B5CF6;
+  --sx-pink: #EC4899;
+  --sx-green: #10b981;
+  --sx-blue: #3b82f6;
+  --sx-red: #ef4444;
+  --sx-mut: rgba(255,255,255,0.45);
+  --sx-glass: rgba(10,11,20,0.92);
+  --sx-shadow: 0 16px 48px rgba(0,0,0,0.55);
+}
+
+.semex-overlay {
+  position: absolute;
+  bottom: 20px;
+  left: 20px;
+  z-index: 999;
+  font-family: 'DM Sans', sans-serif;
+  contain: layout style;
+}
+
+/* Full Panel */
+.overlay-full {
+  background: var(--sx-bg);
+  border: 1px solid var(--sx-border);
+  border-radius: 14px;
+  width: 210px;
+  overflow: hidden;
+  box-shadow: var(--sx-shadow), 0 0 0 1px rgba(139,92,246,0.10) inset;
+  color: white;
+  font-size: 11px;
+}
+
+/* Header */
+.full-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--sx-border);
+}
+.brand-row { display: flex; align-items: center; gap: 6px; }
+.brand-logo {
+  width: 20px; height: 20px; border-radius: 5px;
+  background: linear-gradient(135deg, var(--sx-purple), var(--sx-pink));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9px; font-weight: 800; color: white;
+}
+.brand-name { font-size: 11px; font-weight: 700; color: white; letter-spacing: 0.03em; }
+.brand-tag  { font-size: 9px; color: var(--sx-mut); }
+.header-btns { display: flex; gap: 3px; }
+.hbtn {
+  width: 22px; height: 22px; border-radius: 5px; border: 1px solid var(--sx-border);
+  background: var(--sx-surface); color: var(--sx-mut); font-size: 11px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+
+/* Status bar */
+.status-bar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 10px;
+  border-bottom: 1px solid var(--sx-border);
+  background: rgba(255,255,255,0.02);
+}
+.status-text { display: flex; align-items: center; gap: 5px; font-size: 10px; color: rgba(255,255,255,0.75); }
+.s-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--sx-blue); animation: pulse 1.5s infinite; }
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:.4} }
+.checkout-badge {
+  font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 4px;
+  background: rgba(139,92,246,0.2); border: 1px solid rgba(139,92,246,0.35); color: var(--sx-purple);
+  letter-spacing: 0.04em;
+}
+
+/* Stats */
+.stats-row {
+  display: flex; border-bottom: 1px solid var(--sx-border);
+}
+.stat-col {
+  flex: 1; padding: 6px 0; display: flex; flex-direction: column; align-items: center; gap: 2px;
+  border-right: 1px solid var(--sx-border);
+}
+.stat-col:last-child { border-right: none; }
+.stat-label { font-size: 8px; color: var(--sx-mut); text-transform: uppercase; letter-spacing: 0.06em; }
+.stat-val { font-size: 14px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
+.stat-val.green { color: var(--sx-green); }
+.stat-val.blue  { color: var(--sx-blue); }
+.stat-val.red   { color: var(--sx-red); }
+.stat-val.white { color: white; }
+
+/* Mode row */
+.mode-row {
+  display: flex; gap: 4px; padding: 7px 10px; border-bottom: 1px solid var(--sx-border);
+}
+.mode-btn {
+  flex: 1; padding: 3px 0; border-radius: 5px; border: 1px solid var(--sx-border);
+  background: var(--sx-surface); color: var(--sx-mut); font-size: 10px; font-weight: 600;
+  cursor: pointer; font-family: 'DM Sans', sans-serif;
+}
+.mode-btn.active {
+  background: rgba(139,92,246,0.25); border-color: rgba(139,92,246,0.5); color: var(--sx-purple);
+}
+
+/* Card row */
+.card-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 6px 10px; border-bottom: 1px solid var(--sx-border);
+}
+.card-num { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: white; letter-spacing: 0.05em; }
+.card-actions { display: flex; gap: 3px; }
+.card-btn {
+  width: 18px; height: 18px; border-radius: 4px; border: 1px solid var(--sx-border);
+  background: var(--sx-surface); color: var(--sx-mut); font-size: 9px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+
+/* CC List */
+.cc-list {
+  padding: 5px 10px 4px; border-bottom: 1px solid var(--sx-border);
+  display: flex; flex-direction: column; gap: 2px;
+}
+.cc-item { display: flex; align-items: center; gap: 5px; }
+.cc-num { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: rgba(255,255,255,0.6); }
+.cc-badge { font-size: 8px; padding: 1px 4px; border-radius: 3px; }
+.cc-badge.live { background: rgba(16,185,129,0.2); color: var(--sx-green); border: 1px solid rgba(16,185,129,0.3); }
+.cc-badge.dead { background: rgba(239,68,68,0.2); color: var(--sx-red); border: 1px solid rgba(239,68,68,0.3); }
+.cc-badge.use  { background: rgba(139,92,246,0.2); color: var(--sx-purple); border: 1px solid rgba(139,92,246,0.3); }
+
+/* Controls */
+.ctrl-row {
+  display: flex; gap: 5px; padding: 8px 10px; border-bottom: 1px solid var(--sx-border);
+}
+.ctrl-start {
+  flex: 1; padding: 6px 0; border-radius: 7px; border: none;
+  background: linear-gradient(160deg, #9B7BFF 0%, #7C5CFC 55%, #6B4FE0 100%);
+  color: white; font-size: 11px; font-weight: 600; cursor: pointer;
+  font-family: 'DM Sans', sans-serif; display: flex; align-items: center; justify-content: center; gap: 4px;
+}
+.ctrl-stop {
+  width: 30px; border-radius: 7px; border: 1px solid rgba(239,68,68,0.35);
+  background: rgba(239,68,68,0.15); color: var(--sx-red); font-size: 11px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+.ctrl-lock {
+  width: 30px; border-radius: 7px; border: 1px solid var(--sx-border);
+  background: var(--sx-surface); color: var(--sx-mut); font-size: 11px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+
+/* Info footer */
+.info-footer {
+  padding: 5px 10px;
+  display: flex; align-items: center; justify-content: space-between;
+  flex-wrap: wrap; gap: 3px;
+}
+.info-item { font-size: 8.5px; color: var(--sx-mut); }
+.info-item span { color: rgba(255,255,255,0.7); font-family: 'JetBrains Mono', monospace; }
+
+/* ── Pill (minimized) state — shown right of full overlay ── */
+.overlay-pill {
+  display: inline-flex; align-items: center; gap: 8px;
+  background: rgba(10,11,20,0.92);
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 999px; padding: 6px 12px;
+  backdrop-filter: blur(10px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+  margin-left: 12px; cursor: pointer;
+  vertical-align: middle;
+}
+.pill-logo {
+  width: 22px; height: 22px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--sx-purple), var(--sx-pink));
+  display: flex; align-items: center; justify-content: center;
+  font-size: 9px; font-weight: 800; color: white; flex-shrink: 0;
+}
+.pill-text { font-size: 11px; color: rgba(255,255,255,0.8); }
+.pill-dot-sm { width: 6px; height: 6px; border-radius: 50%; background: var(--sx-green); animation: pulse 1.5s infinite; }
+
+/* ── Embedded Checkout Detection Popup ── */
+.embed-popup {
+  position: absolute; top: 16px; right: 16px; z-index: 9999; width: 290px;
+  font-family: 'DM Sans', sans-serif;
+}
+.ep-card {
+  background: rgba(10,11,20,0.97); border: 1px solid rgba(139,92,246,0.3);
+  border-radius: 14px; padding: 16px; box-shadow: 0 16px 48px rgba(0,0,0,0.6);
+  color: white; position: relative;
+}
+.ep-close {
+  position: absolute; top: 10px; right: 10px; width: 22px; height: 22px;
+  border-radius: 5px; border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.5); font-size: 11px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+.ep-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.ep-icon {
+  width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--sx-purple), var(--sx-pink));
+  display: flex; align-items: center; justify-content: center; font-size: 14px;
+}
+.ep-title { font-size: 13px; font-weight: 700; }
+.ep-desc { font-size: 11px; color: rgba(255,255,255,0.6); margin-bottom: 12px; line-height: 1.5; }
+.ep-desc .ep-domain { color: white; font-weight: 600; }
+.ep-btns { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+.ep-primary {
+  padding: 9px 12px; border-radius: 8px; border: none;
+  background: linear-gradient(135deg, var(--sx-purple), #6d28d9); color: white;
+  font-size: 12px; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif;
+  display: flex; align-items: center; justify-content: center; gap: 5px;
+}
+.ep-secondary {
+  padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.7);
+  font-size: 12px; font-weight: 500; cursor: pointer; font-family: 'DM Sans', sans-serif;
+  display: flex; align-items: center; justify-content: center; gap: 5px;
+}
+.ep-hint { font-size: 10px; color: rgba(255,255,255,0.35); display: flex; align-items: center; gap: 4px; }
+
+/* Tab labels */
+.tab-label {
+  position: absolute; bottom: -22px; left: 0;
+  font-size: 10px; color: rgba(255,255,255,0.4); white-space: nowrap;
+  font-family: 'DM Sans', sans-serif;
+}
+</style>
+</head>
+<body>
+
+<div class="checkout-bg">
+  <!-- Mock Stripe Checkout -->
+  <div class="checkout-left">
+    <div class="merchant-logo">⚡ turboscribe.ai</div>
+    <div>
+      <div class="product-name">TurboScribe Unlimited</div>
+      <div class="product-price">$20.00 <small style="font-size:14px;font-weight:400;color:rgba(255,255,255,0.5)">/month</small></div>
+      <div class="product-sub">Billed monthly • Cancel anytime</div>
+    </div>
+  </div>
+
+  <div class="checkout-right">
+    <div class="wallet-btns">
+      <button class="wallet-btn apple">🍎 Apple Pay</button>
+      <button class="wallet-btn link">⚡ Link</button>
+    </div>
+    <div class="divider">or</div>
+    <div class="section-label">Contact information</div>
+    <div class="field-group">
+      <div class="field">fangu5219@gmail.com</div>
+    </div>
+    <div class="section-label">Payment method</div>
+    <div class="field-group">
+      <div class="field card-field">4111 1111 1111 1111</div>
+      <div class="field-row">
+        <div class="field card-field">12 / 30</div>
+        <div class="field card-field">000</div>
+      </div>
+      <div class="field">United States</div>
+    </div>
+    <button class="pay-btn">Subscribe</button>
+    <div class="powered">Powered by <span>semex</span> | Terms | Privacy</div>
+  </div>
+
+  <!-- SEMEX Overlay (Full state) -->
+  <div class="semex-overlay" style="position:absolute;bottom:20px;left:20px;">
+    <div style="position:relative">
+      <div class="overlay-full">
+        <div class="full-header">
+          <div class="brand-row">
+            <div class="brand-logo">S</div>
+            <div>
+              <div class="brand-name">SEMEX</div>
+            </div>
+            <span class="brand-tag">AUTOMATION</span>
+          </div>
+          <div class="header-btns">
+            <button class="hbtn">⚙</button>
+            <button class="hbtn">−</button>
+          </div>
+        </div>
+
+        <div class="status-bar">
+          <div class="status-text">
+            <div class="s-dot"></div>
+            Waiting response…
+          </div>
+          <span class="checkout-badge">CHECKOUT</span>
+        </div>
+
+        <div class="stats-row">
+          <div class="stat-col">
+            <div class="stat-label">ATT</div>
+            <div class="stat-val white">1</div>
+          </div>
+          <div class="stat-col">
+            <div class="stat-label">CHD</div>
+            <div class="stat-val green">0</div>
+          </div>
+          <div class="stat-col">
+            <div class="stat-label">LIVE</div>
+            <div class="stat-val blue">0</div>
+          </div>
+          <div class="stat-col">
+            <div class="stat-label">DEAD</div>
+            <div class="stat-val red">0</div>
+          </div>
+        </div>
+
+        <div class="mode-row">
+          <button class="mode-btn">BIN</button>
+          <button class="mode-btn active">CC</button>
+        </div>
+
+        <div class="card-row">
+          <span class="card-num">411111••••1111</span>
+          <div class="card-actions">
+            <button class="card-btn">⇄</button>
+            <button class="card-btn">🔒</button>
+          </div>
+        </div>
+
+        <div class="cc-list">
+          <div class="cc-item">
+            <span class="cc-num">4111••••1111</span>
+            <span class="cc-badge use">USE</span>
+          </div>
+          <div class="cc-item">
+            <span class="cc-num">5200••••2587</span>
+            <span class="cc-badge live">LIVE</span>
+          </div>
+          <div class="cc-item">
+            <span class="cc-num">4532••••7943</span>
+            <span class="cc-badge dead">DEAD</span>
+          </div>
+        </div>
+
+        <div class="ctrl-row">
+          <button class="ctrl-start">⏸ Pause</button>
+          <button class="ctrl-stop">⏹</button>
+          <button class="ctrl-lock">🔒</button>
+        </div>
+
+        <div class="info-footer">
+          <div class="info-item">TYPE:<span>LAND</span></div>
+          <div class="info-item">ATTS:<span>1</span></div>
+          <div class="info-item">SPD:<span>–</span></div>
+          <div class="info-item" style="width:100%">TIME:<span>00:08</span> &nbsp; IP:<span>2405:acc8:…</span></div>
+        </div>
+      </div>
+      <span class="tab-label">← Full (expanded) state</span>
+    </div>
+  </div>
+
+  <!-- Pill state demo (floating, separate) -->
+  <div style="position:absolute;bottom:200px;left:20px;display:flex;align-items:center">
+    <div style="position:relative">
+      <div class="overlay-pill">
+        <div class="pill-logo">S</div>
+        <div class="pill-dot-sm"></div>
+        <span class="pill-text">Ready</span>
+      </div>
+      <span class="tab-label">← Pill (minimized) state</span>
+    </div>
+  </div>
+
+  <!-- Embed checkout popup demo -->
+  <div class="embed-popup">
+    <div class="ep-card">
+      <button class="ep-close">✕</button>
+      <div class="ep-header">
+        <div class="ep-icon">⚡</div>
+        <div class="ep-title">Embedded Checkout Detected</div>
+      </div>
+      <div class="ep-desc">
+        <span class="ep-domain">turboscribe.ai</span> uses an embedded Stripe Checkout.
+        Open the hosted page for full automation with overlay.
+      </div>
+      <div class="ep-btns">
+        <button class="ep-primary">🔗 Open Checkout in New Tab</button>
+        <button class="ep-secondary">✓ Continue Without Overlay</button>
+      </div>
+      <div class="ep-hint">ℹ&nbsp; Bypass &amp; tracking still work on this page</div>
+    </div>
+  </div>
+
+</div>
+
+</body>
+</html>
