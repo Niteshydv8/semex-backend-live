@@ -1,27 +1,32 @@
 ---
-name: SEMEX overlay V4 redesign
-description: Structural and functional changes to overlay.js/overlay.css in the V4 compact redesign.
+name: SEMEX overlay V4/V5 redesign
+description: Structural and functional changes to overlay.js/overlay.css — V4 JS + V5 HTML/CSS redesign.
 ---
 
-## What changed
+## Current state (V5 HTML, V4 JS)
 
-**HTML structure**: The overlay's `innerHTML` (overlay.js `_0x1e815c`) was rewritten:
-- `btnSettings` (⚙) added to header alongside `btnMinimize`
-- `sx-settings-panel#sxSettingsPanel` div placed between the header and `.full-body`
-- `detailType` is now an `sx-type-badge` span inside `.full-status` (not a separate appended row)
-- `detailBinRow`, `detailBinInfo`, `detailIpRow`, `detailIp`, `detailTypeRow` are all pre-included in the HTML inside `.full-details`
-- Atts/Speed/Time/IP live inside a `sx-detail-grid` (2-column CSS grid)
+**HTML structure** (overlay.js `_0x4fac23.innerHTML` ~line 701):
+- Pill: `pillDot`, `pillText`, `pillPlay/Pause/Stop/Expand` — unchanged
+- Full header: `full-brand-logo` + `full-brand-text` (SEMEX name + v5 tag) + `full-controls` (ctrlStart/Pause/Stop/Blur + btnSettings + btnMinimize)
+- Settings panel: `#sxSettingsPanel.sx-settings-panel` with 3 `sx-addr-btn` buttons (data-mode: bin/ip/random)
+- Full body (pre-populated, JS no longer needs to inject these):
+  - `.full-status`: `statusIcon` + `statusText` + `#detailType.sx-type-badge`
+  - `.full-stats`: `statsToggle` + statTotal/statCharged/statLive/statDead
+  - `.full-details`: `detailCard`, `detailProcessed`, `detailBinRow`/`detailBinInfo` (hidden), `detailIpRow`/`detailIp` (hidden)
+- Dock: `overlayDock`, `dockDot`, `dockText` — unchanged
 
-**Why `detailBinRow` must be in main HTML**: `_semexEnsureDetailRows()` guards itself with `if (_0xdet.querySelector("#detailBinRow")) return;`. If it's absent, the function appends duplicate rows (type, BIN, IP) and creates a second `detailType` element — breaking `detailType.textContent` updates. Keep it in the HTML.
+**Why `detailBinRow` must be pre-included**: `_semexEnsureDetailRows()` guards with `if (_0xdet.querySelector("#detailBinRow")) return;` — if absent it appends duplicate rows including a second `#detailType`, breaking textContent updates.
 
-**Type badge init**: Since `_semexEnsureDetailRows` now no-ops, `detailType` is populated explicitly after `setupEventListeners` with `document.getElementById("detailType").textContent = _semexCheckoutType()`.
+**`detailType` must be in HTML**: `_semexEnsureSettingsPanel` no-ops when `#sxSettingsPanel .sx-addr-btn` not found; line 829 populates `detailType` directly after `setupEventListeners`.
 
-**Settings panel**: Toggled by `.classList.toggle("sx-open")` on `sxSettingsPanel`. Address mode buttons post `SEMEX_GET_ADDR_MODE` (load) and `SEMEX_SET_ADDR_MODE` (save) via the content.js bridge. Bridge stores in `settings.addressMode` in `chrome.storage.local`. Response `SEMEX_ADDR_MODE` sets the `sx-active` class on the matching button.
+**Jetix visual (overlay.css)**:
+- Panel BG: `rgba(14,15,22,0.97)` with `blur(16px)` backdrop
+- Glow ring: `box-shadow: 0 0 0 1px rgba(124,92,252,0.22), 0 16px 48px rgba(0,0,0,0.65)`
+- Logo gradient: `#8E6BFF → #7c3aed` (violet, NOT pink — removed `#ec4899` from ALL rules)
+- Brand name: violet gradient text in header next to logo
+- V4 override block (~line 1640+): CSS variables + PixelZero styling (liquid glass buttons, violet primary, mono numbers)
+- Performance layer (~line 1640): single-pass backdrop, rAF-batched drag, no `transition: all` on root
 
-**Address mode**: `content.js fillFormFromOverlay` reads `_0x4159f5.addressMode` ("bin"|"ip"|"random"). "ip" reads `proxyState.countryCode` from storage; "random" picks from a 15-country pool; "bin" uses BIN card country as before.
+**Build**: `cd semex && bash build.sh https://api.semxhitter.pw --plain` (or without --plain for obfuscation)
 
-**Test card**: Pre-fill is always `4111111111111111` + expiry `12/30` (not brand-matched). The expiry field (if available via `_0x2a7b99.expiry`) also gets `12/30` before the 280ms pause.
-
-**CSS**: V4 additions appended to `overlay.css` — `.sx-settings-panel`, `.sx-addr-btn`, `.sx-type-badge`, `.sx-detail-grid`, `.sx-detail-cell`, `.sx-detail-lbl`. The `.full-body` gap/padding is tightened via `!important` overrides at the end of the file.
-
-**Build**: After these changes, rebuild with `cd semex && bash build.sh https://api.semxhitter.pw --plain`.
+**Why**: V4 JS references `statusText`, `statusIcon`, `statTotal/Charged/Live/Dead`, `statsToggle`, `detailCard`, `detailProcessed`, `btnSettings`, `sxSettingsPanel`, `detailType` — none existed in the V2 HTML (empty full-body). All now pre-included.
