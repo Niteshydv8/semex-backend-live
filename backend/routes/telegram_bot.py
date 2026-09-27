@@ -1990,6 +1990,11 @@ async def _cmd_bins(chat_id: int, from_user_id: int | None) -> None:
 
 
 async def _cmd_get(chat_id: int) -> None:
+    await send_message(
+        chat_id,
+        "⚠️ Extension downloads are temporarily unavailable. Please check back later.",
+    )
+    return
     resolved = await _resolve_zip()
     if not resolved:
         await send_message(
@@ -2381,6 +2386,7 @@ async def download_extension():
     back to the legacy on-disk zip. Increments the release download counter.
     """
     from fastapi.responses import FileResponse, JSONResponse
+    return JSONResponse({"error": "Extension downloads are temporarily unavailable."}, status_code=503)
     resolved = await _resolve_zip()
     if not resolved:
         return JSONResponse({"error": "Extension package not available"}, status_code=404)
