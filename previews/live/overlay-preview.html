@@ -64,185 +64,249 @@ body { font-family: 'DM Sans', sans-serif; background: #f8f9fa; min-height: 100v
 .powered { text-align: center; font-size: 12px; color: #94a3b8; }
 .powered span { color: #635BFF; font-weight: 600; }
 
-/* ── SEMEX Overlay ── */
+/* ── SEMEX Overlay — APEX redesign ── */
 :root {
-  --sx-bg: rgba(10,11,20,0.97);
-  --sx-surface: rgba(255,255,255,0.05);
-  --sx-border: rgba(255,255,255,0.10);
-  --sx-purple: #8B5CF6;
-  --sx-pink: #EC4899;
-  --sx-green: #10b981;
-  --sx-blue: #3b82f6;
-  --sx-red: #ef4444;
-  --sx-mut: rgba(255,255,255,0.45);
-  --sx-glass: rgba(10,11,20,0.92);
-  --sx-shadow: 0 16px 48px rgba(0,0,0,0.55);
+  --sx-purple: #7C5CFC;
+  --sx-purple-hi: #9B7BFF;
+  --sx-pink:   #EC4899;
+  --sx-green:  #00D084;
+  --sx-blue:   #38BDF8;
+  --sx-red:    #F87171;
+  --sx-amber:  #FBBF24;
+  --sx-bg:     #0b0c18;
+  --sx-card:   #0f1020;
+  --sx-border: rgba(255,255,255,0.07);
+  --sx-mut:    rgba(255,255,255,0.35);
+  --sx-soft:   rgba(255,255,255,0.55);
 }
+
+@keyframes pulse { 0%,100%{opacity:1}50%{opacity:.3} }
+@keyframes scan  { 0%{background-position:0 0}100%{background-position:0 100%} }
 
 .semex-overlay {
-  position: absolute;
-  bottom: 20px;
-  left: 20px;
-  z-index: 999;
-  font-family: 'DM Sans', sans-serif;
-  contain: layout style;
+  position: absolute; bottom: 20px; left: 20px;
+  z-index: 999; font-family: 'DM Sans', sans-serif; contain: layout style;
 }
 
-/* Full Panel */
+/* ── Panel shell ── */
 .overlay-full {
+  width: 228px;
   background: var(--sx-bg);
   border: 1px solid var(--sx-border);
-  border-radius: 14px;
-  width: 210px;
+  border-radius: 16px;
   overflow: hidden;
-  box-shadow: var(--sx-shadow), 0 0 0 1px rgba(139,92,246,0.10) inset;
   color: white;
-  font-size: 11px;
+  box-shadow:
+    0 0 0 1px rgba(124,92,252,0.15),
+    0 24px 64px rgba(0,0,0,0.7),
+    inset 0 1px 0 rgba(255,255,255,0.05);
 }
 
-/* Header */
-.full-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 8px 10px;
+/* ── Header ── */
+.sx-header {
+  background: linear-gradient(180deg, #13142b 0%, #0e0f1e 100%);
+  padding: 10px 11px 9px;
+  display: flex; align-items: center; justify-content: space-between;
   border-bottom: 1px solid var(--sx-border);
 }
-.brand-row { display: flex; align-items: center; gap: 6px; }
-.brand-logo {
-  width: 20px; height: 20px; border-radius: 5px;
+.sx-brand { display: flex; align-items: center; gap: 7px; }
+.sx-logo {
+  width: 24px; height: 24px; border-radius: 7px; flex-shrink: 0;
   background: linear-gradient(135deg, var(--sx-purple), var(--sx-pink));
   display: flex; align-items: center; justify-content: center;
-  font-size: 9px; font-weight: 800; color: white;
+  font-size: 10px; font-weight: 900; color: white;
+  box-shadow: 0 4px 12px rgba(124,92,252,0.45);
 }
-.brand-name { font-size: 11px; font-weight: 700; color: white; letter-spacing: 0.03em; }
-.brand-tag  { font-size: 9px; color: var(--sx-mut); }
-.header-btns { display: flex; gap: 3px; }
-.hbtn {
-  width: 22px; height: 22px; border-radius: 5px; border: 1px solid var(--sx-border);
-  background: var(--sx-surface); color: var(--sx-mut); font-size: 11px;
-  cursor: pointer; display: flex; align-items: center; justify-content: center;
+.sx-wordmark { font-size: 12px; font-weight: 800; color: white; letter-spacing: 0.04em; }
+.sx-version  { font-size: 9px; color: var(--sx-mut); font-weight: 500; letter-spacing: 0.02em; }
+.sx-hbtns { display: flex; gap: 3px; }
+.sx-hbtn {
+  width: 22px; height: 22px; border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.07); background: rgba(255,255,255,0.04);
+  color: var(--sx-mut); font-size: 11px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s, color 0.15s;
 }
+.sx-hbtn:hover { background: rgba(255,255,255,0.09); color: rgba(255,255,255,0.75); }
 
-/* Status bar */
-.status-bar {
+/* ── Status row ── */
+.sx-status {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 6px 10px;
+  padding: 7px 11px;
+  background: rgba(124,92,252,0.04);
   border-bottom: 1px solid var(--sx-border);
-  background: rgba(255,255,255,0.02);
 }
-.status-text { display: flex; align-items: center; gap: 5px; font-size: 10px; color: rgba(255,255,255,0.75); }
-.s-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--sx-blue); animation: pulse 1.5s infinite; }
-@keyframes pulse { 0%,100%{opacity:1}50%{opacity:.4} }
-.checkout-badge {
-  font-size: 9px; font-weight: 700; padding: 2px 6px; border-radius: 4px;
-  background: rgba(139,92,246,0.2); border: 1px solid rgba(139,92,246,0.35); color: var(--sx-purple);
-  letter-spacing: 0.04em;
+.sx-status-left { display: flex; align-items: center; gap: 6px; }
+.sx-dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--sx-blue); animation: pulse 1.6s infinite;
+  box-shadow: 0 0 6px rgba(56,189,248,0.7);
+}
+.sx-status-text { font-size: 10.5px; color: rgba(255,255,255,0.7); font-weight: 500; }
+.sx-type-badge {
+  font-size: 8.5px; font-weight: 800; letter-spacing: 0.08em;
+  padding: 2px 7px; border-radius: 4px;
+  background: rgba(124,92,252,0.18); border: 1px solid rgba(124,92,252,0.3);
+  color: var(--sx-purple-hi);
 }
 
-/* Stats */
-.stats-row {
-  display: flex; border-bottom: 1px solid var(--sx-border);
+/* ── Stats grid: 2 × 2 ── */
+.sx-stats {
+  display: grid; grid-template-columns: 1fr 1fr;
+  border-bottom: 1px solid var(--sx-border);
 }
-.stat-col {
-  flex: 1; padding: 6px 0; display: flex; flex-direction: column; align-items: center; gap: 2px;
+.sx-stat {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 9px 0 8px; gap: 2px;
   border-right: 1px solid var(--sx-border);
+  border-bottom: 1px solid var(--sx-border);
 }
-.stat-col:last-child { border-right: none; }
-.stat-label { font-size: 8px; color: var(--sx-mut); text-transform: uppercase; letter-spacing: 0.06em; }
-.stat-val { font-size: 14px; font-weight: 700; font-family: 'JetBrains Mono', monospace; }
-.stat-val.green { color: var(--sx-green); }
-.stat-val.blue  { color: var(--sx-blue); }
-.stat-val.red   { color: var(--sx-red); }
-.stat-val.white { color: white; }
+.sx-stat:nth-child(2), .sx-stat:nth-child(4) { border-right: none; }
+.sx-stat:nth-child(3), .sx-stat:nth-child(4) { border-bottom: none; }
+.sx-stat-lbl {
+  font-size: 8px; font-weight: 700; letter-spacing: 0.1em;
+  text-transform: uppercase; color: var(--sx-mut);
+}
+.sx-stat-val {
+  font-size: 20px; font-weight: 700; font-family: 'JetBrains Mono', monospace;
+  line-height: 1;
+}
+.sx-stat-val.c-white  { color: #fff; }
+.sx-stat-val.c-green  { color: var(--sx-green); text-shadow: 0 0 10px rgba(0,208,132,0.4); }
+.sx-stat-val.c-blue   { color: var(--sx-blue);  text-shadow: 0 0 10px rgba(56,189,248,0.4); }
+.sx-stat-val.c-red    { color: var(--sx-red);   text-shadow: 0 0 10px rgba(248,113,113,0.4); }
 
-/* Mode row */
-.mode-row {
-  display: flex; gap: 4px; padding: 7px 10px; border-bottom: 1px solid var(--sx-border);
+/* ── Mode toggle ── */
+.sx-mode {
+  display: flex; padding: 8px 11px;
+  border-bottom: 1px solid var(--sx-border);
+  background: rgba(255,255,255,0.01);
 }
-.mode-btn {
-  flex: 1; padding: 3px 0; border-radius: 5px; border: 1px solid var(--sx-border);
-  background: var(--sx-surface); color: var(--sx-mut); font-size: 10px; font-weight: 600;
-  cursor: pointer; font-family: 'DM Sans', sans-serif;
+.sx-mode-track {
+  flex: 1; display: flex;
+  background: rgba(255,255,255,0.04); border: 1px solid var(--sx-border);
+  border-radius: 7px; overflow: hidden;
 }
-.mode-btn.active {
-  background: rgba(139,92,246,0.25); border-color: rgba(139,92,246,0.5); color: var(--sx-purple);
+.sx-mode-opt {
+  flex: 1; padding: 4px 0; border: none; background: transparent;
+  color: var(--sx-mut); font-size: 10.5px; font-weight: 700;
+  letter-spacing: 0.05em; cursor: pointer; font-family: 'DM Sans', sans-serif;
+  transition: background 0.15s, color 0.15s;
+}
+.sx-mode-opt.active {
+  background: linear-gradient(135deg, rgba(124,92,252,0.35), rgba(124,92,252,0.2));
+  color: var(--sx-purple-hi);
+  border-radius: 6px;
 }
 
-/* Card row */
-.card-row {
+/* ── Active card chip ── */
+.sx-card {
+  margin: 8px 11px;
+  background: linear-gradient(135deg, #1a1830 0%, #151326 100%);
+  border: 1px solid rgba(124,92,252,0.2);
+  border-radius: 9px; padding: 8px 10px;
   display: flex; align-items: center; justify-content: space-between;
-  padding: 6px 10px; border-bottom: 1px solid var(--sx-border);
+  box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
 }
-.card-num { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: white; letter-spacing: 0.05em; }
-.card-actions { display: flex; gap: 3px; }
-.card-btn {
-  width: 18px; height: 18px; border-radius: 4px; border: 1px solid var(--sx-border);
-  background: var(--sx-surface); color: var(--sx-mut); font-size: 9px;
+.sx-card-left { display: flex; flex-direction: column; gap: 2px; }
+.sx-card-tag { font-size: 8px; font-weight: 700; letter-spacing: 0.08em; color: var(--sx-mut); text-transform: uppercase; }
+.sx-card-num {
+  font-family: 'JetBrains Mono', monospace; font-size: 11px;
+  font-weight: 600; color: #fff; letter-spacing: 0.06em;
+}
+.sx-card-btns { display: flex; gap: 4px; }
+.sx-card-btn {
+  width: 22px; height: 22px; border-radius: 6px;
+  border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.05);
+  color: var(--sx-mut); font-size: 10px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+}
+
+/* ── CC List ── */
+.sx-list {
+  padding: 0 11px 8px; display: flex; flex-direction: column; gap: 3px;
+}
+.sx-list-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 5px 8px; border-radius: 7px;
+  background: rgba(255,255,255,0.025);
+  border-left: 2.5px solid transparent;
+}
+.sx-list-item.is-use  { border-left-color: var(--sx-purple); }
+.sx-list-item.is-live { border-left-color: var(--sx-green); }
+.sx-list-item.is-dead { border-left-color: rgba(255,255,255,0.12); }
+.sx-list-num {
+  flex: 1; font-family: 'JetBrains Mono', monospace; font-size: 9.5px;
+  color: rgba(255,255,255,0.65);
+}
+.sx-list-tag { font-size: 8px; font-weight: 800; letter-spacing: 0.07em; }
+.sx-list-tag.use  { color: var(--sx-purple-hi); }
+.sx-list-tag.live { color: var(--sx-green); }
+.sx-list-tag.dead { color: rgba(255,255,255,0.2); }
+
+/* ── Controls ── */
+.sx-ctrl {
+  display: flex; gap: 5px; padding: 0 11px 10px;
+}
+.sx-btn-pause {
+  flex: 1; padding: 8px 0; border-radius: 8px; border: none;
+  background: linear-gradient(135deg, #9B7BFF 0%, #7C5CFC 60%, #6346E0 100%);
+  color: white; font-size: 11.5px; font-weight: 700; cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  display: flex; align-items: center; justify-content: center; gap: 5px;
+  box-shadow: 0 4px 16px rgba(124,92,252,0.4);
+  letter-spacing: 0.01em;
+}
+.sx-btn-stop {
+  width: 34px; border-radius: 8px;
+  border: 1px solid rgba(248,113,113,0.25);
+  background: rgba(248,113,113,0.08);
+  color: var(--sx-red); font-size: 12px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+}
+.sx-btn-lock {
+  width: 34px; border-radius: 8px;
+  border: 1px solid var(--sx-border);
+  background: rgba(255,255,255,0.03);
+  color: var(--sx-mut); font-size: 12px;
   cursor: pointer; display: flex; align-items: center; justify-content: center;
 }
 
-/* CC List */
-.cc-list {
-  padding: 5px 10px 4px; border-bottom: 1px solid var(--sx-border);
-  display: flex; flex-direction: column; gap: 2px;
+/* ── Footer info strip ── */
+.sx-footer {
+  border-top: 1px solid var(--sx-border);
+  background: rgba(0,0,0,0.2);
+  padding: 5px 11px;
+  display: grid; grid-template-columns: 1fr 1fr;
+  gap: 2px 0;
 }
-.cc-item { display: flex; align-items: center; gap: 5px; }
-.cc-num { font-family: 'JetBrains Mono', monospace; font-size: 9px; color: rgba(255,255,255,0.6); }
-.cc-badge { font-size: 8px; padding: 1px 4px; border-radius: 3px; }
-.cc-badge.live { background: rgba(16,185,129,0.2); color: var(--sx-green); border: 1px solid rgba(16,185,129,0.3); }
-.cc-badge.dead { background: rgba(239,68,68,0.2); color: var(--sx-red); border: 1px solid rgba(239,68,68,0.3); }
-.cc-badge.use  { background: rgba(139,92,246,0.2); color: var(--sx-purple); border: 1px solid rgba(139,92,246,0.3); }
+.sx-fi {
+  font-size: 8.5px; color: var(--sx-mut);
+  font-family: 'JetBrains Mono', monospace;
+}
+.sx-fi b { color: rgba(255,255,255,0.65); font-weight: 500; }
+.sx-fi.full { grid-column: 1 / -1; }
 
-/* Controls */
-.ctrl-row {
-  display: flex; gap: 5px; padding: 8px 10px; border-bottom: 1px solid var(--sx-border);
-}
-.ctrl-start {
-  flex: 1; padding: 6px 0; border-radius: 7px; border: none;
-  background: linear-gradient(160deg, #9B7BFF 0%, #7C5CFC 55%, #6B4FE0 100%);
-  color: white; font-size: 11px; font-weight: 600; cursor: pointer;
-  font-family: 'DM Sans', sans-serif; display: flex; align-items: center; justify-content: center; gap: 4px;
-}
-.ctrl-stop {
-  width: 30px; border-radius: 7px; border: 1px solid rgba(239,68,68,0.35);
-  background: rgba(239,68,68,0.15); color: var(--sx-red); font-size: 11px;
-  cursor: pointer; display: flex; align-items: center; justify-content: center;
-}
-.ctrl-lock {
-  width: 30px; border-radius: 7px; border: 1px solid var(--sx-border);
-  background: var(--sx-surface); color: var(--sx-mut); font-size: 11px;
-  cursor: pointer; display: flex; align-items: center; justify-content: center;
-}
-
-/* Info footer */
-.info-footer {
-  padding: 5px 10px;
-  display: flex; align-items: center; justify-content: space-between;
-  flex-wrap: wrap; gap: 3px;
-}
-.info-item { font-size: 8.5px; color: var(--sx-mut); }
-.info-item span { color: rgba(255,255,255,0.7); font-family: 'JetBrains Mono', monospace; }
-
-/* ── Pill (minimized) state — shown right of full overlay ── */
+/* ── Pill (minimized) ── */
 .overlay-pill {
   display: inline-flex; align-items: center; gap: 8px;
-  background: rgba(10,11,20,0.92);
-  border: 1px solid rgba(255,255,255,0.10);
-  border-radius: 999px; padding: 6px 12px;
-  backdrop-filter: blur(10px);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-  margin-left: 12px; cursor: pointer;
-  vertical-align: middle;
+  background: rgba(11,12,24,0.95);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 999px; padding: 6px 14px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(124,92,252,0.12);
+  margin-left: 12px; cursor: pointer; vertical-align: middle;
 }
 .pill-logo {
   width: 22px; height: 22px; border-radius: 50%;
   background: linear-gradient(135deg, var(--sx-purple), var(--sx-pink));
   display: flex; align-items: center; justify-content: center;
-  font-size: 9px; font-weight: 800; color: white; flex-shrink: 0;
+  font-size: 9px; font-weight: 900; color: white; flex-shrink: 0;
 }
-.pill-text { font-size: 11px; color: rgba(255,255,255,0.8); }
-.pill-dot-sm { width: 6px; height: 6px; border-radius: 50%; background: var(--sx-green); animation: pulse 1.5s infinite; }
+.pill-text { font-size: 11px; color: rgba(255,255,255,0.75); font-weight: 500; }
+.pill-dot-sm {
+  width: 6px; height: 6px; border-radius: 50%; background: var(--sx-green);
+  animation: pulse 1.6s infinite; box-shadow: 0 0 5px rgba(0,208,132,0.6);
+}
 
 /* ── Embedded Checkout Detection Popup — v3 full redesign ── */
 @keyframes ep-slidein {
@@ -422,98 +486,114 @@ body { font-family: 'DM Sans', sans-serif; background: #f8f9fa; min-height: 100v
     <div class="powered">Powered by <span>semex</span> | Terms | Privacy</div>
   </div>
 
-  <!-- SEMEX Overlay (Full state) -->
+  <!-- SEMEX Overlay — APEX redesign (Full state) -->
   <div class="semex-overlay" style="position:absolute;bottom:20px;left:20px;">
     <div style="position:relative">
       <div class="overlay-full">
-        <div class="full-header">
-          <div class="brand-row">
-            <div class="brand-logo">S</div>
+
+        <!-- Header -->
+        <div class="sx-header">
+          <div class="sx-brand">
+            <div class="sx-logo">S</div>
             <div>
-              <div class="brand-name">SEMEX</div>
+              <div class="sx-wordmark">SEMEX</div>
+              <div class="sx-version">v5.0.0</div>
             </div>
-            <span class="brand-tag">AUTOMATION</span>
           </div>
-          <div class="header-btns">
-            <button class="hbtn">⚙</button>
-            <button class="hbtn">−</button>
-          </div>
-        </div>
-
-        <div class="status-bar">
-          <div class="status-text">
-            <div class="s-dot"></div>
-            Waiting response…
-          </div>
-          <span class="checkout-badge">CHECKOUT</span>
-        </div>
-
-        <div class="stats-row">
-          <div class="stat-col">
-            <div class="stat-label">ATT</div>
-            <div class="stat-val white">1</div>
-          </div>
-          <div class="stat-col">
-            <div class="stat-label">CHD</div>
-            <div class="stat-val green">0</div>
-          </div>
-          <div class="stat-col">
-            <div class="stat-label">LIVE</div>
-            <div class="stat-val blue">0</div>
-          </div>
-          <div class="stat-col">
-            <div class="stat-label">DEAD</div>
-            <div class="stat-val red">0</div>
+          <div class="sx-hbtns">
+            <button class="sx-hbtn" title="Settings">⚙</button>
+            <button class="sx-hbtn" title="Minimize">−</button>
           </div>
         </div>
 
-        <div class="mode-row">
-          <button class="mode-btn">BIN</button>
-          <button class="mode-btn active">CC</button>
+        <!-- Status -->
+        <div class="sx-status">
+          <div class="sx-status-left">
+            <div class="sx-dot"></div>
+            <span class="sx-status-text">Waiting response…</span>
+          </div>
+          <span class="sx-type-badge">CHECKOUT</span>
         </div>
 
-        <div class="card-row">
-          <span class="card-num">411111••••1111</span>
-          <div class="card-actions">
-            <button class="card-btn">⇄</button>
-            <button class="card-btn">🔒</button>
+        <!-- Stats 2×2 grid -->
+        <div class="sx-stats">
+          <div class="sx-stat">
+            <div class="sx-stat-lbl">ATT</div>
+            <div class="sx-stat-val c-white">1</div>
+          </div>
+          <div class="sx-stat">
+            <div class="sx-stat-lbl">CHD</div>
+            <div class="sx-stat-val c-green">0</div>
+          </div>
+          <div class="sx-stat">
+            <div class="sx-stat-lbl">LIVE</div>
+            <div class="sx-stat-val c-blue">0</div>
+          </div>
+          <div class="sx-stat">
+            <div class="sx-stat-lbl">DEAD</div>
+            <div class="sx-stat-val c-red">0</div>
           </div>
         </div>
 
-        <div class="cc-list">
-          <div class="cc-item">
-            <span class="cc-num">4111••••1111</span>
-            <span class="cc-badge use">USE</span>
-          </div>
-          <div class="cc-item">
-            <span class="cc-num">5200••••2587</span>
-            <span class="cc-badge live">LIVE</span>
-          </div>
-          <div class="cc-item">
-            <span class="cc-num">4532••••7943</span>
-            <span class="cc-badge dead">DEAD</span>
+        <!-- Mode toggle -->
+        <div class="sx-mode">
+          <div class="sx-mode-track">
+            <button class="sx-mode-opt">BIN</button>
+            <button class="sx-mode-opt active">CC</button>
           </div>
         </div>
 
-        <div class="ctrl-row">
-          <button class="ctrl-start">⏸ Pause</button>
-          <button class="ctrl-stop">⏹</button>
-          <button class="ctrl-lock">🔒</button>
+        <!-- Active card chip -->
+        <div class="sx-card">
+          <div class="sx-card-left">
+            <div class="sx-card-tag">Active Card</div>
+            <div class="sx-card-num">411111 •••• 1111</div>
+          </div>
+          <div class="sx-card-btns">
+            <button class="sx-card-btn" title="Swap">⇄</button>
+            <button class="sx-card-btn" title="Lock">🔒</button>
+          </div>
         </div>
 
-        <div class="info-footer">
-          <div class="info-item">TYPE:<span>LAND</span></div>
-          <div class="info-item">ATTS:<span>1</span></div>
-          <div class="info-item">SPD:<span>–</span></div>
-          <div class="info-item" style="width:100%">TIME:<span>00:08</span> &nbsp; IP:<span>2405:acc8:…</span></div>
+        <!-- CC List -->
+        <div class="sx-list">
+          <div class="sx-list-item is-use">
+            <span class="sx-list-num">4111 •••• 1111</span>
+            <span class="sx-list-tag use">USE</span>
+          </div>
+          <div class="sx-list-item is-live">
+            <span class="sx-list-num">5200 •••• 2587</span>
+            <span class="sx-list-tag live">LIVE</span>
+          </div>
+          <div class="sx-list-item is-dead">
+            <span class="sx-list-num">4532 •••• 7943</span>
+            <span class="sx-list-tag dead">DEAD</span>
+          </div>
         </div>
+
+        <!-- Controls -->
+        <div class="sx-ctrl">
+          <button class="sx-btn-pause">⏸ Pause</button>
+          <button class="sx-btn-stop">⏹</button>
+          <button class="sx-btn-lock">🔒</button>
+        </div>
+
+        <!-- Footer info -->
+        <div class="sx-footer">
+          <div class="sx-fi">TYPE:<b>LAND</b></div>
+          <div class="sx-fi">ATTS:<b>1</b></div>
+          <div class="sx-fi">SPD:<b>–</b></div>
+          <div class="sx-fi">TIME:<b>00:08</b></div>
+          <div class="sx-fi full">IP:<b>2405:acc8:1234:…</b></div>
+        </div>
+
       </div>
       <span class="tab-label">← Full (expanded) state</span>
     </div>
   </div>
 
-  <!-- Pill state demo (floating, separate) -->
-  <div style="position:absolute;bottom:200px;left:20px;display:flex;align-items:center">
+  <!-- Pill state demo -->
+  <div style="position:absolute;bottom:220px;left:20px;display:flex;align-items:center">
     <div style="position:relative">
       <div class="overlay-pill">
         <div class="pill-logo">S</div>
