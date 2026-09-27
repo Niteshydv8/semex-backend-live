@@ -308,143 +308,77 @@ body { font-family: 'DM Sans', sans-serif; background: #f8f9fa; min-height: 100v
   animation: pulse 1.6s infinite; box-shadow: 0 0 5px rgba(0,208,132,0.6);
 }
 
-/* ── Embed Popup — Nexus horizontal banner ── */
-@keyframes ep-drop {
-  from { opacity: 0; transform: translateY(-14px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-@keyframes ep-ping {
-  0%   { transform: scale(1);   opacity: 0.7; }
-  80%  { transform: scale(2.4); opacity: 0; }
-  100% { transform: scale(2.4); opacity: 0; }
-}
-@keyframes ep-shimmer {
-  0%   { background-position: -200% center; }
-  100% { background-position:  200% center; }
-}
-@keyframes ep-countdown {
-  from { transform: scaleX(1); }
-  to   { transform: scaleX(0); }
+/* ── Embed Popup — Jetix-style (exact match from extension) ── */
+@keyframes semex-ep-in {
+  from { transform: translateX(40px) scale(0.96); opacity: 0; filter: blur(6px); }
+  to   { transform: none; opacity: 1; filter: none; }
 }
 
 .embed-popup {
   position: absolute;
-  top: 16px; left: 50%; transform: translateX(-50%);
-  z-index: 9999;
-  width: 440px;
-  font-family: 'DM Sans', sans-serif;
-  animation: ep-drop 0.3s cubic-bezier(0.22,1,0.36,1) both;
+  top: 16px; right: 16px; z-index: 9999;
+  width: 310px;
+  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  animation: semex-ep-in 0.45s cubic-bezier(0.34,1.1,0.64,1) both;
 }
 
-.ep-card {
-  background: rgba(10,11,22,0.96);
+.sep-card {
+  background: rgba(14,15,22,0.97);
+  border: 1px solid rgba(255,255,255,0.12);
   border-radius: 14px;
-  border: 1px solid rgba(255,255,255,0.07);
-  box-shadow:
-    0 0 0 1px rgba(124,92,252,0.18),
-    0 20px 56px rgba(0,0,0,0.65),
-    inset 0 1px 0 rgba(255,255,255,0.06);
-  overflow: hidden;
-}
-
-/* gradient top stripe */
-.ep-glow-bar {
-  height: 1.5px;
-  background: linear-gradient(90deg,
-    transparent 0%,
-    #7C5CFC 25%,
-    #C084FC 50%,
-    #7C5CFC 75%,
-    transparent 100%);
-  background-size: 200% 100%;
-  animation: ep-shimmer 3s linear infinite;
-}
-
-/* main horizontal row */
-.ep-row {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-  padding: 13px 14px;
-}
-
-/* signal icon */
-.ep-signal {
+  box-shadow: 0 0 0 1px rgba(124,92,252,0.22), 0 16px 48px rgba(0,0,0,0.65);
+  padding: 16px 16px 14px;
   position: relative;
-  width: 38px; height: 38px; flex-shrink: 0;
+  color: white;
+}
+.sep-close {
+  position: absolute; top: 10px; right: 10px;
+  width: 22px; height: 22px;
+  background: rgba(255,255,255,0.06); border: none; border-radius: 6px;
+  color: #6b7280; font-size: 14px; line-height: 1;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s, color 0.15s;
+}
+.sep-close:hover { background: rgba(248,113,113,0.14); color: #f87171; }
+.sep-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.sep-icon {
+  width: 30px; height: 30px; border-radius: 8px; flex: 0 0 auto;
+  background: rgba(124,92,252,0.18); border: 1px solid rgba(124,92,252,0.35);
   display: flex; align-items: center; justify-content: center;
+  font-size: 15px; color: #a78bfa;
+  box-shadow: 0 0 14px rgba(124,92,252,0.28);
 }
-.ep-signal-ring {
-  position: absolute; inset: 0;
-  border-radius: 50%;
-  border: 1.5px solid rgba(124,92,252,0.55);
-  animation: ep-ping 2.2s ease-out infinite;
+.sep-header-text { font-size: 12.5px; font-weight: 700; color: #c4b5fd; letter-spacing: 0.01em; }
+.sep-desc { font-size: 11.5px; color: #6b7280; line-height: 1.55; margin-bottom: 12px; }
+.sep-desc .sep-domain { color: #a78bfa; font-weight: 600; }
+.sep-btns { display: flex; flex-direction: column; gap: 7px; }
+.sep-btn-primary {
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  padding: 10px 14px; border-radius: 9px; cursor: pointer;
+  font-family: inherit; font-size: 12.5px; font-weight: 700;
+  background: linear-gradient(180deg, rgba(142,107,255,0.9), rgba(109,74,232,0.85));
+  border: 1px solid rgba(175,145,255,0.40);
+  color: #fff;
+  box-shadow: 0 4px 16px rgba(124,92,252,0.40);
+  transition: filter 0.15s, transform 0.15s;
 }
-.ep-signal-ring:nth-child(2) { animation-delay: 0.75s; }
-.ep-signal-core {
-  position: relative; z-index: 1;
-  width: 22px; height: 22px; border-radius: 50%;
-  background: linear-gradient(135deg, #7C5CFC, #C084FC);
-  box-shadow: 0 0 14px rgba(124,92,252,0.55);
-  display: flex; align-items: center; justify-content: center;
-  font-size: 10px; font-weight: 900; color: white;
+.sep-btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); }
+.sep-btn-secondary {
+  display: flex; align-items: center; justify-content: center; gap: 7px;
+  padding: 9px 14px; border-radius: 9px; cursor: pointer;
+  font-family: inherit; font-size: 12.5px; font-weight: 600;
+  background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.10);
+  color: #9ca3af;
+  transition: background 0.15s, color 0.15s;
 }
-
-/* text block */
-.ep-text { flex: 1; min-width: 0; }
-.ep-eyebrow {
-  font-size: 9px; font-weight: 700; letter-spacing: 0.1em;
-  text-transform: uppercase; color: #A78BFA; margin-bottom: 2px;
-}
-.ep-headline {
-  font-size: 13px; font-weight: 700; color: #fff;
-  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
-}
-.ep-sub {
-  font-size: 10px; color: rgba(255,255,255,0.35); margin-top: 1px;
-}
-
-/* action buttons */
-.ep-actions {
-  display: flex; align-items: center; gap: 6px; flex-shrink: 0;
-}
-.ep-btn-open {
-  padding: 7px 14px; border-radius: 8px; border: none;
-  background: linear-gradient(135deg, #7C5CFC, #6346E0);
-  color: #fff; font-size: 11.5px; font-weight: 700;
-  font-family: 'DM Sans', sans-serif; cursor: pointer;
-  white-space: nowrap; letter-spacing: 0.01em;
-  box-shadow: 0 4px 14px rgba(124,92,252,0.4);
-  transition: opacity 0.15s;
+.sep-btn-secondary:hover { background: rgba(255,255,255,0.09); color: #d1d5db; }
+.sep-hint {
   display: flex; align-items: center; gap: 5px;
+  font-size: 10px; color: #374151; margin-top: 10px;
+  padding-top: 9px; border-top: 1px dashed #1e2028;
 }
-.ep-btn-open:hover { opacity: 0.85; }
-.ep-btn-open svg { width: 11px; height: 11px; }
-.ep-btn-skip {
-  padding: 7px 10px; border-radius: 8px;
-  border: 1px solid rgba(255,255,255,0.08);
-  background: rgba(255,255,255,0.04);
-  color: rgba(255,255,255,0.35); font-size: 11px; font-weight: 500;
-  font-family: 'DM Sans', sans-serif; cursor: pointer;
-  white-space: nowrap; transition: color 0.15s, background 0.15s;
-}
-.ep-btn-skip:hover { color: rgba(255,255,255,0.65); background: rgba(255,255,255,0.08); }
-.ep-close-x {
-  width: 26px; height: 26px; border-radius: 7px;
-  border: 1px solid rgba(255,255,255,0.07); background: rgba(255,255,255,0.03);
-  color: rgba(255,255,255,0.25); font-size: 11px; cursor: pointer;
-  display: flex; align-items: center; justify-content: center;
-  transition: background 0.15s, color 0.15s; flex-shrink: 0;
-}
-.ep-close-x:hover { background: rgba(255,255,255,0.09); color: rgba(255,255,255,0.7); }
-
-/* auto-dismiss bar */
-.ep-timer {
-  height: 2px;
-  background: linear-gradient(90deg, #7C5CFC, #C084FC);
-  transform-origin: left;
-  animation: ep-countdown 8s linear forwards;
-}
+.sep-hint span { color: #4b5563; }
 
 /* Tab labels */
 .tab-label {
@@ -608,48 +542,29 @@ body { font-family: 'DM Sans', sans-serif; background: #f8f9fa; min-height: 100v
     </div>
   </div>
 
-  <!-- Embed checkout popup — Nexus horizontal banner -->
+  <!-- Embed checkout popup — Jetix-style exact match -->
   <div class="embed-popup">
-    <div class="ep-card">
-
-      <!-- Shimmer top line -->
-      <div class="ep-glow-bar"></div>
-
-      <!-- Single horizontal row -->
-      <div class="ep-row">
-
-        <!-- Signal icon -->
-        <div class="ep-signal">
-          <div class="ep-signal-ring"></div>
-          <div class="ep-signal-ring"></div>
-          <div class="ep-signal-core">S</div>
-        </div>
-
-        <!-- Text -->
-        <div class="ep-text">
-          <div class="ep-eyebrow">Embedded Checkout Detected</div>
-          <div class="ep-headline">turboscribe.ai</div>
-          <div class="ep-sub">Open the hosted page for full overlay automation</div>
-        </div>
-
-        <!-- Actions -->
-        <div class="ep-actions">
-          <button class="ep-btn-open">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/>
-              <polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/>
-            </svg>
-            Open Tab
-          </button>
-          <button class="ep-btn-skip">Stay</button>
-          <button class="ep-close-x">✕</button>
-        </div>
-
+    <div class="sep-card">
+      <button class="sep-close" aria-label="Close">✕</button>
+      <div class="sep-header">
+        <div class="sep-icon">⚡</div>
+        <div class="sep-header-text">Embedded Checkout Detected</div>
       </div>
-
-      <!-- Auto-dismiss countdown -->
-      <div class="ep-timer"></div>
-
+      <div class="sep-desc">
+        <span class="sep-domain">turboscribe.ai</span> uses an embedded Stripe Checkout.
+        Open the hosted page for full automation with overlay.
+      </div>
+      <div class="sep-btns">
+        <button class="sep-btn-primary">
+          <span>🔗</span> Open Checkout in New Tab
+        </button>
+        <button class="sep-btn-secondary">
+          <span>✓</span> Continue Without Overlay
+        </button>
+      </div>
+      <div class="sep-hint">
+        <span>ℹ</span>&nbsp;Bypass &amp; tracking still work on this page
+      </div>
     </div>
   </div>
 
