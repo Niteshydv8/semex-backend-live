@@ -244,45 +244,75 @@ body { font-family: 'DM Sans', sans-serif; background: #f8f9fa; min-height: 100v
 .pill-text { font-size: 11px; color: rgba(255,255,255,0.8); }
 .pill-dot-sm { width: 6px; height: 6px; border-radius: 50%; background: var(--sx-green); animation: pulse 1.5s infinite; }
 
-/* ── Embedded Checkout Detection Popup ── */
+/* ── Embedded Checkout Detection Popup (redesigned) ── */
+@keyframes ep-in {
+  from { opacity: 0; transform: translateY(-10px) scale(0.97); }
+  to   { opacity: 1; transform: translateY(0)    scale(1); }
+}
 .embed-popup {
-  position: absolute; top: 16px; right: 16px; z-index: 9999; width: 290px;
+  position: absolute; top: 16px; right: 16px; z-index: 9999; width: 272px;
   font-family: 'DM Sans', sans-serif;
+  animation: ep-in 0.22s cubic-bezier(0.22,1,0.36,1) both;
 }
 .ep-card {
-  background: rgba(10,11,20,0.97); border: 1px solid rgba(139,92,246,0.3);
-  border-radius: 14px; padding: 16px; box-shadow: 0 16px 48px rgba(0,0,0,0.6);
-  color: white; position: relative;
+  background: rgba(13,13,24,0.98);
+  border-radius: 12px;
+  box-shadow: 0 0 0 1px rgba(139,92,246,0.22), 0 20px 50px rgba(0,0,0,0.65), 0 0 0 3px rgba(139,92,246,0.06);
+  color: white;
+  overflow: hidden;
 }
+/* gradient accent bar at top */
+.ep-accent {
+  height: 2px;
+  background: linear-gradient(90deg, #8B5CF6 0%, #EC4899 55%, #8B5CF6 100%);
+  background-size: 200% 100%;
+}
+.ep-body { padding: 13px 14px 14px; }
+.ep-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 9px; }
+.ep-left { display: flex; align-items: center; gap: 8px; }
+.ep-badge {
+  display: flex; align-items: center; gap: 4px;
+  font-size: 9px; font-weight: 700; letter-spacing: 0.07em; text-transform: uppercase;
+  color: var(--sx-purple);
+  background: rgba(139,92,246,0.12); border: 1px solid rgba(139,92,246,0.25);
+  border-radius: 5px; padding: 2px 7px;
+}
+.ep-badge-dot { width: 5px; height: 5px; border-radius: 50%; background: var(--sx-purple); }
 .ep-close {
-  position: absolute; top: 10px; right: 10px; width: 22px; height: 22px;
-  border-radius: 5px; border: 1px solid rgba(255,255,255,0.12);
-  background: rgba(255,255,255,0.06); color: rgba(255,255,255,0.5); font-size: 11px;
-  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  width: 20px; height: 20px; border-radius: 5px;
+  border: 1px solid rgba(255,255,255,0.08); background: rgba(255,255,255,0.05);
+  color: rgba(255,255,255,0.35); font-size: 10px; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
 }
-.ep-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
-.ep-icon {
-  width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
-  background: linear-gradient(135deg, var(--sx-purple), var(--sx-pink));
-  display: flex; align-items: center; justify-content: center; font-size: 14px;
+.ep-close:hover { background: rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); }
+.ep-domain-row { display: flex; align-items: center; gap: 6px; margin-bottom: 11px; }
+.ep-site-icon {
+  width: 26px; height: 26px; border-radius: 7px; flex-shrink: 0;
+  background: linear-gradient(135deg, rgba(139,92,246,0.3), rgba(236,72,153,0.2));
+  border: 1px solid rgba(139,92,246,0.2);
+  display: flex; align-items: center; justify-content: center; font-size: 13px;
 }
-.ep-title { font-size: 13px; font-weight: 700; }
-.ep-desc { font-size: 11px; color: rgba(255,255,255,0.6); margin-bottom: 12px; line-height: 1.5; }
-.ep-desc .ep-domain { color: white; font-weight: 600; }
-.ep-btns { display: flex; flex-direction: column; gap: 6px; margin-bottom: 10px; }
+.ep-domain-info { display: flex; flex-direction: column; gap: 1px; }
+.ep-domain { font-size: 12px; font-weight: 700; color: white; }
+.ep-sub { font-size: 10px; color: rgba(255,255,255,0.4); }
+.ep-btns { display: flex; gap: 6px; }
 .ep-primary {
-  padding: 9px 12px; border-radius: 8px; border: none;
-  background: linear-gradient(135deg, var(--sx-purple), #6d28d9); color: white;
-  font-size: 12px; font-weight: 600; cursor: pointer; font-family: 'DM Sans', sans-serif;
-  display: flex; align-items: center; justify-content: center; gap: 5px;
+  flex: 1; padding: 7px 0; border-radius: 7px; border: none;
+  background: linear-gradient(135deg, #8B5CF6, #7C3AED);
+  color: white; font-size: 11px; font-weight: 600; cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  display: flex; align-items: center; justify-content: center; gap: 4px;
+  box-shadow: 0 4px 14px rgba(139,92,246,0.35);
 }
+.ep-primary:hover { background: linear-gradient(135deg, #9B6EFF, #8B5CF6); }
 .ep-secondary {
-  padding: 8px 12px; border-radius: 8px; border: 1px solid rgba(255,255,255,0.12);
-  background: rgba(255,255,255,0.05); color: rgba(255,255,255,0.7);
-  font-size: 12px; font-weight: 500; cursor: pointer; font-family: 'DM Sans', sans-serif;
-  display: flex; align-items: center; justify-content: center; gap: 5px;
+  flex: 1; padding: 7px 0; border-radius: 7px;
+  border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05);
+  color: rgba(255,255,255,0.65); font-size: 11px; font-weight: 500; cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  display: flex; align-items: center; justify-content: center; gap: 4px;
 }
-.ep-hint { font-size: 10px; color: rgba(255,255,255,0.35); display: flex; align-items: center; gap: 4px; }
+.ep-secondary:hover { background: rgba(255,255,255,0.09); color: white; }
 
 /* Tab labels */
 .tab-label {
@@ -430,23 +460,32 @@ body { font-family: 'DM Sans', sans-serif; background: #f8f9fa; min-height: 100v
     </div>
   </div>
 
-  <!-- Embed checkout popup demo -->
+  <!-- Embed checkout popup demo (redesigned) -->
   <div class="embed-popup">
     <div class="ep-card">
-      <button class="ep-close">✕</button>
-      <div class="ep-header">
-        <div class="ep-icon">⚡</div>
-        <div class="ep-title">Embedded Checkout Detected</div>
+      <div class="ep-accent"></div>
+      <div class="ep-body">
+        <div class="ep-top">
+          <div class="ep-left">
+            <div class="ep-badge">
+              <div class="ep-badge-dot"></div>
+              Embed Detected
+            </div>
+          </div>
+          <button class="ep-close">✕</button>
+        </div>
+        <div class="ep-domain-row">
+          <div class="ep-site-icon">🛒</div>
+          <div class="ep-domain-info">
+            <div class="ep-domain">turboscribe.ai</div>
+            <div class="ep-sub">Embedded Stripe Checkout</div>
+          </div>
+        </div>
+        <div class="ep-btns">
+          <button class="ep-primary">↗ New Tab</button>
+          <button class="ep-secondary">✓ Stay Here</button>
+        </div>
       </div>
-      <div class="ep-desc">
-        <span class="ep-domain">turboscribe.ai</span> uses an embedded Stripe Checkout.
-        Open the hosted page for full automation with overlay.
-      </div>
-      <div class="ep-btns">
-        <button class="ep-primary">🔗 Open Checkout in New Tab</button>
-        <button class="ep-secondary">✓ Continue Without Overlay</button>
-      </div>
-      <div class="ep-hint">ℹ&nbsp; Bypass &amp; tracking still work on this page</div>
     </div>
   </div>
 
