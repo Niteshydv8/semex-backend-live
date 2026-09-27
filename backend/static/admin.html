@@ -865,7 +865,7 @@ async function loadUsers() {
                     u.isAdmin ? '<span class="badge purple">ADMIN</span>' :
                     u.plan === "VIP" ? '<span class="badge pink">VIP</span>' :
                     `<span class="badge info">${u.plan || 'TRIAL'}</span>`;
-      const avatar = u.photoUrl ? `<img src="${u.photoUrl}" style="width:34px;height:34px;border-radius:50%;vertical-align:middle;margin-right:8px;">` :
+      const avatar = u.photoUrl ? `<span class="avatar"><img src="${u.photoUrl}" style="width:100%;height:100%;object-fit:cover;" onerror="this.parentElement.innerHTML='${(u.firstName||u.username||'?')[0].toUpperCase()}'"></span>` :
                      `<span class="avatar">${(u.firstName||u.username||'?')[0].toUpperCase()}</span>`;
       return `<tr>
         <td>${avatar} <b>${u.firstName || ''} ${u.lastName || ''}</b><br><small style="color:var(--muted)">${u.username ? '@'+u.username : ''} · <code>${u.telegramId}</code></small></td>
