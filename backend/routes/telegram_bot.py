@@ -1198,25 +1198,29 @@ def _owner_support_url() -> str | None:
 
 def _main_menu_kb() -> dict:
     """Inline keyboard shown under the /start welcome."""
-    # Row 1 — extension download + premium
+    # Row 1 — extension download
     row1 = [
         {"text": "🧩 Get Extension", "callback_data": "menu:get"},
-        {"text": "💎 Go Premium", "callback_data": "menu:premium"},
     ]
-    # Row 2 — status + support
+    # Row 2 — group purchase options
+    row2 = [
+        {"text": "🛒 CC Group", "callback_data": "menu:premium"},
+        {"text": "👑 Full VIP", "callback_data": "menu:vip"},
+    ]
+    # Row 3 — status + support
     support_url = _owner_support_url()
     support_btn = (
         {"text": "🛟 Support", "url": support_url}
         if support_url
         else {"text": "🛟 Support", "callback_data": "menu:support"}
     )
-    row2 = [
+    row3 = [
         {"text": "📊 My Status", "callback_data": "menu:settings"},
         support_btn,
     ]
-    # Row 3 — redeem code entry prompt
-    row3 = [{"text": "🔑 Redeem Code", "callback_data": "menu:redeem"}]
-    return {"inline_keyboard": [row1, row2, row3]}
+    # Row 4 — redeem code entry prompt
+    row4 = [{"text": "🔑 Redeem Code", "callback_data": "menu:redeem"}]
+    return {"inline_keyboard": [row1, row2, row3, row4]}
 
 
 def _welcome_text(name: str, user_id: int | None) -> str:
@@ -1537,6 +1541,8 @@ async def _handle_callback(callback: dict) -> None:
         await _cmd_get(chat_id)
     elif data == "menu:premium":
         await _cmd_buy(chat_id, username)
+    elif data == "menu:vip":
+        await _cmd_vip(chat_id, username)
     elif data == "menu:support":
         handle = (getattr(settings, "OWNER_HANDLE", "") or "").strip().lstrip("@")
         if handle:
