@@ -97,11 +97,9 @@ def _find_extension_zip() -> Path | None:
 
 
 async def _cmd_buy(chat_id: int, username: str | None) -> None:
-    """Show premium plans + private-group offer + USDT wallets (BEP20/TRC20/TON)."""
-    group_weekly = getattr(settings, "GROUP_PRICE_WEEKLY", None) or "$25"
-    group_2week = getattr(settings, "GROUP_PRICE_2WEEK", None) or "$38"
-    group_monthly = getattr(settings, "GROUP_PRICE_MONTHLY", None) or "$50"
-    has_crypto = bool((getattr(settings, "CRYPTO_BOT_TOKEN", "") or "").strip())
+    """Show private-group offer + USDT wallets (BEP20/TRC20/TON)."""
+    group_weekly = getattr(settings, "GROUP_PRICE_WEEKLY", None) or "$29"
+    group_monthly = getattr(settings, "GROUP_PRICE_MONTHLY", None) or "$59"
     usdt_bep20 = getattr(settings, "PAYMENT_USDT_BEP20", "")
     usdt_trc20 = getattr(settings, "PAYMENT_USDT_TRC20", "")
     usdt_ton = getattr(settings, "PAYMENT_USDT_TON", "")
@@ -111,12 +109,26 @@ async def _cmd_buy(chat_id: int, username: str | None) -> None:
         f"🔥 <b>SEMEX Private Group</b>  ·  Hey {greeting}",
         "━━━━━━━━━━━━━━━━━━━━",
         "",
-        "🔒 <b>PRIVATE GROUP ACCESS</b>",
-        f"├ <b>WEEKLY</b>     (7d)   ·  {group_weekly}",
-        f"├ <b>BI-WEEKLY</b>  (14d)  ·  {group_2week}",
-        f"└ <b>MONTHLY</b>   (30d)  ·  {group_monthly}",
+        "📦 <b>ONLY CC DROP &amp; SOMETIMES METHODS</b>",
         "",
-        "<i>Fresh CCs · mix lines · unchecked lines · charged BINs &amp; sites · non-VBV BINs · tips &amp; more.</i>",
+        "✅ <b>YOU WILL GET —</b>",
+        "  ★ FRESH CCs",
+        "  ★ MIX LINES",
+        "  ★ UNCHECKED LINES",
+        "  ★ ON REQUEST CCs EVERY WEEK (1 person)",
+        "  ★ HITTING TIPS",
+        "  ★ CHARGED BINs + SITES",
+        "  ★ NON-VBV BINs",
+        "  ★ NON-VBV CCs",
+        "  ★ ETC ON REQUEST",
+        "",
+        "💳 <b>CC SOURCE —</b> Steelers · Own checks · Private groups · Dumping",
+        "",
+        "🔒 <b>PRICE</b>",
+        f"├ <b>WEEKLY</b>   (7d)   ·  {group_weekly}",
+        f"└ <b>MONTHLY</b>  (30d)  ·  {group_monthly}",
+        "",
+        "♻️ <b>REFUND AVAILABLE</b> for any issues.",
         "",
         "━━━━━━━━━━━━━━━━━━━━",
         "💵 <b>Pay with USDT</b> — tap a <b>💵 USDT</b> button below for auto-confirmation",
@@ -152,7 +164,7 @@ def _stars_catalog() -> dict:
             "title": "Private Group — Weekly",
             "desc": "7 days of the SEMEX private group (CC drop + methods).",
             "stars": getattr(settings, "GROUP_STARS_WEEKLY", 1400),
-            "usd": getattr(settings, "GROUP_PRICE_WEEKLY", "$25"),
+            "usd": getattr(settings, "GROUP_PRICE_WEEKLY", "$29"),
         },
         "group_2week": {
             "title": "Private Group — Bi-Weekly",
@@ -164,7 +176,7 @@ def _stars_catalog() -> dict:
             "title": "Private Group — Monthly",
             "desc": "30 days of the SEMEX private group (CC drop + methods).",
             "stars": getattr(settings, "GROUP_STARS_MONTHLY", 2700),
-            "usd": getattr(settings, "GROUP_PRICE_MONTHLY", "$50"),
+            "usd": getattr(settings, "GROUP_PRICE_MONTHLY", "$59"),
         },
     }
 
@@ -179,7 +191,7 @@ def _buy_stars_kb() -> dict:
     cat = _stars_catalog()
     rows = []
     # Group plans: side-by-side Stars + USDT (Binance Pay) buttons
-    for key in ("group_weekly", "group_2week", "group_monthly"):
+    for key in ("group_weekly", "group_monthly"):
         item = cat[key]
         short = item["title"].replace("Private Group — ", "Group ")
         rows.append([
