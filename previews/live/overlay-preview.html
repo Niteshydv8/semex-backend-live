@@ -4,74 +4,105 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SEMEX Overlay Preview</title>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
+/* ─── Reset ─── */
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'DM Sans', sans-serif; background: #f8f9fa; min-height: 100vh; display: flex; }
+body { font-family: 'DM Sans', sans-serif; background: #f1f5f9; min-height: 100vh; display: flex; flex-direction: column; }
 
-/* ── Mock checkout page (left side) ── */
-.checkout-bg {
-  flex: 1;
-  background: #fff;
-  display: flex;
-  position: relative;
-  overflow: hidden;
+/* ─── Top bar ─── */
+.top-bar {
+  background: #0b0b0f; color: #f5f5f7;
+  padding: 10px 24px; display: flex; align-items: center; gap: 12px;
+  border-bottom: 1px solid #26262e; font-size: 13px;
 }
+.top-bar-logo {
+  display: flex; align-items: center; gap: 8px;
+  font-weight: 700; font-size: 15px; letter-spacing: .02em;
+}
+.top-bar-badge {
+  background: rgba(52,211,153,0.15); color: #34d399;
+  border: 1px solid rgba(52,211,153,0.3);
+  border-radius: 4px; padding: 1px 7px; font-size: 10px; font-weight: 700;
+}
+.top-bar-sep { flex: 1; }
+.top-bar-note { color: #9a9aa6; font-size: 11px; }
+
+/* ─── Main canvas ─── */
+.canvas { flex: 1; display: flex; position: relative; overflow: hidden; }
+
+/* ─── Mock checkout ─── */
+.checkout-bg { flex: 1; background: #fff; display: flex; position: relative; overflow: hidden; }
 .checkout-left {
-  width: 420px;
-  background: #1a1a2e;
-  padding: 48px 40px;
-  display: flex;
-  flex-direction: column;
-  gap: 24px;
-  color: white;
+  width: 380px; background: #0d1117;
+  padding: 48px 36px; display: flex; flex-direction: column; gap: 20px; color: white;
+  border-right: 1px solid #1e2638;
 }
-.merchant-logo { font-size: 22px; font-weight: 700; color: #a78bfa; }
-.product-name { font-size: 18px; font-weight: 600; }
-.product-price { font-size: 36px; font-weight: 700; }
-.product-sub { font-size: 12px; color: rgba(255,255,255,0.5); }
+.merchant-logo { font-size: 20px; font-weight: 700; color: #34d399; display: flex; align-items: center; gap: 8px; }
+.product-name  { font-size: 17px; font-weight: 600; color: #f5f5f7; }
+.product-price { font-size: 34px; font-weight: 700; color: #fff; }
+.product-sub   { font-size: 11px; color: rgba(255,255,255,0.4); margin-top: 2px; }
+.product-divider { height: 1px; background: #1e2638; }
+.product-line  { display: flex; justify-content: space-between; font-size: 13px; color: rgba(255,255,255,0.6); }
+.product-line span:last-child { color: #f5f5f7; font-weight: 600; }
 .checkout-right {
-  flex: 1;
-  padding: 48px 40px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-  max-width: 500px;
+  flex: 1; padding: 48px 36px; display: flex; flex-direction: column; gap: 18px; max-width: 480px;
 }
-.wallet-btns { display: flex; gap: 10px; }
+.wallet-btns { display: flex; gap: 8px; }
 .wallet-btn {
-  flex: 1; height: 44px; border-radius: 8px; border: none; cursor: pointer;
-  font-size: 14px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px;
+  flex: 1; height: 42px; border-radius: 8px; border: none; cursor: pointer;
+  font-size: 13px; font-weight: 600; display: flex; align-items: center; justify-content: center; gap: 6px;
 }
 .wallet-btn.apple { background: #000; color: #fff; }
 .wallet-btn.link  { background: #00D96E; color: #000; }
-.divider { text-align: center; color: #94a3b8; font-size: 13px; position: relative; }
+.divider { text-align: center; color: #94a3b8; font-size: 12px; position: relative; }
 .divider::before, .divider::after {
-  content: ''; position: absolute; top: 50%; width: 45%; height: 1px; background: #e2e8f0;
+  content: ''; position: absolute; top: 50%; width: 44%; height: 1px; background: #e2e8f0;
 }
 .divider::before { left: 0; } .divider::after { right: 0; }
-.section-label { font-size: 14px; font-weight: 600; color: #1e293b; }
-.field-group { display: flex; flex-direction: column; gap: 12px; }
-.field { border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px 14px; font-size: 14px; color: #334155; background: #fff; }
-.field-row { display: flex; gap: 10px; }
+.section-label { font-size: 13px; font-weight: 600; color: #1e293b; }
+.field-group { display: flex; flex-direction: column; gap: 10px; }
+.field { border: 1.5px solid #e2e8f0; border-radius: 8px; padding: 11px 13px; font-size: 13px; color: #334155; background: #fff; }
+.field-row { display: flex; gap: 8px; }
 .field-row .field { flex: 1; }
-.card-field { font-family: 'JetBrains Mono', monospace; font-size: 14px; color: #6b7280; }
+.card-field { font-family: 'JetBrains Mono', monospace; color: #475569; }
 .pay-btn {
-  background: #635BFF; color: white; border: none; border-radius: 8px;
-  padding: 14px; font-size: 15px; font-weight: 600; cursor: pointer; width: 100%;
-  font-family: 'DM Sans', sans-serif;
+  background: linear-gradient(135deg, #34d399 0%, #10b981 100%);
+  color: #0b0b0f; border: none; border-radius: 8px;
+  padding: 13px; font-size: 14px; font-weight: 700; cursor: pointer; width: 100%;
+  font-family: 'DM Sans', sans-serif; letter-spacing: .01em;
 }
-.powered { text-align: center; font-size: 12px; color: #94a3b8; }
-.powered span { color: #635BFF; font-weight: 600; }
+.powered { text-align: center; font-size: 11px; color: #94a3b8; }
+.powered b { color: #34d399; }
 
-/* ── SEMEX Overlay — Jetix layout ── */
-@keyframes pulse-dot { 0%,100%{opacity:1} 50%{opacity:.4} }
+/* ═══════════════════════════════════════
+   SEMEX OVERLAY — SEMEX THEME
+═══════════════════════════════════════ */
+:root {
+  --sx-bg:      #0b0b0f;
+  --sx-surface: #16161c;
+  --sx-surface2:#1e1e27;
+  --sx-line:    #26262e;
+  --sx-txt:     #f5f5f7;
+  --sx-mut:     #9a9aa6;
+  --sx-green:   #34d399;
+  --sx-green-d: #10b981;
+  --sx-purple:  #8B5CF6;
+  --sx-amber:   #f59e0b;
+  --sx-red:     #ef4444;
+  --sx-blue:    #3b82f6;
+}
 
+@keyframes sx-pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:.5;transform:scale(.85)} }
+@keyframes sx-spin { to { transform: rotate(360deg); } }
+@keyframes sx-in { from { opacity:0; transform:translateY(6px) scale(.97); } to { opacity:1; transform:none; } }
+@keyframes sx-fade-in { from { opacity:0; } to { opacity:1; } }
+
+/* Overlay root */
 .semex-overlay {
-  position: absolute; bottom: 20px; left: 20px;
-  z-index: 999;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  font-size: 13px; color: #e2e8f0; line-height: 1.4;
+  position: absolute; bottom: 20px; left: 20px; z-index: 999;
+  font-family: 'DM Sans', -apple-system, sans-serif;
+  font-size: 13px; color: var(--sx-txt); line-height: 1.4;
   user-select: none;
 }
 
@@ -79,355 +110,726 @@ body { font-family: 'DM Sans', sans-serif; background: #f8f9fa; min-height: 100v
 .overlay-full {
   display: flex; flex-direction: column;
   width: 300px;
-  background: rgba(15,23,42,0.95);
-  backdrop-filter: blur(16px);
-  border: 1px solid rgba(255,255,255,0.1);
+  background: rgba(11,11,15,0.97);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid var(--sx-line);
   border-radius: 16px;
-  box-shadow: 0 8px 32px rgba(0,0,0,0.5), inset 0 1px 0 rgba(255,255,255,0.05);
+  box-shadow:
+    0 0 0 1px rgba(52,211,153,0.08),
+    0 8px 40px rgba(0,0,0,0.6),
+    inset 0 1px 0 rgba(255,255,255,0.04);
   overflow: hidden;
+  animation: sx-in 0.3s ease both;
 }
 
-/* header */
+/* ── Header ── */
 .full-header {
   display: flex; align-items: center; justify-content: space-between;
-  padding: 10px 14px; border-bottom: 1px solid rgba(255,255,255,0.06);
+  padding: 10px 12px 10px 10px;
+  border-bottom: 1px solid var(--sx-line);
+  background: rgba(22,22,28,0.6);
 }
-.full-brand { display: flex; align-items: center; gap: 8px; }
+.full-brand { display: flex; align-items: center; gap: 9px; }
 .full-brand-logo {
-  width: 28px; height: 28px; border-radius: 8px; flex-shrink: 0;
-  background: linear-gradient(135deg, #8B5CF6, #EC4899);
+  width: 30px; height: 30px; border-radius: 9px; flex-shrink: 0;
+  background: var(--sx-bg);
+  border: 1px solid rgba(52,211,153,0.25);
   display: flex; align-items: center; justify-content: center;
-  color: #fff; font-weight: 700; font-size: 14px;
+  box-shadow: 0 0 10px rgba(52,211,153,0.15);
 }
-.full-brand-text { display: flex; flex-direction: column; }
-.full-brand-name { font-weight: 700; font-size: 14px; color: #fff; }
-.full-brand-tag  { font-size: 10px; color: #64748b; }
-.header-btns { display: flex; gap: 4px; }
+.full-brand-logo svg { width: 18px; height: 18px; }
+.full-brand-text { display: flex; flex-direction: column; line-height: 1.2; }
+.full-brand-name {
+  font-weight: 800; font-size: 14px;
+  background: linear-gradient(135deg, #34d399, #10b981);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+  background-clip: text; letter-spacing: .04em;
+}
+.full-brand-tag { font-size: 10px; color: var(--sx-mut); letter-spacing: .02em; }
+
+.header-btns { display: flex; gap: 3px; }
 .header-btn {
-  padding: 4px 8px; border: none; border-radius: 6px;
-  background: rgba(255,255,255,0.06); color: #94a3b8;
-  font-size: 11px; cursor: pointer; transition: all 0.2s;
+  width: 26px; height: 26px; border: none; border-radius: 7px;
+  background: var(--sx-surface2); color: var(--sx-mut);
+  font-size: 13px; cursor: pointer; transition: all 0.15s;
+  display: flex; align-items: center; justify-content: center;
 }
-.header-btn:hover { background: rgba(255,255,255,0.12); color: #fff; }
+.header-btn:hover { background: var(--sx-line); color: var(--sx-txt); }
+.header-btn.active { background: rgba(139,92,246,0.15); color: var(--sx-purple); }
 
-/* body */
-.full-body { padding: 12px 14px; display: flex; flex-direction: column; gap: 10px; }
+/* ── Body ── */
+.full-body { padding: 10px 12px; display: flex; flex-direction: column; gap: 8px; }
 
-/* status */
+/* ── Status ── */
 .full-status {
   display: flex; align-items: center; gap: 8px;
-  padding: 8px 10px; border-radius: 8px;
-  background: rgba(255,255,255,0.04);
+  padding: 8px 10px; border-radius: 9px;
+  background: var(--sx-surface2);
+  border: 1px solid var(--sx-line);
+  transition: border-color 0.3s, background 0.3s;
 }
-.full-status-icon { font-size: 16px; }
-.full-status-text { font-size: 12px; font-weight: 500; }
+.full-status.state-processing { border-color: rgba(59,130,246,0.3); background: rgba(59,130,246,0.06); }
+.full-status.state-charged    { border-color: rgba(52,211,153,0.3); background: rgba(52,211,153,0.06); }
+.full-status.state-live       { border-color: rgba(245,158,11,0.3); background: rgba(245,158,11,0.06); }
+.full-status.state-dead       { border-color: rgba(239,68,68,0.25); background: rgba(239,68,68,0.05); }
+.full-status.state-paused     { border-color: rgba(245,158,11,0.25); background: rgba(245,158,11,0.05); }
+.full-status.state-stopped    { border-color: var(--sx-line); background: var(--sx-surface2); }
 
-/* stats */
+.status-dot {
+  width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0;
+  background: var(--sx-mut); transition: background 0.3s;
+}
+.status-dot.pulse { animation: sx-pulse 1.6s infinite; }
+.status-dot.green  { background: var(--sx-green); }
+.status-dot.amber  { background: var(--sx-amber); }
+.status-dot.red    { background: var(--sx-red); }
+.status-dot.blue   { background: var(--sx-blue); }
+.status-dot.grey   { background: var(--sx-mut); }
+
+.status-text { font-size: 12px; font-weight: 600; color: var(--sx-txt); flex: 1; }
+.status-attempt {
+  font-size: 10px; color: var(--sx-mut);
+  font-family: 'JetBrains Mono', monospace;
+  background: var(--sx-surface); border-radius: 4px; padding: 2px 5px;
+}
+
+/* ── Stats ── */
 .full-stats {
-  display: flex; align-items: center; position: relative;
-  padding: 6px 8px; border-radius: 8px;
-  background: rgba(255,255,255,0.03);
+  display: flex; align-items: center;
+  border-radius: 9px; border: 1px solid var(--sx-line);
+  background: var(--sx-surface); overflow: hidden;
 }
-.stat-item { flex: 1; text-align: center; }
-.stat-label { display: block; font-size: 9px; color: #64748b; text-transform: uppercase; letter-spacing: 0.5px; }
-.stat-value { display: block; font-size: 16px; font-weight: 700; color: #e2e8f0; }
-.stat-value.charged { color: #10b981; }
-.stat-value.live    { color: #f59e0b; }
-.stat-value.dead    { color: #ef4444; }
-.stat-div { width: 1px; height: 24px; background: rgba(255,255,255,0.08); }
+.stat-item { flex: 1; text-align: center; padding: 7px 4px; }
+.stat-label { display: block; font-size: 9px; color: var(--sx-mut); text-transform: uppercase; letter-spacing: .6px; margin-bottom: 2px; }
+.stat-value { display: block; font-size: 17px; font-weight: 800; color: var(--sx-txt); font-family: 'JetBrains Mono', monospace; }
+.stat-value.green { color: var(--sx-green); }
+.stat-value.amber { color: var(--sx-amber); }
+.stat-value.red   { color: var(--sx-red); }
+.stat-div { width: 1px; height: 28px; background: var(--sx-line); flex-shrink: 0; }
 
-/* details */
-.full-details { display: flex; flex-direction: column; gap: 4px; }
+/* ── Details ── */
+.full-details {
+  border-radius: 9px; border: 1px solid var(--sx-line);
+  background: var(--sx-surface); overflow: hidden;
+}
 .detail-row {
   display: flex; justify-content: space-between; align-items: center;
-  font-size: 11px; padding: 2px 0;
+  padding: 5px 10px; font-size: 11px;
+  border-bottom: 1px solid rgba(38,38,46,0.6);
+  transition: opacity 0.3s;
 }
-.detail-row span:first-child { color: #64748b; }
-.detail-val { color: #e2e8f0; font-weight: 500; font-family: 'Courier New', monospace; }
+.detail-row:last-child { border-bottom: none; }
+.detail-key { color: var(--sx-mut); font-weight: 500; }
+.detail-val {
+  color: var(--sx-txt); font-weight: 600;
+  font-family: 'JetBrains Mono', monospace; font-size: 11px;
+  transition: filter 0.3s;
+}
+.detail-val.blurred { filter: blur(5px); }
+.detail-val.green { color: var(--sx-green); }
+.detail-val.amber { color: var(--sx-amber); }
 
-/* controls */
-.full-controls { display: flex; gap: 6px; padding-top: 4px; }
+/* ── Controls ── */
+.full-controls { display: flex; gap: 6px; }
 .ctrl-btn {
-  flex: 1; padding: 7px 0; border: none; border-radius: 8px;
-  font-size: 12px; font-weight: 600; cursor: pointer; transition: all 0.2s;
-  display: flex; align-items: center; justify-content: center; gap: 4px;
+  flex: 1; padding: 8px 0; border: none; border-radius: 9px;
+  font-size: 12px; font-weight: 700; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: 5px;
+  transition: all 0.15s; font-family: 'DM Sans', sans-serif;
+  letter-spacing: .01em;
 }
-.ctrl-btn.start  { background: #10b981; color: #fff; }
-.ctrl-btn.start:hover { background: #059669; }
-.ctrl-btn.pause  { background: #f59e0b; color: #000; }
-.ctrl-btn.pause:hover { background: #d97706; }
-.ctrl-btn.stop   { background: rgba(239,68,68,0.15); color: #ef4444; flex: 0 0 36px; }
-.ctrl-btn.stop:hover { background: rgba(239,68,68,0.25); }
-.ctrl-btn.blur   { background: rgba(255,255,255,0.06); color: #94a3b8; flex: 0 0 36px; }
-.ctrl-btn.blur:hover { background: rgba(255,255,255,0.12); color: #fff; }
+.ctrl-btn.pause {
+  background: var(--sx-amber); color: #0b0b0f;
+  box-shadow: 0 2px 12px rgba(245,158,11,0.3);
+}
+.ctrl-btn.pause:hover { background: #d97706; transform: translateY(-1px); }
+.ctrl-btn.resume {
+  background: var(--sx-green); color: #0b0b0f;
+  box-shadow: 0 2px 12px rgba(52,211,153,0.3);
+}
+.ctrl-btn.resume:hover { background: var(--sx-green-d); transform: translateY(-1px); }
+.ctrl-btn.stop   { background: rgba(239,68,68,0.12); color: var(--sx-red); border: 1px solid rgba(239,68,68,0.2); flex: 0 0 36px; }
+.ctrl-btn.stop:hover { background: rgba(239,68,68,0.22); transform: translateY(-1px); }
+.ctrl-btn.lock   { background: var(--sx-surface2); color: var(--sx-mut); border: 1px solid var(--sx-line); flex: 0 0 36px; }
+.ctrl-btn.lock:hover { background: var(--sx-line); color: var(--sx-txt); }
+.ctrl-btn.lock.active { background: rgba(139,92,246,0.15); color: var(--sx-purple); border-color: rgba(139,92,246,0.3); }
+.ctrl-btn:active { transform: scale(0.96) !important; }
+
+/* ── Settings Panel ── */
+.settings-panel {
+  position: absolute; top: 0; right: -210px;
+  width: 200px;
+  background: rgba(11,11,15,0.97);
+  backdrop-filter: blur(20px);
+  border: 1px solid var(--sx-line);
+  border-radius: 14px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+  overflow: hidden;
+  transition: right 0.25s cubic-bezier(0.34,1.1,0.64,1), opacity 0.2s;
+  opacity: 0; pointer-events: none;
+  z-index: 10;
+}
+.settings-panel.open { right: -208px; opacity: 1; pointer-events: auto; }
+.settings-title {
+  padding: 9px 12px; font-size: 11px; font-weight: 700;
+  color: var(--sx-mut); text-transform: uppercase; letter-spacing: .06em;
+  border-bottom: 1px solid var(--sx-line);
+}
+.settings-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 7px 12px; font-size: 12px; color: var(--sx-txt);
+  border-bottom: 1px solid rgba(38,38,46,0.5);
+}
+.settings-row:last-child { border-bottom: none; }
+.settings-row span:first-child { color: var(--sx-mut); font-size: 11px; }
+.settings-toggle {
+  width: 32px; height: 17px; border-radius: 9px;
+  background: var(--sx-line); border: none; cursor: pointer;
+  position: relative; transition: background 0.2s; flex-shrink: 0;
+}
+.settings-toggle::after {
+  content: ''; position: absolute; top: 2px; left: 2px;
+  width: 13px; height: 13px; border-radius: 50%;
+  background: var(--sx-mut); transition: all 0.2s;
+}
+.settings-toggle.on { background: rgba(52,211,153,0.25); }
+.settings-toggle.on::after { left: 17px; background: var(--sx-green); }
+.pos-btns { display: flex; gap: 3px; }
+.pos-btn {
+  padding: 2px 5px; border: 1px solid var(--sx-line); border-radius: 4px;
+  background: none; color: var(--sx-mut); font-size: 10px; cursor: pointer; transition: all 0.15s;
+}
+.pos-btn.active { border-color: rgba(52,211,153,0.4); color: var(--sx-green); background: rgba(52,211,153,0.08); }
 
 /* ── Pill ── */
 .overlay-pill {
   display: inline-flex; align-items: center; gap: 8px;
-  padding: 6px 10px;
-  background: rgba(15,23,42,0.92);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255,255,255,0.1);
-  border-radius: 24px;
-  box-shadow: 0 4px 20px rgba(0,0,0,0.4);
-  cursor: pointer; margin-left: 12px; vertical-align: middle;
+  padding: 6px 12px 6px 6px;
+  background: rgba(11,11,15,0.96);
+  backdrop-filter: blur(16px);
+  border: 1px solid var(--sx-line);
+  border-radius: 40px;
+  box-shadow: 0 0 0 1px rgba(52,211,153,0.08), 0 4px 24px rgba(0,0,0,0.5);
+  cursor: pointer;
+  animation: sx-in 0.25s ease both;
+  pointer-events: auto;
 }
-.pill-logo {
-  width: 24px; height: 24px; border-radius: 50%; flex-shrink: 0;
-  background: linear-gradient(135deg, #8B5CF6, #EC4899);
+.pill-logo-wrap {
+  width: 26px; height: 26px; border-radius: 50%; flex-shrink: 0;
+  background: var(--sx-bg); border: 1px solid rgba(52,211,153,0.25);
   display: flex; align-items: center; justify-content: center;
-  color: #fff; font-weight: 700; font-size: 12px;
+  box-shadow: 0 0 8px rgba(52,211,153,0.12);
 }
-.pill-dot-sm {
-  width: 6px; height: 6px; border-radius: 50%;
-  background: #10b981; animation: pulse-dot 2s infinite; flex-shrink: 0;
+.pill-logo-wrap svg { width: 15px; height: 15px; }
+.pill-dot {
+  width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0;
+  background: var(--sx-green); animation: sx-pulse 1.6s infinite;
 }
-.pill-text { font-size: 12px; font-weight: 500; }
+.pill-dot.amber { background: var(--sx-amber); }
+.pill-dot.grey  { background: var(--sx-mut); animation: none; }
+.pill-text { font-size: 12px; font-weight: 700; color: var(--sx-txt); letter-spacing: .01em; white-space: nowrap; }
+.pill-expand {
+  width: 20px; height: 20px; border-radius: 50%; flex-shrink: 0;
+  background: var(--sx-surface2); border: none; color: var(--sx-mut);
+  font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: all 0.15s;
+}
+.pill-expand:hover { background: var(--sx-line); color: var(--sx-txt); }
 
-/* ── Embed Popup — Jetix-style (exact match from extension) ── */
-@keyframes semex-ep-in {
+/* ── Embed Popup ── */
+@keyframes sx-ep-in {
   from { transform: translateX(40px) scale(0.96); opacity: 0; filter: blur(6px); }
   to   { transform: none; opacity: 1; filter: none; }
 }
-
 .embed-popup {
-  position: absolute;
-  top: 16px; right: 16px; z-index: 9999;
-  width: 310px;
-  font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+  position: absolute; top: 16px; right: 16px; z-index: 9999;
+  width: 308px;
+  font-family: 'DM Sans', -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
-  animation: semex-ep-in 0.45s cubic-bezier(0.34,1.1,0.64,1) both;
+  animation: sx-ep-in 0.45s cubic-bezier(0.34,1.1,0.64,1) both;
 }
-
-.sep-card {
-  background: rgba(14,15,22,0.97);
-  border: 1px solid rgba(255,255,255,0.12);
+.ep-card {
+  background: rgba(11,11,15,0.98);
+  border: 1px solid var(--sx-line);
   border-radius: 14px;
-  box-shadow: 0 0 0 1px rgba(124,92,252,0.22), 0 16px 48px rgba(0,0,0,0.65);
-  padding: 16px 16px 14px;
-  position: relative;
-  color: white;
+  box-shadow: 0 0 0 1px rgba(52,211,153,0.1), 0 16px 48px rgba(0,0,0,0.7);
+  padding: 15px 15px 13px;
+  position: relative; color: white;
 }
-.sep-close {
+.ep-close {
   position: absolute; top: 10px; right: 10px;
   width: 22px; height: 22px;
-  background: rgba(255,255,255,0.06); border: none; border-radius: 6px;
-  color: #6b7280; font-size: 14px; line-height: 1;
+  background: var(--sx-surface2); border: none; border-radius: 6px;
+  color: var(--sx-mut); font-size: 13px; line-height: 1;
   cursor: pointer; display: flex; align-items: center; justify-content: center;
   transition: background 0.15s, color 0.15s;
 }
-.sep-close:hover { background: rgba(248,113,113,0.14); color: #f87171; }
-.sep-header { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
-.sep-icon {
+.ep-close:hover { background: rgba(239,68,68,0.15); color: var(--sx-red); }
+.ep-header { display: flex; align-items: center; gap: 10px; margin-bottom: 9px; }
+.ep-icon {
   width: 30px; height: 30px; border-radius: 8px; flex: 0 0 auto;
-  background: rgba(124,92,252,0.18); border: 1px solid rgba(124,92,252,0.35);
+  background: rgba(52,211,153,0.1); border: 1px solid rgba(52,211,153,0.25);
   display: flex; align-items: center; justify-content: center;
-  font-size: 15px; color: #a78bfa;
-  box-shadow: 0 0 14px rgba(124,92,252,0.28);
+  box-shadow: 0 0 12px rgba(52,211,153,0.15);
 }
-.sep-header-text { font-size: 12.5px; font-weight: 700; color: #c4b5fd; letter-spacing: 0.01em; }
-.sep-desc { font-size: 11.5px; color: #6b7280; line-height: 1.55; margin-bottom: 12px; }
-.sep-desc .sep-domain { color: #a78bfa; font-weight: 600; }
-.sep-btns { display: flex; flex-direction: column; gap: 7px; }
-.sep-btn-primary {
+.ep-icon svg { width: 17px; height: 17px; }
+.ep-header-text { font-size: 12.5px; font-weight: 700; color: var(--sx-green); letter-spacing: .01em; }
+.ep-desc { font-size: 11.5px; color: var(--sx-mut); line-height: 1.55; margin-bottom: 11px; }
+.ep-desc .ep-domain { color: var(--sx-green); font-weight: 600; }
+.ep-btns { display: flex; flex-direction: column; gap: 6px; }
+.ep-btn-primary {
   display: flex; align-items: center; justify-content: center; gap: 7px;
   padding: 10px 14px; border-radius: 9px; cursor: pointer;
   font-family: inherit; font-size: 12.5px; font-weight: 700;
-  background: linear-gradient(180deg, rgba(142,107,255,0.9), rgba(109,74,232,0.85));
-  border: 1px solid rgba(175,145,255,0.40);
-  color: #fff;
-  box-shadow: 0 4px 16px rgba(124,92,252,0.40);
+  background: linear-gradient(135deg, rgba(52,211,153,0.9), rgba(16,185,129,0.85));
+  border: 1px solid rgba(52,211,153,0.4);
+  color: #0b0b0f;
+  box-shadow: 0 4px 16px rgba(52,211,153,0.25);
   transition: filter 0.15s, transform 0.15s;
 }
-.sep-btn-primary:hover { filter: brightness(1.1); transform: translateY(-1px); }
-.sep-btn-secondary {
+.ep-btn-primary:hover { filter: brightness(1.08); transform: translateY(-1px); }
+.ep-btn-secondary {
   display: flex; align-items: center; justify-content: center; gap: 7px;
   padding: 9px 14px; border-radius: 9px; cursor: pointer;
   font-family: inherit; font-size: 12.5px; font-weight: 600;
-  background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.10);
-  color: #9ca3af;
+  background: var(--sx-surface); border: 1px solid var(--sx-line);
+  color: var(--sx-mut);
   transition: background 0.15s, color 0.15s;
 }
-.sep-btn-secondary:hover { background: rgba(255,255,255,0.09); color: #d1d5db; }
-.sep-hint {
+.ep-btn-secondary:hover { background: var(--sx-surface2); color: var(--sx-txt); }
+.ep-hint {
   display: flex; align-items: center; gap: 5px;
-  font-size: 10px; color: #374151; margin-top: 10px;
-  padding-top: 9px; border-top: 1px dashed #1e2028;
+  font-size: 10px; color: #374151; margin-top: 9px;
+  padding-top: 9px; border-top: 1px dashed #26262e;
 }
-.sep-hint span { color: #4b5563; }
+.ep-hint-icon { color: rgba(52,211,153,0.4); }
 
 /* Tab labels */
 .tab-label {
   position: absolute; bottom: -22px; left: 0;
-  font-size: 10px; color: rgba(255,255,255,0.4); white-space: nowrap;
-  font-family: 'DM Sans', sans-serif;
+  font-size: 10px; color: rgba(255,255,255,0.35); white-space: nowrap;
+  font-family: 'DM Sans', sans-serif; letter-spacing: .02em;
+}
+.pill-tab-label {
+  position: absolute; bottom: -22px; left: 0;
+  font-size: 10px; color: #94a3b8; white-space: nowrap;
+  font-family: 'DM Sans', sans-serif; letter-spacing: .02em;
 }
 </style>
 </head>
 <body>
 
-<div class="checkout-bg">
-  <!-- Mock Stripe Checkout -->
-  <div class="checkout-left">
-    <div class="merchant-logo">⚡ turboscribe.ai</div>
-    <div>
-      <div class="product-name">TurboScribe Unlimited</div>
-      <div class="product-price">$20.00 <small style="font-size:14px;font-weight:400;color:rgba(255,255,255,0.5)">/month</small></div>
-      <div class="product-sub">Billed monthly • Cancel anytime</div>
-    </div>
+<!-- Top bar -->
+<div class="top-bar">
+  <div class="top-bar-logo">
+    <svg width="20" height="20" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <path d="M32 3L59.7 19v26L32 61 4.3 45V19z" fill="#040806"/>
+      <path d="M32 3L59.7 19v26L48 52.5" stroke="#34d399" stroke-width="1.8" stroke-linecap="round"/>
+      <path d="M16 52.5L4.3 45V19L32 3" stroke="#34d399" stroke-width="1.8" stroke-linecap="round" opacity="0.5"/>
+      <circle cx="50" cy="50" r="2.2" fill="#34d399" opacity="0.9"/>
+      <line x1="20" y1="21" x2="44" y2="21" stroke="#34d399" stroke-width="1.6" stroke-linecap="round" opacity="0.35"/>
+      <line x1="20" y1="43" x2="44" y2="43" stroke="#34d399" stroke-width="1.6" stroke-linecap="round" opacity="0.35"/>
+      <polyline points="22,25 34,32 22,39" stroke="#34d399" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+      <polyline points="30,25 42,32 30,39" stroke="#34d399" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.45"/>
+    </svg>
+    SEMEX
+    <span class="top-bar-badge">v5.0.0</span>
   </div>
-
-  <div class="checkout-right">
-    <div class="wallet-btns">
-      <button class="wallet-btn apple">🍎 Apple Pay</button>
-      <button class="wallet-btn link">⚡ Link</button>
-    </div>
-    <div class="divider">or</div>
-    <div class="section-label">Contact information</div>
-    <div class="field-group">
-      <div class="field">fangu5219@gmail.com</div>
-    </div>
-    <div class="section-label">Payment method</div>
-    <div class="field-group">
-      <div class="field card-field">4111 1111 1111 1111</div>
-      <div class="field-row">
-        <div class="field card-field">12 / 30</div>
-        <div class="field card-field">000</div>
-      </div>
-      <div class="field">United States</div>
-    </div>
-    <button class="pay-btn">Subscribe</button>
-    <div class="powered">Powered by <span>semex</span> | Terms | Privacy</div>
-  </div>
-
-  <!-- SEMEX Overlay — Jetix layout -->
-  <div class="semex-overlay" style="position:absolute;bottom:20px;left:20px;">
-    <div style="position:relative">
-      <div class="overlay-full">
-
-        <!-- Header -->
-        <div class="full-header">
-          <div class="full-brand">
-            <div class="full-brand-logo">S</div>
-            <div class="full-brand-text">
-              <div class="full-brand-name">SEMEX</div>
-              <div class="full-brand-tag">Automation v5.0.0</div>
-            </div>
-          </div>
-          <div class="header-btns">
-            <button class="header-btn">⚙</button>
-            <button class="header-btn">−</button>
-          </div>
-        </div>
-
-        <!-- Body -->
-        <div class="full-body">
-
-          <!-- Status -->
-          <div class="full-status">
-            <div class="full-status-icon">⏳</div>
-            <div class="full-status-text">Waiting response…</div>
-          </div>
-
-          <!-- Stats row -->
-          <div class="full-stats">
-            <div class="stat-item">
-              <span class="stat-label">Attempts</span>
-              <span class="stat-value">1</span>
-            </div>
-            <div class="stat-div"></div>
-            <div class="stat-item">
-              <span class="stat-label">Charged</span>
-              <span class="stat-value charged">0</span>
-            </div>
-            <div class="stat-div"></div>
-            <div class="stat-item">
-              <span class="stat-label">Live</span>
-              <span class="stat-value live">0</span>
-            </div>
-            <div class="stat-div"></div>
-            <div class="stat-item">
-              <span class="stat-label">Dead</span>
-              <span class="stat-value dead">0</span>
-            </div>
-          </div>
-
-          <!-- Details -->
-          <div class="full-details">
-            <div class="detail-row">
-              <span>Card</span>
-              <span class="detail-val">411111 •••• 1111</span>
-            </div>
-            <div class="detail-row">
-              <span>Mode</span>
-              <span class="detail-val">CC List</span>
-            </div>
-            <div class="detail-row">
-              <span>Type</span>
-              <span class="detail-val">LAND</span>
-            </div>
-            <div class="detail-row">
-              <span>IP</span>
-              <span class="detail-val">2405:acc8:…</span>
-            </div>
-            <div class="detail-row">
-              <span>Time</span>
-              <span class="detail-val">00:08</span>
-            </div>
-          </div>
-
-          <!-- Controls -->
-          <div class="full-controls">
-            <button class="ctrl-btn pause">⏸ Pause</button>
-            <button class="ctrl-btn stop">⏹</button>
-            <button class="ctrl-btn blur">🔒</button>
-          </div>
-
-        </div>
-      </div>
-      <span class="tab-label">← Full (expanded) state</span>
-    </div>
-  </div>
-
-  <!-- Pill state demo -->
-  <div style="position:absolute;bottom:310px;left:20px;display:flex;align-items:center">
-    <div style="position:relative">
-      <div class="overlay-pill">
-        <div class="pill-logo">S</div>
-        <div class="pill-dot-sm"></div>
-        <span class="pill-text">Processing #1</span>
-      </div>
-      <span class="tab-label">← Pill (minimized) state</span>
-    </div>
-  </div>
-
-  <!-- Embed checkout popup — Jetix-style exact match -->
-  <div class="embed-popup">
-    <div class="sep-card">
-      <button class="sep-close" aria-label="Close">✕</button>
-      <div class="sep-header">
-        <div class="sep-icon">⚡</div>
-        <div class="sep-header-text">Embedded Checkout Detected</div>
-      </div>
-      <div class="sep-desc">
-        <span class="sep-domain">turboscribe.ai</span> uses an embedded Stripe Checkout.
-        Open the hosted page for full automation with overlay.
-      </div>
-      <div class="sep-btns">
-        <button class="sep-btn-primary">
-          <span>🔗</span> Open Checkout in New Tab
-        </button>
-        <button class="sep-btn-secondary">
-          <span>✓</span> Continue Without Overlay
-        </button>
-      </div>
-      <div class="sep-hint">
-        <span>ℹ</span>&nbsp;Bypass &amp; tracking still work on this page
-      </div>
-    </div>
-  </div>
-
+  <span class="top-bar-sep"></span>
+  <span class="top-bar-note">Overlay Preview — all controls are interactive</span>
 </div>
 
+<!-- Main canvas -->
+<div class="canvas">
+  <div class="checkout-bg">
+
+    <!-- Mock checkout left (product) -->
+    <div class="checkout-left">
+      <div class="merchant-logo">⚡ turboscribe.ai</div>
+      <div>
+        <div class="product-name">TurboScribe Unlimited</div>
+        <div class="product-price">$20.00 <small style="font-size:14px;font-weight:400;color:rgba(255,255,255,0.4)">/mo</small></div>
+        <div class="product-sub">Billed monthly · Cancel anytime</div>
+      </div>
+      <div class="product-divider"></div>
+      <div class="product-line"><span>Subtotal</span><span>$20.00</span></div>
+      <div class="product-line"><span>Tax</span><span>$0.00</span></div>
+      <div class="product-divider"></div>
+      <div class="product-line" style="font-size:15px"><span style="color:#f5f5f7;font-weight:700">Total</span><span style="color:#34d399;font-weight:800">$20.00</span></div>
+    </div>
+
+    <!-- Mock checkout right (form) -->
+    <div class="checkout-right">
+      <div class="wallet-btns">
+        <button class="wallet-btn apple">🍎 Apple Pay</button>
+        <button class="wallet-btn link">⚡ Link</button>
+      </div>
+      <div class="divider">or pay with card</div>
+      <div class="section-label">Contact</div>
+      <div class="field-group">
+        <div class="field" style="color:#94a3b8">fangu5219@gmail.com</div>
+      </div>
+      <div class="section-label">Card details</div>
+      <div class="field-group">
+        <div class="field card-field">4111 1111 1111 1111</div>
+        <div class="field-row">
+          <div class="field card-field">12 / 30</div>
+          <div class="field card-field">000</div>
+        </div>
+        <div class="field" style="color:#94a3b8">United States</div>
+      </div>
+      <button class="pay-btn">Subscribe — $20.00</button>
+      <div class="powered">Powered by <b>Stripe</b> &nbsp;·&nbsp; Terms &nbsp;·&nbsp; Privacy</div>
+    </div>
+
+    <!-- ═══ SEMEX Overlay ═══ -->
+    <div class="semex-overlay" id="semexOverlay">
+      <div style="position:relative">
+
+        <!-- Settings panel (slides out to the right) -->
+        <div class="settings-panel" id="settingsPanel">
+          <div class="settings-title">Settings</div>
+          <div class="settings-row">
+            <span>Position</span>
+            <div class="pos-btns">
+              <button class="pos-btn active" data-pos="BL" onclick="setPos(this,'BL')">BL</button>
+              <button class="pos-btn" data-pos="BR" onclick="setPos(this,'BR')">BR</button>
+              <button class="pos-btn" data-pos="TL" onclick="setPos(this,'TL')">TL</button>
+              <button class="pos-btn" data-pos="TR" onclick="setPos(this,'TR')">TR</button>
+            </div>
+          </div>
+          <div class="settings-row">
+            <span>Proxy</span>
+            <button class="settings-toggle on" id="toggleProxy" onclick="toggleSetting(this)"></button>
+          </div>
+          <div class="settings-row">
+            <span>Anti-FP</span>
+            <button class="settings-toggle on" id="toggleAFP" onclick="toggleSetting(this)"></button>
+          </div>
+          <div class="settings-row">
+            <span>Auto-click</span>
+            <button class="settings-toggle" id="toggleAC" onclick="toggleSetting(this)"></button>
+          </div>
+          <div class="settings-row">
+            <span>Screenshots</span>
+            <button class="settings-toggle on" id="toggleSS" onclick="toggleSetting(this)"></button>
+          </div>
+        </div>
+
+        <!-- Full panel -->
+        <div class="overlay-full" id="overlayFull">
+
+          <!-- Header -->
+          <div class="full-header">
+            <div class="full-brand">
+              <div class="full-brand-logo">
+                <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M32 3L59.7 19v26L32 61 4.3 45V19z" fill="#040806"/>
+                  <path d="M32 3L59.7 19v26L48 52.5" stroke="#34d399" stroke-width="1.8" stroke-linecap="round"/>
+                  <path d="M16 52.5L4.3 45V19L32 3" stroke="#34d399" stroke-width="1.8" stroke-linecap="round" opacity="0.5"/>
+                  <circle cx="50" cy="50" r="2.2" fill="#34d399" opacity="0.9"/>
+                  <line x1="20" y1="21" x2="44" y2="21" stroke="#34d399" stroke-width="1.6" stroke-linecap="round" opacity="0.35"/>
+                  <line x1="20" y1="43" x2="44" y2="43" stroke="#34d399" stroke-width="1.6" stroke-linecap="round" opacity="0.35"/>
+                  <polyline points="22,25 34,32 22,39" stroke="#34d399" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                  <polyline points="30,25 42,32 30,39" stroke="#34d399" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.45"/>
+                </svg>
+              </div>
+              <div class="full-brand-text">
+                <div class="full-brand-name">SEMEX</div>
+                <div class="full-brand-tag">Automation v5.0.0</div>
+              </div>
+            </div>
+            <div class="header-btns">
+              <button class="header-btn" id="settingsBtn" title="Settings" onclick="toggleSettings()">⚙</button>
+              <button class="header-btn" title="Minimise" onclick="collapseTopill()">−</button>
+            </div>
+          </div>
+
+          <!-- Body -->
+          <div class="full-body">
+
+            <!-- Status -->
+            <div class="full-status state-processing" id="statusBox">
+              <div class="status-dot pulse blue" id="statusDot"></div>
+              <div class="status-text" id="statusText">Processing card…</div>
+              <div class="status-attempt" id="statusAttempt">#1</div>
+            </div>
+
+            <!-- Stats -->
+            <div class="full-stats">
+              <div class="stat-item">
+                <span class="stat-label">Attempts</span>
+                <span class="stat-value" id="statAttempts">1</span>
+              </div>
+              <div class="stat-div"></div>
+              <div class="stat-item">
+                <span class="stat-label">Charged</span>
+                <span class="stat-value green" id="statCharged">0</span>
+              </div>
+              <div class="stat-div"></div>
+              <div class="stat-item">
+                <span class="stat-label">Live</span>
+                <span class="stat-value amber" id="statLive">0</span>
+              </div>
+              <div class="stat-div"></div>
+              <div class="stat-item">
+                <span class="stat-label">Dead</span>
+                <span class="stat-value red" id="statDead">0</span>
+              </div>
+            </div>
+
+            <!-- Details -->
+            <div class="full-details">
+              <div class="detail-row">
+                <span class="detail-key">Card</span>
+                <span class="detail-val" id="detCard">411111 •••• 1111</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-key">Mode</span>
+                <span class="detail-val amber">CC List</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-key">Gateway</span>
+                <span class="detail-val" id="detGateway">Stripe</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-key">IP</span>
+                <span class="detail-val" id="detIP">2405:acc8:…</span>
+              </div>
+              <div class="detail-row">
+                <span class="detail-key">Time</span>
+                <span class="detail-val green" id="detTime">00:00</span>
+              </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="full-controls">
+              <button class="ctrl-btn pause" id="pauseBtn" onclick="togglePause()">⏸ Pause</button>
+              <button class="ctrl-btn stop"  id="stopBtn"  onclick="stopSession()" title="Stop">⏹</button>
+              <button class="ctrl-btn lock"  id="lockBtn"  onclick="toggleLock()"  title="Hide details">🔒</button>
+            </div>
+
+          </div>
+        </div>
+        <span class="tab-label">← Full panel</span>
+      </div>
+    </div>
+
+    <!-- Pill state -->
+    <div style="position:absolute;bottom:310px;left:20px;display:flex;align-items:center">
+      <div style="position:relative">
+        <div class="overlay-pill" id="overlayPill" onclick="expandToFull()" style="display:none">
+          <div class="pill-logo-wrap">
+            <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M32 3L59.7 19v26L32 61 4.3 45V19z" fill="#040806"/>
+              <path d="M32 3L59.7 19v26L48 52.5" stroke="#34d399" stroke-width="1.8" stroke-linecap="round"/>
+              <path d="M16 52.5L4.3 45V19L32 3" stroke="#34d399" stroke-width="1.8" stroke-linecap="round" opacity="0.5"/>
+              <polyline points="22,25 34,32 22,39" stroke="#34d399" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              <polyline points="30,25 42,32 30,39" stroke="#34d399" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.45"/>
+            </svg>
+          </div>
+          <div class="pill-dot" id="pillDot"></div>
+          <span class="pill-text" id="pillText">Processing #1</span>
+          <button class="pill-expand" title="Expand" onclick="event.stopPropagation();expandToFull()">↑</button>
+        </div>
+        <span class="pill-tab-label" id="pillLabel" style="display:none">← Pill (click to expand)</span>
+      </div>
+    </div>
+
+    <!-- Embed checkout popup -->
+    <div class="embed-popup" id="embedPopup">
+      <div class="ep-card">
+        <button class="ep-close" onclick="document.getElementById('embedPopup').style.display='none'" aria-label="Close">✕</button>
+        <div class="ep-header">
+          <div class="ep-icon">
+            <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <path d="M32 3L59.7 19v26L32 61 4.3 45V19z" fill="#040806"/>
+              <path d="M32 3L59.7 19v26L48 52.5" stroke="#34d399" stroke-width="1.8" stroke-linecap="round"/>
+              <path d="M16 52.5L4.3 45V19L32 3" stroke="#34d399" stroke-width="1.8" stroke-linecap="round" opacity="0.5"/>
+              <polyline points="22,25 34,32 22,39" stroke="#34d399" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+              <polyline points="30,25 42,32 30,39" stroke="#34d399" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.45"/>
+            </svg>
+          </div>
+          <div class="ep-header-text">Embedded Checkout Detected</div>
+        </div>
+        <div class="ep-desc">
+          <span class="ep-domain">turboscribe.ai</span> uses an embedded Stripe checkout.
+          Open the hosted page for full automation with overlay.
+        </div>
+        <div class="ep-btns">
+          <button class="ep-btn-primary">
+            <span>🔗</span> Open Checkout in New Tab
+          </button>
+          <button class="ep-btn-secondary" onclick="document.getElementById('embedPopup').style.display='none'">
+            <span>✓</span> Continue Without Overlay
+          </button>
+        </div>
+        <div class="ep-hint">
+          <span class="ep-hint-icon">ℹ</span>
+          <span>Bypass &amp; tracking still work on this page</span>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /checkout-bg -->
+</div><!-- /canvas -->
+
+<script>
+/* ── State ── */
+const state = {
+  paused: false,
+  stopped: false,
+  locked: false,
+  settingsOpen: false,
+  attempts: 1, charged: 0, live: 0, dead: 0,
+  timerSec: 0, timerInterval: null,
+};
+
+const STATUSES = [
+  { cls: 'state-processing', dotCls: 'blue pulse',  txt: 'Processing card…',        pill: 'Processing' },
+  { cls: 'state-charged',    dotCls: 'green pulse',  txt: 'Charged ✓',               pill: 'Charged ✓'  },
+  { cls: 'state-live',       dotCls: 'amber pulse',  txt: 'Live (auth hold)',         pill: 'Live'        },
+  { cls: 'state-dead',       dotCls: 'red',          txt: 'Declined — next card',     pill: 'Declined'    },
+];
+let statusIdx = 0;
+
+/* ── Timer ── */
+function startTimer() {
+  if (state.timerInterval) return;
+  state.timerInterval = setInterval(() => {
+    if (!state.paused && !state.stopped) {
+      state.timerSec++;
+      const m = String(Math.floor(state.timerSec / 60)).padStart(2,'0');
+      const s = String(state.timerSec % 60).padStart(2,'0');
+      document.getElementById('detTime').textContent = `${m}:${s}`;
+    }
+  }, 1000);
+}
+
+/* ── Collapse / expand ── */
+function collapseTopill() {
+  closeSettings();
+  document.getElementById('overlayFull').style.display = 'none';
+  document.getElementById('semexOverlay').querySelector('.tab-label').style.display = 'none';
+  document.getElementById('overlayPill').style.display = 'inline-flex';
+  document.getElementById('pillLabel').style.display = 'block';
+  syncPill();
+}
+
+function expandToFull() {
+  document.getElementById('overlayPill').style.display = 'none';
+  document.getElementById('pillLabel').style.display = 'none';
+  document.getElementById('overlayFull').style.display = 'flex';
+  document.getElementById('semexOverlay').querySelector('.tab-label').style.display = 'block';
+}
+
+/* ── Pause / Resume ── */
+function togglePause() {
+  if (state.stopped) return;
+  state.paused = !state.paused;
+  const btn = document.getElementById('pauseBtn');
+  if (state.paused) {
+    btn.className = 'ctrl-btn resume'; btn.textContent = '▶ Resume';
+    setStatus({ cls: 'state-paused', dotCls: 'amber', txt: 'Paused', pill: 'Paused' });
+  } else {
+    btn.className = 'ctrl-btn pause'; btn.textContent = '⏸ Pause';
+    setStatus(STATUSES[statusIdx]);
+  }
+  syncPill();
+}
+
+/* ── Stop ── */
+function stopSession() {
+  state.stopped = true; state.paused = false;
+  if (state.timerInterval) { clearInterval(state.timerInterval); state.timerInterval = null; }
+  document.getElementById('pauseBtn').className = 'ctrl-btn pause';
+  document.getElementById('pauseBtn').textContent = '⏸ Pause';
+  document.getElementById('pauseBtn').disabled = true;
+  document.getElementById('pauseBtn').style.opacity = '0.4';
+  setStatus({ cls: 'state-stopped', dotCls: 'grey', txt: 'Stopped', pill: 'Stopped' });
+  document.getElementById('pillDot').className = 'pill-dot grey';
+  syncPill();
+}
+
+/* ── Lock / blur ── */
+function toggleLock() {
+  state.locked = !state.locked;
+  const btn = document.getElementById('lockBtn');
+  btn.classList.toggle('active', state.locked);
+  document.querySelectorAll('.detail-val').forEach(el => {
+    el.classList.toggle('blurred', state.locked);
+  });
+}
+
+/* ── Settings ── */
+function toggleSettings() {
+  state.settingsOpen = !state.settingsOpen;
+  document.getElementById('settingsPanel').classList.toggle('open', state.settingsOpen);
+  document.getElementById('settingsBtn').classList.toggle('active', state.settingsOpen);
+}
+function closeSettings() {
+  state.settingsOpen = false;
+  document.getElementById('settingsPanel').classList.remove('open');
+  document.getElementById('settingsBtn').classList.remove('active');
+}
+function toggleSetting(btn) { btn.classList.toggle('on'); }
+
+function setPos(btn, pos) {
+  document.querySelectorAll('.pos-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const ov = document.getElementById('semexOverlay');
+  ov.style.top = ov.style.bottom = ov.style.left = ov.style.right = '';
+  if (pos==='BL') { ov.style.bottom='20px'; ov.style.left='20px'; }
+  if (pos==='BR') { ov.style.bottom='20px'; ov.style.right='20px'; }
+  if (pos==='TL') { ov.style.top='60px'; ov.style.left='20px'; }
+  if (pos==='TR') { ov.style.top='60px'; ov.style.right='20px'; }
+}
+
+/* ── Status helper ── */
+function setStatus(s) {
+  const box = document.getElementById('statusBox');
+  box.className = 'full-status ' + s.cls;
+  const dot = document.getElementById('statusDot');
+  dot.className = 'status-dot ' + s.dotCls;
+  document.getElementById('statusText').textContent = s.txt;
+}
+
+/* ── Sync pill text/dot ── */
+function syncPill() {
+  const s = state.paused ? { txt:'Paused', dot:'amber' } :
+            state.stopped ? { txt:'Stopped', dot:'grey' } :
+            { txt: STATUSES[statusIdx].pill + ' #'+state.attempts, dot: 'green' };
+  document.getElementById('pillText').textContent = s.txt;
+  document.getElementById('pillDot').className = 'pill-dot ' + (s.dot==='green'?'':'') + s.dot;
+}
+
+/* ── Demo cycle: simulate hits every 3s ── */
+function simulateCycle() {
+  if (state.paused || state.stopped) return;
+  statusIdx = (statusIdx + 1) % STATUSES.length;
+  const st = STATUSES[statusIdx];
+  setStatus(st);
+  state.attempts++;
+  document.getElementById('statAttempts').textContent = state.attempts;
+  document.getElementById('statusAttempt').textContent = '#' + state.attempts;
+  if (st.cls === 'state-charged') { state.charged++; document.getElementById('statCharged').textContent = state.charged; }
+  if (st.cls === 'state-live')    { state.live++;    document.getElementById('statLive').textContent = state.live; }
+  if (st.cls === 'state-dead')    { state.dead++;    document.getElementById('statDead').textContent = state.dead; }
+  syncPill();
+}
+
+/* ── Init ── */
+startTimer();
+setInterval(simulateCycle, 3000);
+syncPill();
+
+/* Close settings when clicking outside */
+document.addEventListener('click', function(e) {
+  const panel = document.getElementById('settingsPanel');
+  const btn   = document.getElementById('settingsBtn');
+  if (state.settingsOpen && !panel.contains(e.target) && e.target !== btn) closeSettings();
+});
+</script>
 </body>
 </html>
