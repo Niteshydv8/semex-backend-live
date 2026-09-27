@@ -98,10 +98,6 @@ def _find_extension_zip() -> Path | None:
 
 async def _cmd_buy(chat_id: int, username: str | None) -> None:
     """Show premium plans + private-group offer + USDT wallets (BEP20/TRC20/TON)."""
-    owner_handle = (settings.OWNER_HANDLE or settings.TELEGRAM_BOT_USERNAME or "").replace("@", "")
-    price_monthly = getattr(settings, "PLAN_PRICE_MONTHLY", None) or "$100"
-    price_yearly = (getattr(settings, "PLAN_PRICE_YEARLY", "") or "").strip()
-    price_lifetime = (getattr(settings, "PLAN_PRICE_LIFETIME", "") or "").strip()
     group_weekly = getattr(settings, "GROUP_PRICE_WEEKLY", None) or "$25"
     group_2week = getattr(settings, "GROUP_PRICE_2WEEK", None) or "$38"
     group_monthly = getattr(settings, "GROUP_PRICE_MONTHLY", None) or "$50"
@@ -112,24 +108,10 @@ async def _cmd_buy(chat_id: int, username: str | None) -> None:
 
     greeting = f"@{username}" if username else "there"
     lines = [
-        f"💎 <b>SEMEX Premium</b>  ·  Hey {greeting}",
+        f"🔥 <b>SEMEX Private Group</b>  ·  Hey {greeting}",
         "━━━━━━━━━━━━━━━━━━━━",
         "",
-        "📦 <b>BOT ACCESS — Premium</b>",
-        f"├ <b>MONTHLY</b>  ·  {price_monthly}",
-    ]
-    if price_yearly:
-        lines.append(f"├ <b>YEARLY</b>   ·  {price_yearly}")
-    if price_lifetime:
-        lines.append(f"└ <b>LIFETIME</b> ·  {price_lifetime}  <i>(one-time)</i>")
-    else:
-        lines[-1] = lines[-1].replace("├", "└")
-
-    lines += [
-        "",
-        "<i>Includes: 3DS Bypass · full-quality screenshots · extended history · priority support</i>",
-        "",
-        "🔥 <b>PRIVATE GROUP — CC Drop + Methods</b>",
+        "🔒 <b>PRIVATE GROUP ACCESS</b>",
         f"├ <b>WEEKLY</b>     (7d)   ·  {group_weekly}",
         f"├ <b>BI-WEEKLY</b>  (14d)  ·  {group_2week}",
         f"└ <b>MONTHLY</b>   (30d)  ·  {group_monthly}",
@@ -195,10 +177,7 @@ def _buy_stars_kb() -> dict:
     copy the address there and paste their TxID in chat for auto-verification.
     """
     cat = _stars_catalog()
-    rows = [
-        # Premium plan — Stars only (no USDT button for Premium)
-        [{"text": f"⭐ Premium Monthly — {cat['plan_monthly']['stars']} ⭐ ({cat['plan_monthly']['usd']})", "callback_data": "stars:plan_monthly"}],
-    ]
+    rows = []
     # Group plans: side-by-side Stars + USDT (Binance Pay) buttons
     for key in ("group_weekly", "group_2week", "group_monthly"):
         item = cat[key]
