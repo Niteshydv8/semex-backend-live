@@ -148,6 +148,58 @@ async def _cmd_buy(chat_id: int, username: str | None) -> None:
     await send_message(chat_id, "\n".join(lines), reply_markup=_buy_stars_kb())
 
 
+async def _cmd_vip(chat_id: int, username: str | None) -> None:
+    """Show the Full Private group offer — manual payment / manual add."""
+    owner_handle = (getattr(settings, "OWNER_HANDLE", "") or "").strip().lstrip("@")
+    usdt_bep20 = getattr(settings, "PAYMENT_USDT_BEP20", "")
+    usdt_trc20 = getattr(settings, "PAYMENT_USDT_TRC20", "")
+    usdt_ton = getattr(settings, "PAYMENT_USDT_TON", "")
+
+    greeting = f"@{username}" if username else "there"
+    owner_line = f"DM <b>@{owner_handle}</b> with your TxID after paying." if owner_handle else "DM the owner with your TxID after paying."
+    lines = [
+        f"👑 <b>SEMEX Full Private Group</b>  ·  Hey {greeting}",
+        "━━━━━━━━━━━━━━━━━━━━",
+        "",
+        "🔐 <b>FULL ACCESS — EVERYTHING INCLUDED</b>",
+        "",
+        "✅ <b>YOU WILL GET —</b>",
+        "  ★ Affiliate program + BINs",
+        "  ★ Bug BINs",
+        "  ★ CCs",
+        "  ★ Methods",
+        "  ★ Carding items",
+        "  ★ Cracking",
+        "  ★ Dumping",
+        "  ★ Bug finding",
+        "  ★ CC checker",
+        "  ★ Bot Access Premium",
+        "  ★ Help selling your stuff",
+        "  ★ Etc methods · many more",
+        "  ★ Continue posting",
+        "  ★ Private cookies",
+        "  ★ VC + tutorial videos",
+        "  ★ Learn everything from base to pro 🤙🏼",
+        "",
+        "💰 <b>PRICE —  $150 / month</b>",
+        "",
+        "━━━━━━━━━━━━━━━━━━━━",
+        "💵 <b>Pay with USDT — then DM owner to get added</b>",
+        "",
+        "🔵 <b>BEP20</b>  (BNB Smart Chain — lowest fee)",
+        f"<code>{usdt_bep20}</code>" if usdt_bep20 else "<i>—</i>",
+        "",
+        "🔴 <b>TRC20</b>  (Tron)",
+        f"<code>{usdt_trc20}</code>" if usdt_trc20 else "<i>—</i>",
+        "",
+        "⚪ <b>TON</b>",
+        f"<code>{usdt_ton}</code>" if usdt_ton else "<i>—</i>",
+        "",
+        f"📩 {owner_line}",
+    ]
+    await send_message(chat_id, "\n".join(lines))
+
+
 # ─── Telegram Stars (XTR) payments ─────────────────────────────────────────
 # Payload format: stars:<product> where product ∈ plan_monthly / group_weekly /
 # group_monthly. Amounts come from config (env-overridable).
@@ -1536,7 +1588,8 @@ async def _cmd_help(chat_id: int) -> None:
         "<b>🚀 General</b>\n"
         "/start · /menu — main menu\n"
         "/get — download the extension .zip\n"
-        "/buy — premium plans &amp; USDT wallets\n"
+        "/buy — CC drop group (Weekly/Monthly)\n"
+        "/vip — full private group ($150/mo)\n"
         "/paid — submit payment proof\n"
         "/cancel — cancel a pending /paid\n"
         "/settings — account + saved BINs\n"
@@ -2260,6 +2313,8 @@ async def _dispatch_update(update: dict, wh_secret: str) -> None:
             await _cmd_get(chat_id)
         elif command in ("/buy", "/premium", "/upgrade", "/plans"):
             await _cmd_buy(chat_id, username)
+        elif command in ("/vip", "/fullaccess", "/private"):
+            await _cmd_vip(chat_id, username)
         elif command in ("/paid", "/proof", "/receipt"):
             await _cmd_paid(chat_id, username, from_user_id)
         elif command == "/cancel":
