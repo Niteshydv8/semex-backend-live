@@ -92,3 +92,9 @@ android-sdk/
 credentials.json
 *.key
 .credentials
+
+# Extension source — never commit to backend repo
+semex/
+semex-build/
+semex-v*.zip
+attached_assets/
