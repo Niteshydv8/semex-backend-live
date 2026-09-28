@@ -22,7 +22,10 @@ The extension's 32 JS files use obfuscator.io with RC4-keyed hex string arrays +
 
 **Why:** user demanded 100% Stripe UI coverage / no missed hits after seeing Pixel Zero's claims.
 
+Also ported (same build): placeholder card-replacement mode (settings.cardReplacement.enabled, default OFF — form gets 0000…/01/30/000, real card swaps in at network via __SEMEX_PENDING_CARD with persistent:true so EVERY card-bearing request is swapped, 3-min ts expiry); x/X-wildcard BIN patterns in generateCardFromBIN; invoice.stripe.com "Pay $X" text-button pass in triggerStripeValidation; custom address mode (addressMode "custom" + settings.customCountryCode); fill gate accepts any URL with cs_live_/cs_test_//checkout/session/.
+
 **How to apply:** when touching fill or hit detection, keep these invariants:
+- __SEMEX_PENDING_CARD: non-persistent entries are one-shot (cleared after first swap); persistent entries must carry ts and expire after 3 min, or a stale card swaps into unrelated requests.
 - confirmSetup succeeded = card SAVED → LIVE, never CHARGED (SetupIntent is not a charge).
 - Confirm-result bridge messages arrive via window.postMessage and are page-forgeable: always require plausible pi_/seti_ id + a SEMEX_STRIPE_CONFIRM_START within 30s on the same tab + the existing card+freshness guard. Residual risk accepted: a merchant page that deliberately forges both messages after observing a fill (same class as the existing fetch-hook exposure).
 - Keyboard fallback must return per-field filled keys; never excuse a missing field just because some unrelated input has text (false fill-success bug caught in review).
