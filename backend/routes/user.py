@@ -592,3 +592,44 @@ async def ip_check(ip: Optional[str] = None, user: User = Depends(get_current_us
         merged["riskLabel"] = "LOW"
 
     return merged
+
+
+# ---------- Leaderboard ----------
+# Public ranking of operators by charged hits. Identity is masked (first name
+# + partially-hidden username) — no telegram_id, no full username, no card
+# data. Counts come from the users-collection counters that data.py keeps in
+# lockstep with hit ingestion (hit_count / charged_count / live_count).
+
+@router.get("/leaderboard")
+async def get_leaderboard(user: User = Depends(get_current_user_unlocked)):
+    db = get_db()
+    cursor = db.users.find(
+        {"is_banned": {"$ne": True}, "charged_count": {"$gt": 0}},
+        {
+            "telegram_id": 1,
+            "telegram_username": 1,
+            "telegram_first_name": 1,
+            "plan": 1,
+            "hit_count": 1,
+            "charged_count": 1,
+            "live_count": 1,
+        },
+    ).sort([("charged_count", -1), ("hit_count", -1)]).limit(25)
+    out = []
+    rank = 0
+    async for doc in cursor:
+        rank += 1
+        uname = doc.get("telegram_username") or ""
+        fname = (doc.get("telegram_first_name") or "").strip()
+        masked = (uname[:2] + "***") if len(uname) >= 2 else None
+        out.append({
+            "rank": rank,
+            "name": fname or (masked or f"Operator #{rank}"),
+            "username": masked,
+            "plan": doc.get("plan") or "TRIAL",
+            "charged": doc.get("charged_count") or 0,
+            "live": doc.get("live_count") or 0,
+            "total": doc.get("hit_count") or 0,
+            "me": doc.get("telegram_id") == user.telegram_id,
+        })
+    return {"leaderboard": out}
