@@ -50,3 +50,4 @@
 - [SEMEX auto-clicker module](semex-auto-clicker.md) — Ctrl+Shift+Space toggle; content/auto-clicker.js; SEMEX_AUTO_CLICK_TOGGLE postMessage; MAX_CLICKS=50; smart button targeting.
 - [SEMEX auth storage key obfuscation](semex-auth-storage-keys.md) — auth tokens in obfuscated keys (_SK_AT/__xatk etc.); verifySession reason "auth_rejected" = purge tokens, "server_error" = keep and retry.
 - [Pixel Zero competitor decode](pixel-zero-decode.md) — runtime string-table decode harness for obfuscator.io; their placeholder-swap + keyboard-fill techniques; what was ported into SEMEX and the invariants to keep.
+- [SEMEX placeholder-mode invariants](semex-placeholder-mode-invariants.md) — staged-card swap exclusive in BOTH transports; placeholder fill Stripe-context-only (sticky sessionStorage trap); leaderboard = masked username only.
