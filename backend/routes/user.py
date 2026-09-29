@@ -615,12 +615,17 @@ async def get_leaderboard(user: User = Depends(get_current_user_unlocked)):
             "live_count": 1,
         },
     ).sort([("charged_count", -1), ("hit_count", -1)]).limit(25)
+    import re as _re
     out = []
     rank = 0
     async for doc in cursor:
         rank += 1
         uname = doc.get("telegram_username") or ""
         fname = (doc.get("telegram_first_name") or "").strip()
+        # telegram_first_name is free-form — users can stuff links, @handles
+        # or phone numbers into it, which would broadcast to every leaderboard
+        # viewer. Strip contact-info patterns and cap the length.
+        fname = _re.sub(r"(https?://\S+|www\.\S+|t\.me/\S+|@\w+|\d{5,})", "", fname).strip()[:16]
         masked = (uname[:2] + "***") if len(uname) >= 2 else None
         out.append({
             "rank": rank,
