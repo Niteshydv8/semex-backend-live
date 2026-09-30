@@ -51,3 +51,5 @@
 - [SEMEX auth storage key obfuscation](semex-auth-storage-keys.md) — auth tokens in obfuscated keys (_SK_AT/__xatk etc.); verifySession reason "auth_rejected" = purge tokens, "server_error" = keep and retry.
 - [Pixel Zero competitor decode](pixel-zero-decode.md) — runtime string-table decode harness for obfuscator.io; their placeholder-swap + keyboard-fill techniques; what was ported into SEMEX and the invariants to keep.
 - [SEMEX placeholder-mode invariants](semex-placeholder-mode-invariants.md) — staged-card swap exclusive in BOTH transports; placeholder fill Stripe-context-only (sticky sessionStorage trap); leaderboard = masked username only.
+- [SEMEX obfuscated storage keys](semex-storage-key-map.md) — popup/content must read the MAPPED key (LOCAL_MIGRATE in background.js, e.g. lastHitResult→__xlhr); reading the friendly name silently returns undefined.
+- [SEMEX fill-path storage stalls](semex-fill-storage-stalls.md) — chrome.storage can never-call-back in some frames; every fill-path read needs Promise.race timeout + last-known-good settings cache (fail-safe, not fail-open for cardReplacement).
