@@ -1,14 +1,13 @@
 ---
-name: Adding a merchant-embedded Stripe gateway (e.g. Whop)
-description: What a new merchant-embedded Stripe checkout needs — and what it must NOT touch
+name: Adding a merchant checkout gateway (Stripe-embedded vs Basis Theory)
+description: What a new merchant checkout needs — and the Whop/Basis Theory exception
 ---
 
-To support a merchant site whose checkout is an embedded Stripe Payment Element (e.g. whop.com/checkout/*), only two changes are needed:
+Two different merchant-checkout shapes exist; identify which one before touching code:
 
-1. A domain profile in `getSelectors()` (shared/server-client.js) with the merchant's own-DOM fields (email/name/address via autocomplete attrs) + `iframe: true`.
-2. The merchant's checkout path added to the `main-world/overlay.js` manifest matches (e.g. `*://whop.com/checkout/*`) for deterministic overlay injection.
+1. **Stripe-embedded merchant** (js.stripe.com elements-inner iframe on the page): only needs a `getSelectors()` profile (shared/server-client.js) + overlay manifest match. Card fill, decoy, and card replacement all work via the existing Stripe iframe path. Never add the merchant host to `isCheckoutPage`.
 
-Do NOT add the merchant host to `isCheckoutPage` in main-world/interceptor.js — the top frame's own API traffic would get misparsed as payment responses. Hit detection, card replacement, and screenshot capture all run inside the js.stripe.com elements-inner iframe, which is already a checkout context.
+2. **Basis Theory merchant (Whop)** — verified live 2026-10-12 on whop.com/checkout/plan_*: card fields are js.basistheory.com hosted-elements iframes (one field per frame: #cardNumber / #expirationDate / #cvc); email/name/country/address are Whop's own React DOM (name=email/name/country/line1, autocomplete carries "billing " prefix). Stripe only loads controller/metrics frames, so NOTHING Stripe-shaped fires: not the overlay watcher, not the fill gate, not the network swap. Whop needed: gate entries (whop.com path-gated + basistheory.com always-true), subframe routing that ALSO fills the top frame, background dispatcher widened to basistheory frames, per-field fill success in BT iframes (full-card validation falsely fails single-field frames).
 
-**Why:** card fill, decoy pre-fill, and card-replacement gating all execute in the Stripe iframe via canonical-selector override (`_semexIsEmbeddedStripe`) — merchant profiles only matter for the merchant's own DOM fields.
-**How to apply:** any future "support site X" request where X embeds Stripe — check first whether the generic watcher + iframe path already covers it before adding host logic.
+**Why:** the generic "merchant = embedded Stripe" assumption silently produces a checkout where the overlay never appears and fills no-op.
+**How to apply:** for any "support site X" request, first inspect the live page's iframe inventory. Still NOT covered for Whop: card-replacement network swap (Basis Theory tokenize shape unobserved — real card is filled directly as fail-safe) and hit detection/screenshot forwarding (Whop confirm API shape unobserved).

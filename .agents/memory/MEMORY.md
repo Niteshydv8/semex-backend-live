@@ -53,4 +53,4 @@
 - [SEMEX placeholder-mode invariants](semex-placeholder-mode-invariants.md) — staged-card swap exclusive in BOTH transports; placeholder fill Stripe-context-only (sticky sessionStorage trap); leaderboard = masked username only.
 - [SEMEX obfuscated storage keys](semex-storage-key-map.md) — popup/content must read the MAPPED key (LOCAL_MIGRATE in background.js, e.g. lastHitResult→__xlhr); reading the friendly name silently returns undefined.
 - [SEMEX fill-path storage stalls](semex-fill-storage-stalls.md) — chrome.storage can never-call-back in some frames; every fill-path read needs Promise.race timeout + last-known-good settings cache (fail-safe, not fail-open for cardReplacement).
-- [Adding a merchant-embedded Stripe gateway](semex-merchant-gateway-add.md) — only getSelectors profile + overlay manifest match; never add merchant host to isCheckoutPage (top-frame API traffic would misfire).
+- [Adding a merchant checkout gateway](semex-merchant-gateway-add.md) — Stripe-embedded needs only profile + overlay match; Whop is Basis Theory (NOT Stripe) and needed gate/routing/dispatcher changes; inspect live iframe inventory first.
