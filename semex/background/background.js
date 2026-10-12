@@ -273,6 +273,23 @@ chrome.runtime.onMessage.addListener((_0x2d827f, _0x393846, _0x2ece2b) => {
     } catch (_e) { try { _0x2ece2b({ baseUrl: "" }); } catch (__) {} }
     return true;
   }
+  if (_0x2d827f.type === "SEMEX_CHECK_VERSION") {
+    // Content scripts can't fetch the API from a page origin (CORS-blocked on
+    // merchant checkouts), so the proactive version check is proxied here —
+    // the service worker fetches from the extension origin, immune to CORS.
+    (async () => {
+      try {
+        const base = (typeof serverClient !== "undefined" && serverClient && serverClient.baseUrl) || "";
+        if (!base) { _0x2ece2b({ ok: false }); return; }
+        const r = await fetch(base + "/api/public/version", { cache: "no-store" });
+        if (!r.ok) { _0x2ece2b({ ok: false }); return; }
+        const info = await r.json().catch(() => null);
+        if (!info) { _0x2ece2b({ ok: false }); return; }
+        _0x2ece2b({ ok: true, info: info });
+      } catch (_e) { try { _0x2ece2b({ ok: false }); } catch (__) {} }
+    })();
+    return true;
+  }
   if (_0x2d827f.type === "SEMEX_SYNC_PULL") {
     _semexSyncPull().finally(() => { try { _0x2ece2b({ ok: true }); } catch (_e) {} });
     return true;

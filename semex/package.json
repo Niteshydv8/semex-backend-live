@@ -8,7 +8,8 @@
     "test:e2e:newui": "bash build.sh \"${SEMEX_API_URL:-https://api.semxhitter.pw}\" >/dev/null && node tests/fill-e2e-newui.test.js",
     "test:e2e:live": "bash build.sh \"${SEMEX_API_URL:-https://api.semxhitter.pw}\" >/dev/null && node tests/fill-live-stripe.e2e.js",
     "test:e2e:braintree": "bash build.sh \"${SEMEX_API_URL:-https://api.semxhitter.pw}\" --plain >/dev/null && node tests/braintree-bypass-e2e.test.js",
-    "test:e2e:basistheory": "node tests/basistheory-swap-e2e.test.js"
+    "test:e2e:basistheory": "bash build.sh \"${SEMEX_API_URL:-https://api.semxhitter.pw}\" --plain >/dev/null && node tests/basistheory-swap-e2e.test.js",
+    "test:e2e:version": "bash build.sh \"${SEMEX_API_URL:-https://api.semxhitter.pw}\" --plain >/dev/null && node tests/version-check-e2e.test.js"
   },
   "engines": {
     "node": ">=20"

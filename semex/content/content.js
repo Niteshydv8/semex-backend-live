@@ -5,10 +5,6 @@ var __name = (_0x58ccee, _0x29e41f) => __defProp(_0x58ccee, "name", {
 });
 const IS_MAIN_FRAME = window.top === window.self;
 const _logHistory = new Set();
-function logOnce(_0x23e52b, _0x1d5f85, ..._0x3ea74a) {
-  if (!_logHistory.has(_0x23e52b)) {
-    _logHistory.add(_0x23e52b);
-
 // ─── Extension-outdated FULL PAYWALL (v2.3.6) ─────────────────────────────
 // Whenever the extension is flagged outdated we render a hard-block modal on
 // every payment-gateway page (Stripe / Xsolla / Roblox / Epic). The modal
@@ -106,20 +102,28 @@ async function _semexProactiveVersionCheck() {
     if (window.top !== window) return;  // top frame only
     const localVer = (chrome && chrome.runtime && chrome.runtime.getManifest) ? (chrome.runtime.getManifest().version || "") : "";
     if (!localVer) return;
-    // Ask background for the base URL (server-client is loaded there).
-    const baseResp = await new Promise((res) => {
+    // Version checks MUST go through the service worker: a page-origin fetch
+    // to the API trips CORS on merchant checkouts (console noise, a
+    // fingerprinting tell on watched origins, and it throws silently under
+    // strict CSP — which would break the version gate itself).
+    const _askSw = () => new Promise((res) => {
       try {
-        chrome.runtime.sendMessage({ type: "SEMEX_GET_API_URL" }, (r) => {
+        chrome.runtime.sendMessage({ type: "SEMEX_CHECK_VERSION" }, (r) => {
           if (chrome.runtime.lastError) return res(null);
           res(r || null);
         });
       } catch (_e) { res(null); }
     });
-    const base = baseResp && baseResp.baseUrl;
-    if (!base) return;
-    const r = await fetch(base + "/api/public/version", { cache: "no-store" });
-    if (!r.ok) return;
-    const info = await r.json();
+    let resp = await _askSw();
+    // MV3 cold start: a message sent while the service worker is still booting
+    // can be dropped. Retry once after a short wait so a fresh browser session
+    // doesn't silently skip the version check.
+    if (!resp || !resp.ok) {
+      await new Promise((r) => setTimeout(r, 2000));
+      resp = await _askSw();
+    }
+    if (!resp || !resp.ok || !resp.info) return;
+    const info = resp.info;
     const minV = info && info.minVersion || "0.0.0";
     const cmp = (function () {
       const a = String(localVer).split(".").map(x => parseInt(x, 10) || 0);
@@ -172,7 +176,10 @@ async function _semexProactiveVersionCheck() {
   } catch (_e) {}
 })();
 
-
+function logOnce(_0x23e52b, _0x1d5f85, ..._0x3ea74a) {
+  if (!_logHistory.has(_0x23e52b)) {
+    _logHistory.add(_0x23e52b);
+    console.log(_0x1d5f85, ..._0x3ea74a);
   }
 }
 __name(logOnce, "logOnce");
