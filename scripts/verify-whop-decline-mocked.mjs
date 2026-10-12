@@ -26,7 +26,8 @@ const ctx = await chromium.launchPersistentContext('', {
 let sw = ctx.serviceWorkers()[0];
 if (!sw) sw = await ctx.waitForEvent('serviceworker', { timeout: 15000 }).catch(() => null);
 console.log('service worker:', sw ? sw.url() : 'NONE');
-if (sw) sw.on('console', m => console.log('[sw]', m.text().slice(0, 250)));
+const swLogs = [];
+if (sw) sw.on('console', m => { const t = m.text().slice(0, 250); swLogs.push(t); console.log('[sw]', t); });
 
 const page = await ctx.newPage();
 page.on('console', m => {
@@ -55,39 +56,30 @@ await page.evaluate(() => {
   });
 });
 
-for (const frame of page.frames()) {
-  const u = frame.url();
-  if (!u.includes('js.basistheory.com')) continue;
-  const id = u.includes('card-number') ? 'cardNumber' : u.includes('expiration') ? 'expirationDate' : u.includes('verification') ? 'cvc' : null;
-  if (!id) continue;
-  const digits = id === 'cardNumber' ? '4242424242424242' : id === 'expirationDate' ? '1228' : '123';
-  const input = await frame.$('input');
-  await input.click();
-  await input.type(digits, { delay: 40 });
-}
-await page.evaluate(() => {
-  const setIn = (el, val) => {
-    const s = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set;
-    el.focus(); s.call(el, val);
-    el.dispatchEvent(new InputEvent('input', { bubbles: true, cancelable: true, inputType: 'insertFromPaste', data: val }));
-    el.dispatchEvent(new Event('change', { bubbles: true })); el.blur();
-  };
-  const setSel = (el, val) => {
-    const s = Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, 'value').set;
-    el.focus(); s.call(el, val);
-    el.dispatchEvent(new Event('change', { bubbles: true })); el.blur();
-  };
-  document.querySelectorAll('input[name="email"]').forEach(el => setIn(el, 'support@semex.pro'));
-  document.querySelectorAll('input[name="name"]').forEach(el => setIn(el, 'Test Person'));
-  document.querySelectorAll('input[name="line1"]').forEach(el => setIn(el, '1 Main St'));
-  document.querySelectorAll('input[name="city"]').forEach(el => setIn(el, 'New York'));
-  document.querySelectorAll('input[name="postal_code"], input[name="postalCode"]').forEach(el => setIn(el, '10001'));
-  document.querySelectorAll('select[name="country"]').forEach(el => setSel(el, 'US'));
-  document.querySelectorAll('select[name="state"]').forEach(el => {
-    const o = Array.from(el.options).find(o => /new york/i.test(o.text) || o.value === 'NY');
-    if (o) setSel(el, o.value);
+// Drive the extension's OWN fill path (SEMEX_FILL_FORM with an explicit card,
+// exactly what the overlay sends) instead of typing into the Basis Theory
+// iframes. fillFormFromOverlay sets lastFilledCard + RELAY_CARD_DATA, so the
+// resulting hit reaches PAYMENT_RESULT with a non-null card and a fresh fill
+// timestamp — the background no longer drops it as "false hit (empty card)".
+const CARD = { number: '4242424242424242', month: '12', year: '2028', cvv: '123' };
+const fillResult = await page.evaluate(card => new Promise(res => {
+  const to = setTimeout(() => res({ timeout: true }), 30000);
+  window.addEventListener('message', function onMsg(e) {
+    if (e.data && e.data.type === 'SEMEX_FILL_FORM_COMPLETE') {
+      clearTimeout(to);
+      window.removeEventListener('message', onMsg);
+      res(e.data);
+    }
   });
-});
+  window.postMessage({ type: 'SEMEX_FILL_FORM', card }, '*');
+}), CARD);
+console.log('SEMEX_FILL_FORM completion:', JSON.stringify(fillResult));
+if (!fillResult || fillResult.ok !== true) {
+  console.log('FAIL: extension fill did not complete — aborting (a manual iframe fill would produce a card:null hit).');
+  await page.screenshot({ path: 'screenshots/whop-decline-mocked.png' });
+  await ctx.close();
+  process.exit(1);
+}
 await page.waitForTimeout(1000);
 await page.evaluate(() => {
   document.querySelectorAll('input[type="checkbox"], [role="checkbox"]').forEach(c => {
@@ -111,9 +103,14 @@ const dead = hits.find(h =>
   h.gateway === 'whop' &&
   /checkout_sessions\/[^/]+\/confirm/.test(h.url || '') &&
   /card was declined/i.test(h.declineReason || ''));
-const ok = confirmIntercepted && !!dead;
+// Evidence the background accepted the hit pipeline (no false-hit drops) now
+// that the fill went through the extension's own fill path.
+const dropped = swLogs.filter(l => /dropping false hit/.test(l));
+console.log('\nbg false-hit drops:', dropped.length, dropped.slice(0, 2));
+const ok = confirmIntercepted && !!dead && dropped.length === 0;
 console.log('\nconfirm intercepted by mock:', confirmIntercepted);
 console.log('DEAD event from whop confirm with decline reason:', !!dead, dead && JSON.stringify(dead));
+console.log('hit not dropped by background:', dropped.length === 0);
 console.log(ok ? 'PASS: decline surfaced as DEAD' : 'FAIL: decline missing or mislabeled');
 await page.screenshot({ path: 'screenshots/whop-decline-mocked.png' });
 await ctx.close();
