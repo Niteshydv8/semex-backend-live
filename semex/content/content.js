@@ -1293,7 +1293,11 @@ async function fillFormFromOverlay(_0x395d27) {
     // fill on "Filling form..." — fall through to the config-refetch path.
     let _0xf0e2e7 = await Promise.race([
       safeSendMessage({
-        type: "GET_CACHED_FORM_DATA"
+        type: "GET_CACHED_FORM_DATA",
+        // Domain-scope the lookup: the prefetch buffer holds a STRIPE-generic
+        // profile; serving it on Whop (Basis Theory) fills nothing but the
+        // luckily-shared #cardNumber/#cvc ids (verified live 2026-10-12).
+        domain: window.location.hostname
       }),
       new Promise(_r => setTimeout(() => _r(null), 5000))
     ]);
@@ -1316,7 +1320,7 @@ async function fillFormFromOverlay(_0x395d27) {
       // 6 × 250ms window, but polls more than twice as fast.
       for (let _0xretry = 0; _0xretry < 13; _0xretry++) {
         await new Promise(_0xr => setTimeout(_0xr, 120));
-        _0xf0e2e7 = await safeSendMessage({ type: "GET_CACHED_FORM_DATA" });
+        _0xf0e2e7 = await safeSendMessage({ type: "GET_CACHED_FORM_DATA", domain: window.location.hostname });
         if (_0xf0e2e7 && _0xf0e2e7.success && _0xf0e2e7.data) break;
       }
     }
@@ -3211,7 +3215,10 @@ async function fillForm(_0x252793) {
     const _semexTopSel = Object.assign({}, _0x11f44a);
     delete _semexTopSel.cardNumber; delete _semexTopSel.expiry; delete _semexTopSel.cvv;
     delete _semexTopSel.expMonth; delete _semexTopSel.expYear;
-    return await executeFillSequence(_semexTopSel, _0x14ac05);
+    // skipCardValidation: card fields live in the Basis Theory subframes by
+    // design — validating them here (absent selectors = "missing") falsely
+    // posted empty_fields:cardNumber,expiry,cvv on every Whop fill.
+    return await executeFillSequence(_semexTopSel, _0x14ac05, { skipCardValidation: true });
   }
   if (_0x5aa32b) {
     return await executeFillSequence(_0x11f44a, _0x14ac05);
@@ -3477,8 +3484,9 @@ async function _semexKeyboardFallbackFill(_neededKeys, _values) {
   return _filled;
 }
 
-async function executeFillSequence(_0x2a7b99, _0xec3d33) {
+async function executeFillSequence(_0x2a7b99, _0xec3d33, _semexOpts) {
   var _0x32765c;
+  const _semexSkipCardValidation = !!(_semexOpts && _semexOpts.skipCardValidation);
   // Tracks whether all required card fields were actually filled.
   // Set to false (with a descriptive error) if any required field stays empty
   // after the fill loop so the overlay can surface the failure instead of
@@ -3704,7 +3712,9 @@ async function executeFillSequence(_0x2a7b99, _0xec3d33) {
     // have "expMonth" and "expYear".  Require both of those instead so a blank
     // year field isn't hidden behind a passing "expiry" check.
     const _semexHasSeparateExpiry = !_0x2a7b99.expiry && (_0x2a7b99.expMonth || _0x2a7b99.expYear);
-    const _semexRequiredChecks = [
+    // skipCardValidation (Whop/Basis Theory top-frame pass): card fields were
+    // deliberately stripped because they live in cross-origin subframes.
+    const _semexRequiredChecks = _semexSkipCardValidation ? [] : [
       { key: "cardNumber", label: "cardNumber" },
       ...(_semexHasSeparateExpiry
         ? [{ key: "expMonth", label: "expMonth" }, { key: "expYear", label: "expYear" }]

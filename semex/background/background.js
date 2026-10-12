@@ -507,6 +507,7 @@ chrome.runtime.onMessage.addListener((_0x2d827f, _0x393846, _0x2ece2b) => {
             address: _0x40f5e8 || null,
             selectors: _0x2987d5.selectors || _0x2987d5,
             country: _0x24e6ca,
+            domain: _0x7c964d || "",
             timestamp: Date.now()
           };
           chrome.storage.session.get("__xcabuf").then(_cached => {
@@ -790,12 +791,36 @@ chrome.runtime.onMessage.addListener((_0x2d827f, _0x393846, _0x2ece2b) => {
     return true;
   }
   if (_0x2d827f.type === "GET_CACHED_FORM_DATA") {
+    // Domain-scoped lookup: the prefetch buffer (fetchSingleFormData) holds
+    // STRIPE-generic selector configs. A Whop/Basis Theory (or any non-Stripe)
+    // fill that consumed one got selectors that don't exist in its DOM — the
+    // fill silently missed every non-lucky field (live-verified on Whop:
+    // name/line1/zip/expiry all empty). Tag entries with their domain and only
+    // serve a matching one; a mismatch returns success:false so the content
+    // script's CHECK_CONFIG force-refetch path (which writes a domain-correct
+    // entry) takes over.
+    const _reqDomain = (_0x2d827f.domain || "").toLowerCase();
+    const _domainMatches = (_entryDomain) => {
+      const _ed = (_entryDomain || "").toLowerCase();
+      if (!_reqDomain || !_ed) return false;
+      if (_ed === _reqDomain) return true;
+      // All Stripe-hosted surfaces share one selector profile.
+      return _ed.includes("stripe") && _reqDomain.includes("stripe");
+    };
     chrome.storage.session.get("__xcabuf").then(_0x568ae3 => {
       // BUGFIX: value lives under the "__xcabuf" key, not ".cachedAddressBuffer" —
       // the old read always saw an empty buffer so every autofill re-fetched.
       let _0xb3d9ea = (_0x568ae3 && _0x568ae3.__xcabuf) || [];
-      if (_0xb3d9ea.length > 0) {
-        const _0x372bed = _0xb3d9ea.shift();
+      let _matchIdx = -1;
+      if (_reqDomain) {
+        for (let _mi = 0; _mi < _0xb3d9ea.length; _mi++) {
+          if (_domainMatches(_0xb3d9ea[_mi] && _0xb3d9ea[_mi].domain)) { _matchIdx = _mi; break; }
+        }
+      } else if (_0xb3d9ea.length > 0) {
+        _matchIdx = 0; // legacy callers without a domain: keep old FIFO behavior
+      }
+      if (_matchIdx >= 0) {
+        const _0x372bed = _0xb3d9ea.splice(_matchIdx, 1)[0];
         chrome.storage.session.set({
           __xcabuf: _0xb3d9ea
         }).catch(() => {}).finally(() => {
@@ -806,6 +831,13 @@ chrome.runtime.onMessage.addListener((_0x2d827f, _0x393846, _0x2ece2b) => {
         _0x2ece2b({
           success: true,
           data: _0x372bed
+        });
+      } else if (_reqDomain) {
+        // No config for THIS domain in the buffer — fail so the caller forces
+        // a CHECK_CONFIG refetch keyed to the right domain.
+        _0x2ece2b({
+          success: false,
+          reason: "domain_mismatch"
         });
       } else {
         fetchSingleFormData().then(_0x1b437f => {
@@ -1566,6 +1598,7 @@ async function fetchSingleFormData() {
         // an empty form). CHECK_CONFIG's direct path unwraps correctly (":428").
         selectors: _0x48d816.selectors || _0x48d816,
         country: _0x2c190f,
+        domain: "checkout.stripe.com", // prefetch buffer holds the Stripe-generic profile
         timestamp: Date.now(),
         id: crypto.randomUUID()
       };
