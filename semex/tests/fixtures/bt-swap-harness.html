@@ -1,0 +1,47 @@
+<!DOCTYPE html>
+<html>
+<head><meta charset="utf-8"><title>SEMEX Basis Theory swap harness</title></head>
+<body>
+<h1>BT swap harness</h1>
+<pre id="log">ready</pre>
+<script>
+// Fully local verification of the SEMEX Basis Theory card-replacement swap.
+// The extension (loaded unpacked) patches window.fetch in the MAIN world on
+// every page (<all_urls>), so this page's fetch to api.basistheory.com passes
+// through the same handler that fires on a real Whop checkout. Playwright
+// route-intercepts api.basistheory.com and captures the POST body — the
+// assertion target — so no payment data ever leaves the browser.
+window.__semexMessages = [];
+window.addEventListener("message", function (e) {
+  if (e.data && typeof e.data.type === "string" && e.data.type.indexOf("SEMEX") === 0) {
+    window.__semexMessages.push(e.data);
+  }
+});
+
+// window.__runSwapTest(decoyBody, realCard) — called by the tester via
+// page.evaluate (MAIN world). Mirrors exactly what content.js does inside a
+// Basis Theory hosted-element iframe on Whop: stage the real card, then the
+// SDK sends the tokenize request carrying the visible (decoy) values.
+window.__runSwapTest = async function (decoyBody, realCard) {
+  const log = [];
+  if (realCard) {
+    window.postMessage({ type: "SEMEX_SET_PENDING_CARD", card: realCard }, "*");
+    await new Promise(function (r) { setTimeout(r, 150); });
+  }
+  let status = null, err = null;
+  try {
+    const res = await fetch("https://api.basistheory.com/tokens", {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "BT-API-KEY": "mock-key" },
+      body: JSON.stringify(decoyBody)
+    });
+    status = res.status;
+  } catch (e) { err = String(e); }
+  const toast = window.__semexMessages.filter(function (m) {
+    return m.type === "SEMEX_TOAST" && m.messageType === "CARD_REPLACED";
+  });
+  return { status: status, err: err, cardReplacedToasts: toast, messages: window.__semexMessages.length };
+};
+</script>
+</body>
+</html>
