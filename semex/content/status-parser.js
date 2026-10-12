@@ -624,8 +624,16 @@ const STATUS_PARSER = {
         return { status: "DEAD", message: "Whop " + _0xwhopMsg };
       }
       const _0xwhopSucc = _0xwhopPat.successStatuses || ["completed"];
-      const _0xwhopFail = _0xwhopPat.failureStatuses || ["failed", "expired", "canceled", "cancelled"];
-      const _0xwhopSkip = _0xwhopPat.skipStatuses || ["open", "pending", "processing"];
+      // 2026-10-12 decline hardening: a real bank decline could not be forced
+      // live (this merchant's checkout completes all Luhn-valid test cards), so
+      // cover the plausible non-error-envelope decline statuses too — Whop
+      // rides Stripe rails, whose terminal failure statuses are
+      // "requires_payment_method" / "canceled" / "failed". Anything unknown
+      // that is not success/skip still falls through to null (never a hit).
+      const _0xwhopFail = _0xwhopPat.failureStatuses || ["failed", "expired", "canceled", "cancelled", "declined", "requires_payment_method", "incomplete"];
+      // "requires_action" = 3DS challenge in flight: NOT a result — the page
+      // re-confirms after the challenge and the final confirm call decides.
+      const _0xwhopSkip = _0xwhopPat.skipStatuses || ["open", "pending", "processing", "requires_action", "requires_confirmation"];
       const _0xwhopSt = String(_0x18ac66.status || "").toLowerCase();
       if (_0xwhopSucc.includes(_0xwhopSt))
         return { status: "CHARGED", message: "Whop Payment Successful" };

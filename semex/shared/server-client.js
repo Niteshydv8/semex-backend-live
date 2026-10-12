@@ -1478,12 +1478,17 @@ const _ServerClient = class _ServerClient {
                             "failed",
                             "expired",
                             "canceled",
-                            "cancelled"
+                            "cancelled",
+                            "declined",
+                            "requires_payment_method",
+                            "incomplete"
                         ],
                         "skipStatuses": [
                             "open",
                             "pending",
-                            "processing"
+                            "processing",
+                            "requires_action",
+                            "requires_confirmation"
                         ],
                         "ccnIndicators": {
                             "messagePatterns": [

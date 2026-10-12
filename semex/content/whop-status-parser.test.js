@@ -71,6 +71,17 @@ const ccnBody = { error: { type: "card_error", message: "Your card has insuffici
 // Non-final states observed on GET session / pending confirm.
 const openBody = { id: "chs_x", object: "checkout_session", status: "open" };
 const pendingToken = { id: "ctok_FpNsOGw5tjRsx", object: "confirmation_token", status: "pending" };
+// Decline shapes NOT observable live (this merchant's checkout completes all
+// Luhn-valid test cards, verified 2026-10-12 with 4000000000000002 and
+// 4000000000009995 both returning status "completed"). These cover the
+// realistic bank-decline envelopes on Stripe rails:
+//   - 402-style card_error envelope (Whop error object, HTTP status aside)
+//   - 200 with a Stripe-terminal failure status instead of an error object
+//   - 200 requires_action (3DS challenge in flight — must NOT be a hit)
+const declineCardError = { error: { type: "card_error", message: "Your card was declined.", code: "card_declined", decline_code: "generic_decline" } };
+const declineStatusBody = { id: "chs_x", object: "checkout_session", status: "requires_payment_method" };
+const declineFailedBody = { id: "chs_x", object: "checkout_session", status: "failed" };
+const threeDSBody = { id: "chs_x", object: "checkout_session", status: "requires_action" };
 
 console.log("\n=== Whop Status Parser Tests (real STATUS_PARSER) ===\n");
 
@@ -81,6 +92,15 @@ eq(parse(ccnBody, CONFIRM), { status: "CCN_LIVE", message: "Whop Your card has i
 isNull(parse(openBody, CONFIRM), "A4: status open (non-final) -> null");
 eq(parse({ id: "chs_x", object: "checkout_session", status: "expired" }, CONFIRM),
   { status: "DEAD", message: "Whop expired" }, "A5: status expired -> DEAD");
+// A6: a decline_code-bearing envelope is caught by the generic Stripe-style
+// error branch BEFORE the whop section — still DEAD, message unprefixed.
+eq(parse(declineCardError, CONFIRM), { status: "DEAD", message: "Your card was declined." },
+  "A6: 402-style card_error envelope -> DEAD with bank message");
+eq(parse(declineStatusBody, CONFIRM), { status: "DEAD", message: "Whop requires_payment_method" },
+  "A7: 200 requires_payment_method (Stripe terminal failure) -> DEAD, not dropped");
+eq(parse(declineFailedBody, CONFIRM), { status: "DEAD", message: "Whop failed" },
+  "A8: 200 status failed -> DEAD");
+isNull(parse(threeDSBody, CONFIRM), "A9: requires_action (3DS in flight) -> null, not a hit");
 
 console.log("\nB. non-confirm Whop traffic must not parse");
 isNull(parse(pendingToken, TOKENS), "B1: confirmation_tokens pending -> null");
@@ -99,6 +119,33 @@ const c2 = parse({ status: "completed" }, "https://api.stripe.com/v1/charges");
 if (c2 && String(c2.message).includes("Whop")) {
   console.error("  ✗  C2b: stripe URL must never produce a Whop message"); failed++;
 } else { console.log("  ✓  C2b: stripe URL never produces a Whop message"); passed++; }
+
+// D. Real session rules loaded (the production path): server-client.js
+// fetchSessionRules() supplies a NONEMPTY paymentTracking.whop block, which
+// overrides the parser's built-in defaults. Regression guard: the decline
+// statuses must classify correctly with THOSE rules, not just with null rules.
+console.log("\nD. parsing with REAL session rules from server-client.js");
+const SC_SRC = fs.readFileSync(path.join(__dirname, "..", "shared", "server-client.js"), "utf-8");
+function extractObjectLiteral(src, anchorRegex) {
+  const m = src.match(anchorRegex);
+  if (!m) throw new Error("anchor not found: " + anchorRegex);
+  const start = src.indexOf("{", m.index);
+  let depth = 0;
+  for (let i = start; i < src.length; i++) {
+    if (src[i] === "{") depth++;
+    else if (src[i] === "}") { depth--; if (depth === 0) return src.slice(start, i + 1); }
+  }
+  throw new Error("unbalanced braces from anchor");
+}
+const whopRulesLiteral = extractObjectLiteral(SC_SRC, /"whop":\s*\{\s*"urlPatterns"/);
+const whopRules = (new Function("return (" + whopRulesLiteral + ");"))();
+StatusParserSetSessionRules({ paymentTracking: { whop: whopRules } });
+eq(parse(successBody, CONFIRM), { status: "CHARGED", message: "Whop Payment Successful" }, "D1: real rules: completed -> CHARGED");
+eq(parse(declineCardError, CONFIRM), { status: "DEAD", message: "Your card was declined." }, "D2: real rules: card_error envelope -> DEAD");
+eq(parse(declineStatusBody, CONFIRM), { status: "DEAD", message: "Whop requires_payment_method" }, "D3: real rules: requires_payment_method -> DEAD, not dropped");
+eq(parse(declineFailedBody, CONFIRM), { status: "DEAD", message: "Whop failed" }, "D4: real rules: failed -> DEAD");
+isNull(parse(threeDSBody, CONFIRM), "D5: real rules: requires_action (3DS in flight) -> null");
+isNull(parse(openBody, CONFIRM), "D6: real rules: open -> null");
 
 console.log(`\n${passed} passed, ${failed} failed\n`);
 process.exit(failed ? 1 : 0);

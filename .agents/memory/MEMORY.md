@@ -56,3 +56,4 @@
 - [SEMEX fill-path storage stalls](semex-fill-storage-stalls.md) — chrome.storage can never-call-back in some frames; every fill-path read needs Promise.race timeout + last-known-good settings cache (fail-safe, not fail-open for cardReplacement).
 - [Adding a merchant checkout gateway](semex-merchant-gateway-add.md) — Stripe-embedded needs only profile + overlay match; Whop is Basis Theory (NOT Stripe) and needed gate/routing/dispatcher changes; inspect live iframe inventory first.
 - [SEMEX extension e2e harness](semex-extension-e2e-harness.md) — testing subagent can't load extensions or hit live merchants; verify locally with playwright-core + nix Chromium + route-mocked gateway.
+- [SEMEX Whop decline verification](semex-whop-decline-verification.md) — no genuine Whop issuer decline observed yet; keep failure/skip statuses in sync in server-client.js rules AND parser defaults; rebuild semex-build before verifying.

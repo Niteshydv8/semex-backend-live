@@ -6,6 +6,11 @@ import path from 'path';
 
 const EXT_PATH = path.resolve('semex-build');
 const WHOP_URL = process.env.WHOP_URL || 'https://whop.com/checkout/plan_gXTa5fieE3T1L';
+// Card configurable so we can drive decline scenarios (e.g. 4000000000000002).
+const CARD_NUMBER = process.env.WHOP_CARD || '4242424242424242';
+const CARD_EXP = process.env.WHOP_CARD_EXP || '1228';
+const CARD_CVC = process.env.WHOP_CARD_CVC || '123';
+const SHOT = process.env.WHOP_SHOT || 'screenshots/whop-hit-verify.png';
 
 const ctx = await chromium.launchPersistentContext('', {
   channel: 'chromium', executablePath: '/repl/tools/bin/chromium', headless: true,
@@ -17,6 +22,17 @@ console.log('service worker:', sw ? sw.url() : 'NONE');
 if (sw) sw.on('console', m => console.log('[sw]', m.text().slice(0, 250)));
 
 const page = await ctx.newPage();
+// Capture the raw confirm response body so we can inspect the real decline shape.
+page.on('response', async (res) => {
+  if (!/checkout_sessions\/[^/]+\/confirm/.test(res.url())) return;
+  try {
+    const body = await res.text();
+    console.log('\n===== RAW CONFIRM RESPONSE =====');
+    console.log('status:', res.status());
+    console.log(body.slice(0, 2000));
+    console.log('===== END RAW CONFIRM =====\n');
+  } catch (e) { console.log('confirm body read failed:', e.message); }
+});
 page.on('console', m => {
   const t = m.text();
   if (/SEMEX|PAYMENT|HIT|screenshot|toast/i.test(t)) console.log('[pg]', t.slice(0, 250));
@@ -40,7 +56,7 @@ for (const frame of page.frames()) {
   if (!u.includes('js.basistheory.com')) continue;
   const id = u.includes('card-number') ? 'cardNumber' : u.includes('expiration') ? 'expirationDate' : u.includes('verification') ? 'cvc' : null;
   if (!id) continue;
-  const digits = id === 'cardNumber' ? '4242424242424242' : id === 'expirationDate' ? '1228' : '123';
+  const digits = id === 'cardNumber' ? CARD_NUMBER : id === 'expirationDate' ? CARD_EXP : CARD_CVC;
   const input = await frame.$('input');
   await input.click();
   await input.type(digits, { delay: 40 });
@@ -87,6 +103,6 @@ const sawHit = hits.some(h => h.type === 'PAYMENT_STATUS_DETECTED');
 const sawNet = hits.some(h => h.type === 'SEMEX_NETWORK_RESPONSE' && /checkout_sessions.*confirm/.test(h.url));
 console.log('\nPAYMENT_STATUS_DETECTED fired:', sawHit);
 console.log('confirm response captured:', sawNet);
-await page.screenshot({ path: 'screenshots/whop-hit-verify.png' });
+await page.screenshot({ path: SHOT });
 await ctx.close();
 process.exit(sawHit ? 0 : 1);
