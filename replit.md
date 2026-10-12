@@ -36,11 +36,25 @@ Optional: `CORS_ORIGINS`, `PUBLIC_SHOWCASE_CHANNEL_ID`, `ACCESS_TOKEN_TTL_MINUTE
 
 ### Run locally
 ```bash
-cd backend
-pip install -r requirements.txt
-cp .env.example .env   # fill in values
-uvicorn server:app --reload --port 8001
+scripts/setup-backend-local.sh        # installs deps, starts mongod + uvicorn on 127.0.0.1:8001
+scripts/setup-backend-local.sh deps   # install Python deps only
 ```
+This is the reproducible setup the backend tests (`backend/tests/`) and
+`scripts/verify-whop-hit-authed.mjs` depend on. Notes:
+
+- Replit's Python is externally managed — pip must run with
+  `--user --break-system-packages` (the script does this).
+- `python-jose` is intentionally NOT in `requirements.txt`: nothing imports it
+  (`security.py` uses `pyjwt`) and it is blocked by the package firewall.
+- `mongod` is not on PATH; the script pins
+  `/nix/store/3z9iq2gr9ddb0ncmxjlv81ngn6b4nm70-mongodb-6.0.5/bin/mongod`.
+  If that path disappears after a Nix update, find the new one with
+  `ls /nix/store | grep -i mongodb` and pass it as `SEMEX_MONGOD=<path>`.
+- The script uses a throwaway DB (`semex_verify_authed`) and dummy Telegram
+  credentials; tests wipe their own data per run.
+
+Production-style run (Render etc.): `pip install -r requirements.txt`, fill in
+`.env`, `uvicorn server:app --port 8001`.
 
 ## Frontend (`frontend/`)
 
