@@ -124,6 +124,13 @@ export async function watchHitEvents(page) {
 }
 export const readHitEvents = (page) => page.evaluate(() => window.__hits);
 
+// Fire SEMEX_FILL_FORM without waiting for completion — for instrumented
+// scripts (verify-whop-fill-debug/-trace) that observe the fill mid-flight.
+// Anything asserting on the result must use driveExtensionFill instead.
+export async function postFillForm(page, card) {
+  await page.evaluate(c => window.postMessage({ type: 'SEMEX_FILL_FORM', card: c }, '*'), card);
+}
+
 // Drive the extension's own fill path and wait for SEMEX_FILL_FORM_COMPLETE.
 // THROWS on timeout/failure — callers must abort the run (a manual iframe
 // fill fallback would produce card:null hits that the background drops).

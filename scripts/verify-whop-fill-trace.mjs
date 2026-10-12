@@ -1,22 +1,11 @@
 // Fine-grained: poll field values every 500ms after fill trigger to catch
 // transient fills wiped by React re-renders; also capture SW console.
-import { chromium } from 'playwright';
-import path from 'path';
-import { ensureFreshBuild } from './lib/whop-verify.mjs';
-const EXT_PATH = path.resolve('semex-build');
-ensureFreshBuild({ extPath: EXT_PATH });
-const WHOP_URL = process.env.WHOP_URL || 'https://whop.com/checkout/plan_gXTa5fieE3T1L';
-const CARD = { number: '4242424242424242', month: '12', year: '2028', cvv: '123' };
+import { launchVerifyContext, openWhopCheckout, postFillForm, WHOP_URL, DEFAULT_CARD } from './lib/whop-verify.mjs';
 
-const ctx = await chromium.launchPersistentContext('', {
-  channel: 'chromium', executablePath: '/repl/tools/bin/chromium', headless: true,
-  args: [`--disable-extensions-except=${EXT_PATH}`, `--load-extension=${EXT_PATH}`],
-});
-const sw = await ctx.waitForEvent('serviceworker', { timeout: 15000 }).catch(() => null);
+const { ctx, sw } = await launchVerifyContext({});
 const page = await ctx.newPage();
 page.on('console', m => console.log(`[pg:${m.type()}]`, m.text().slice(0, 200)));
-await page.goto(WHOP_URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
-await page.waitForTimeout(12000);
+await openWhopCheckout(page, WHOP_URL, { settleMs: 8000 });
 console.log('url after load:', page.url());
 
 await page.evaluate(() => {
@@ -31,7 +20,7 @@ await page.evaluate(() => {
   window.__ELS = els;
   window.__LOG.push({ t: 0, ...els() });
 });
-await page.evaluate(card => window.postMessage({ type: 'SEMEX_FILL_FORM', card }, '*'), CARD);
+await postFillForm(page, DEFAULT_CARD);
 for (let i = 1; i <= 40; i++) {
   await page.waitForTimeout(500);
   await page.evaluate(t => window.__LOG.push({ t, ...window.__ELS() }), i * 500);

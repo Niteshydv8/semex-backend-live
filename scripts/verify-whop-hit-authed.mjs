@@ -28,15 +28,19 @@
 //
 // Run: node scripts/verify-whop-hit-authed.mjs
 //      SEMEX_VERIFY_TG_TOKEN=123:abc SEMEX_VERIFY_TG_CHAT=999000222 node scripts/verify-whop-hit-authed.mjs
-import { chromium } from 'playwright';
 import path from 'path';
 import fs from 'fs';
 import os from 'os';
 import { spawn, execSync } from 'child_process';
-import { ensureFreshBuild } from './lib/whop-verify.mjs';
+import {
+  ensureFreshBuild, launchVerifyContext, openWhopCheckout, watchHitEvents,
+  readHitEvents, driveExtensionFill, acceptTermsAndSubmit,
+} from './lib/whop-verify.mjs';
 
-// Fail fast on a stale semex-build — this script once reported NO detection
-// at all because the build predated the Whop parser.
+// Fail fast on a stale semex-build BEFORE copying it or booting any services —
+// this script once reported NO detection at all because the build predated the
+// Whop parser. The driver re-checks the patched temp copy at launch, but a
+// fresh copy of a stale original would pass that check; guard the source here.
 ensureFreshBuild();
 
 const MONGOD = '/nix/store/3z9iq2gr9ddb0ncmxjlv81ngn6b4nm70-mongodb-6.0.5/bin/mongod';
@@ -146,16 +150,9 @@ if (sc === before) { console.log('FAIL: could not patch API URL in copied build'
 fs.writeFileSync(scPath, sc);
 console.log('patched build copy:', extTmp);
 
-// ── 5. launch extension + seed auth storage in the service worker ────────────
-const ctx = await chromium.launchPersistentContext('', {
-  channel: 'chromium', executablePath: '/repl/tools/bin/chromium', headless: true,
-  args: [`--disable-extensions-except=${extTmp}`, `--load-extension=${extTmp}`, '--no-first-run'],
-});
-let sw = ctx.serviceWorkers()[0];
-if (!sw) sw = await ctx.waitForEvent('serviceworker', { timeout: 15000 }).catch(() => null);
-console.log('service worker:', sw ? sw.url() : 'NONE');
-const swLogs = [];
-if (sw) sw.on('console', m => { const t = m.text().slice(0, 250); swLogs.push(t); console.log('[sw]', t); });
+// ── 5. launch extension (via shared driver) + seed auth storage in the SW ────
+const { ctx, sw, swLogs } = await launchVerifyContext({ extPath: extTmp });
+if (!sw) { console.log('FAIL: no service worker — cannot seed auth'); cleanup(); process.exit(1); }
 
 // Same keys verify-otp writes (server-client.js: _SK_AT/_SK_RT/_SK_SID/_SK_UP).
 await sw.evaluate(tok => chrome.storage.local.set({
@@ -183,49 +180,23 @@ page.on('console', m => {
   const t = m.text();
   if (/SEMEX|PAYMENT|HIT|screenshot/i.test(t)) console.log('[pg]', t.slice(0, 250));
 });
-await page.goto(WHOP_URL, { waitUntil: 'domcontentloaded', timeout: 60000 });
-await page.waitForFunction(() => Array.from(document.querySelectorAll('iframe')).some(f => (f.src || '').includes('card-number-element')), { timeout: 40000 });
-await page.waitForTimeout(4000);
-
-await page.evaluate(() => {
-  window.__hits = [];
-  window.addEventListener('message', e => {
-    if (e.data && (e.data.type === 'PAYMENT_STATUS_DETECTED' || e.data.type === 'SEMEX_NETWORK_RESPONSE')) {
-      window.__hits.push({ type: e.data.type, status: e.data.status, gateway: e.data.gateway, url: (e.data.url || '').slice(0, 100) });
-    }
-  });
-});
+await openWhopCheckout(page, WHOP_URL);
+await watchHitEvents(page);
 
 const CARD = { number: CARD_NUMBER, month: CARD_EXP.slice(0, 2), year: '20' + CARD_EXP.slice(2), cvv: CARD_CVC };
-const fillResult = await page.evaluate(card => new Promise(res => {
-  const to = setTimeout(() => res({ timeout: true }), 30000);
-  window.addEventListener('message', function onMsg(e) {
-    if (e.data && e.data.type === 'SEMEX_FILL_FORM_COMPLETE') {
-      clearTimeout(to); window.removeEventListener('message', onMsg); res(e.data);
-    }
-  });
-  window.postMessage({ type: 'SEMEX_FILL_FORM', card }, '*');
-}), CARD);
-console.log('SEMEX_FILL_FORM completion:', JSON.stringify(fillResult));
-if (!fillResult || fillResult.ok !== true) {
-  console.log('FAIL: extension fill did not complete — aborting.');
+try {
+  await driveExtensionFill(page, CARD);
+} catch (e) {
+  console.log('FAIL:', e.message);
   await page.screenshot({ path: SHOT });
   cleanup(); process.exit(1);
 }
-await page.waitForTimeout(1000);
-await page.evaluate(() => {
-  document.querySelectorAll('input[type="checkbox"], [role="checkbox"]').forEach(c => {
-    if (!(c.checked || c.getAttribute('aria-checked') === 'true')) c.click();
-  });
-  document.querySelectorAll('#semex-overlay, [id*="semex"]').forEach(el => { try { el.style.pointerEvents = 'none'; } catch {} });
-});
-await page.waitForTimeout(800);
-await page.getByRole('button', { name: /get access/i }).click();
+await acceptTermsAndSubmit(page);
 console.log('clicked Get access; waiting 45s for submitStatus round-trip...');
 await page.waitForTimeout(45000);
 
 // ── 7. assertions ────────────────────────────────────────────────────────────
-const hits = await page.evaluate(() => window.__hits);
+const hits = await readHitEvents(page);
 console.log('\n===== EXTENSION HIT EVENTS =====');
 console.log(JSON.stringify(hits, null, 1));
 const charged = hits.find(h => h.type === 'PAYMENT_STATUS_DETECTED' && h.status === 'CHARGED' && h.gateway === 'whop');
