@@ -33,6 +33,11 @@ import path from 'path';
 import fs from 'fs';
 import os from 'os';
 import { spawn, execSync } from 'child_process';
+import { ensureFreshBuild } from './lib/whop-verify.mjs';
+
+// Fail fast on a stale semex-build — this script once reported NO detection
+// at all because the build predated the Whop parser.
+ensureFreshBuild();
 
 const MONGOD = '/nix/store/3z9iq2gr9ddb0ncmxjlv81ngn6b4nm70-mongodb-6.0.5/bin/mongod';
 const BACKEND_DIR = path.resolve('backend');

@@ -22,6 +22,48 @@ try {
 export const WHOP_URL = process.env.WHOP_URL || 'https://whop.com/checkout/plan_gXTa5fieE3T1L';
 export const DEFAULT_CARD = { number: '4242424242424242', month: '12', year: '2028', cvv: '123' };
 
+// Fail fast if semex-build/ is stale: a verify script run against an old build
+// SILENTLY tests old code (this exact bug hid the Whop parser during the
+// authed-hit verification — the build predated it, so nothing detected).
+// Compares the newest mtime of the semex/ sources against the build output.
+const SRC_PATHS = ['content', 'main-world', 'background', 'shared', 'popup', 'crypto', 'storage', 'libs', 'manifest.json', 'rules.json', 'build.sh'];
+const REBUILD_HINT = 'Rebuild: cd semex && bash build.sh "https://api.semxhitter.pw" --plain';
+function _newestMtime(p) {
+  const st = fs.statSync(p, { throwIfNoEntry: false });
+  if (!st) return 0;
+  if (!st.isDirectory()) return st.mtimeMs;
+  // Directory mtimes count too: deleting/renaming a file touches its parent
+  // dir, so a removed source file still invalidates the build.
+  let m = st.mtimeMs;
+  for (const f of fs.readdirSync(p)) m = Math.max(m, _newestMtime(path.join(p, f)));
+  return m;
+}
+export function ensureFreshBuild({ extPath = path.resolve('semex-build'), srcDir = path.resolve('semex') } = {}) {
+  const marker = path.join(extPath, 'manifest.json');
+  if (!fs.existsSync(marker)) {
+    throw new Error(`stale build: ${extPath} not found — verify scripts would test nothing real. ${REBUILD_HINT}`);
+  }
+  const buildMtime = fs.statSync(marker).mtimeMs;
+  // A missing expected source path means the build was made from a DIFFERENT
+  // source tree (e.g. a dir was deleted wholesale) — never trust it.
+  for (const s of SRC_PATHS) {
+    if (!fs.existsSync(path.join(srcDir, s))) {
+      throw new Error(`stale build: expected source path semex/${s} is missing — the build cannot be trusted. ${REBUILD_HINT}`);
+    }
+  }
+  // Deleting/renaming anything directly under semex/ bumps the src dir itself.
+  for (const s of ['', ...SRC_PATHS]) {
+    const m = _newestMtime(path.join(srcDir, s));
+    if (m > buildMtime) {
+      throw new Error(
+        `semex-build is STALE: semex/${s} changed after the build ` +
+        `(source ${new Date(m).toISOString()} > build ${new Date(buildMtime).toISOString()}). ` +
+        `Verify results would silently reflect OLD extension code. ${REBUILD_HINT}`
+      );
+    }
+  }
+}
+
 function findChromium() {
   const pinned = '/repl/tools/bin/chromium';
   if (fs.existsSync(pinned)) return pinned;
@@ -41,6 +83,7 @@ function findChromium() {
 // Launch a persistent context with the built extension loaded, wait for the
 // MV3 service worker, and capture its console into swLogs (mirrored to stdout).
 export async function launchVerifyContext({ extPath = path.resolve('semex-build') } = {}) {
+  ensureFreshBuild({ extPath });
   const ctx = await chromium.launchPersistentContext('', {
     channel: 'chromium',
     executablePath: findChromium(),

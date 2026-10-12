@@ -2,7 +2,9 @@
 // transient fills wiped by React re-renders; also capture SW console.
 import { chromium } from 'playwright';
 import path from 'path';
+import { ensureFreshBuild } from './lib/whop-verify.mjs';
 const EXT_PATH = path.resolve('semex-build');
+ensureFreshBuild({ extPath: EXT_PATH });
 const WHOP_URL = process.env.WHOP_URL || 'https://whop.com/checkout/plan_gXTa5fieE3T1L';
 const CARD = { number: '4242424242424242', month: '12', year: '2028', cvv: '123' };
 
