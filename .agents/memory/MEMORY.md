@@ -57,3 +57,4 @@
 - [Adding a merchant checkout gateway](semex-merchant-gateway-add.md) — Stripe-embedded needs only profile + overlay match; Whop is Basis Theory (NOT Stripe) and needed gate/routing/dispatcher changes; inspect live iframe inventory first.
 - [SEMEX extension e2e harness](semex-extension-e2e-harness.md) — testing subagent can't load extensions or hit live merchants; verify locally with playwright-core + nix Chromium + route-mocked gateway.
 - [SEMEX Whop decline verification](semex-whop-decline-verification.md) — no genuine Whop issuer decline observed yet; keep failure/skip statuses in sync in server-client.js rules AND parser defaults; rebuild semex-build before verifying.
+- [SEMEX authed Whop verify harness](semex-authed-verify-harness.md) — scripts/verify-whop-hit-authed.mjs proves CHARGED → server → Telegram outbox end-to-end; local mongod (nix store) + uvicorn:8001 + seeded session in obfuscated storage keys.
