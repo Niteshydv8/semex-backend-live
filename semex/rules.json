@@ -1,0 +1,59 @@
+[
+  {
+    "id": 1,
+    "priority": 1,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        {
+          "header": "content-type",
+          "operation": "set",
+          "value": "application/x-www-form-urlencoded"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "||api.stripe.com/v1/payment_intents/*/confirm",
+      "requestMethods": ["post"],
+      "resourceTypes": ["xmlhttprequest"]
+    }
+  },
+  {
+    "id": 2,
+    "priority": 1,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        {
+          "header": "content-type",
+          "operation": "set",
+          "value": "application/x-www-form-urlencoded"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "||api.stripe.com/v1/setup_intents/*/confirm",
+      "requestMethods": ["post"],
+      "resourceTypes": ["xmlhttprequest"]
+    }
+  },
+  {
+    "id": 3,
+    "priority": 1,
+    "action": {
+      "type": "modifyHeaders",
+      "requestHeaders": [
+        {
+          "header": "content-type",
+          "operation": "set",
+          "value": "application/x-www-form-urlencoded"
+        }
+      ]
+    },
+    "condition": {
+      "urlFilter": "||api.stripe.com/v1/payment_methods",
+      "requestMethods": ["post"],
+      "resourceTypes": ["xmlhttprequest"]
+    }
+  }
+]

@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<!--
+  Fixture: Xsolla Secure Pay — card field iframe HTML snapshot
+  Source:  secure.xsolla.com (Xsolla payment widget)
+  Purpose: Minimal structural snapshot containing ONLY the element attributes
+           that getSelectors('xsolla.com') targets.  Attributes beyond the
+           PRIMARY name/id anchor are intentionally omitted so that
+           element.matches(selectorList) can pass ONLY via that anchor —
+           never via a fallback class, autocomplete, or placeholder attr.
+
+  Xsolla renders its payment form inside a cross-origin iframe at
+  secure.xsolla.com.  All card fields share the same iframe document;
+  this fixture merges them into a single document for selector testing.
+  The fill pipeline uses separateExpiry:true, meaning month and year
+  are filled into distinct inputs rather than a single expiry field.
+
+  Captured: 2026-08-19 (Xsolla payment widget v2 variant).
+
+  PRIMARY anchors tested:
+    input[name="card_number"] — PAN entry field
+    input[name="card_month"]  — expiry month field
+    input[name="card_year"]   — expiry year field
+    input[name="cvv"]         — CVV / CVC field
+    input[name="zip"]         — postal code field
+    #unit-v2-email-input      — email address field
+-->
+<html lang="en">
+<head><meta charset="utf-8"><title>Xsolla Secure Pay (card frame)</title></head>
+<body>
+  <!--
+    Card number — name="card_number" ONLY.
+    No id, no class, no autocomplete: el.matches(selector) passes only via
+    input[name="card_number"].
+  -->
+  <input name="card_number" />
+
+  <!--
+    Expiry month — name="card_month" ONLY.
+    Passes only via input[name="card_month"].
+  -->
+  <input name="card_month" />
+
+  <!--
+    Expiry year — name="card_year" ONLY.
+    Passes only via input[name="card_year"].
+  -->
+  <input name="card_year" />
+
+  <!--
+    CVV — name="cvv" ONLY.
+    No class, no autocomplete: el.matches(selector) passes only via
+    input[name="cvv"].
+  -->
+  <input name="cvv" />
+
+  <!--
+    Postal / zip code — name="zip" ONLY.
+    Passes only via input[name="zip"].
+  -->
+  <input name="zip" />
+
+  <!--
+    Email address — id="unit-v2-email-input" ONLY.
+    No type, no name, no class: el.matches(selector) passes only via
+    #unit-v2-email-input.
+  -->
+  <input id="unit-v2-email-input" />
+</body>
+</html>

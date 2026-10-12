@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <!-- Dark hex base -->
+  <path d="M32 3L59.7 19v26L32 61 4.3 45V19z" fill="#040806"/>
+  <!-- Hex border — subtle, slightly open bottom-right for "breach" concept -->
+  <path d="M32 3L59.7 19v26L48 52.5" stroke="#34d399" stroke-width="1.8" stroke-linecap="round"/>
+  <path d="M16 52.5L4.3 45V19L32 3" stroke="#34d399" stroke-width="1.8" stroke-linecap="round" opacity="0.5"/>
+  <!-- Inner breach glow dot -->
+  <circle cx="50" cy="50" r="2.2" fill="#34d399" opacity="0.9"/>
+  <!-- Top accent bar -->
+  <line x1="20" y1="21" x2="44" y2="21" stroke="#34d399" stroke-width="1.6" stroke-linecap="round" opacity="0.35"/>
+  <!-- Bottom accent bar -->
+  <line x1="20" y1="43" x2="44" y2="43" stroke="#34d399" stroke-width="1.6" stroke-linecap="round" opacity="0.35"/>
+  <!-- Lead chevron — primary -->
+  <polyline points="22,25 34,32 22,39" stroke="#34d399" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <!-- Trail chevron — secondary, offset right -->
+  <polyline points="30,25 42,32 30,39" stroke="#34d399" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.45"/>
+</svg>

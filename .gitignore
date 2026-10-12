@@ -93,8 +93,8 @@ credentials.json
 *.key
 .credentials
 
-# Extension source — never commit to backend repo
-semex/
+# Extension build artifacts (source in semex/ IS committed so extension fixes
+# stay durable and reviewable; build outputs and zips are regenerable)
 semex-build/
 semex-v*.zip
 attached_assets/

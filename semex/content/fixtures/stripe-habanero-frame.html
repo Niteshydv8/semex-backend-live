@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<!--
+  Fixture: Stripe elements-inner-habanero frame HTML snapshot
+  Source:  js.stripe.com/v3/elements-inner-habanero-*.html  (new Payment Element UI, /g/pay/ path)
+  Purpose: Minimal structural snapshot containing ONLY the element IDs that
+           getSelectors() targets.  Attributes beyond `id` are intentionally
+           omitted so that element.matches(selectorList) can pass ONLY via an
+           ID-based selector token — never via a fallback name/autocomplete/class.
+           This makes the Part F tests actually catch stale selector IDs.
+
+  Captured: 2026-08-19 (habanero UI variant).
+-->
+<html lang="en">
+<head><meta charset="utf-8"><title>Stripe Payment Element (habanero)</title></head>
+<body>
+  <!-- Card number -->
+  <input id="payment-numberInput" />
+
+  <!-- Expiry -->
+  <input id="payment-expiryInput" />
+
+  <!-- CVC / CVV -->
+  <input id="payment-cvcInput" />
+
+  <!-- Cardholder name -->
+  <input id="payment-nameInput" />
+
+  <!-- Country -->
+  <select id="payment-countryInput"></select>
+
+  <!-- Address line 1 -->
+  <input id="payment-addressLine1Input" />
+
+  <!-- Address line 2 -->
+  <input id="payment-addressLine2Input" />
+
+  <!-- City / Locality -->
+  <input id="payment-localityInput" />
+
+  <!-- State / Administrative area -->
+  <select id="payment-administrativeAreaInput"></select>
+
+  <!-- Postal code -->
+  <input id="payment-postalCodeInput" />
+
+  <!-- Email (paymentForm section) -->
+  <input id="paymentForm-emailInput" />
+
+  <!-- Phone -->
+  <input id="payment-phoneInput" />
+
+  <!-- Stripe Pass opt-in -->
+  <input id="payment-stripePassInput" name="enableStripePass" type="checkbox" />
+
+  <!-- Terms of service consent -->
+  <input id="payment-termsInput" name="termsOfServiceConsentCheckbox" type="checkbox" />
+
+  <!-- Payment method accordion -->
+  <div data-testid="payment-accordion-wrapper">
+    <div class="p-AccordionItem" data-testid="card-accordion-item">
+      <button
+        class="p-AccordionButton AccordionButton"
+        id="payment-method-label-card"
+        data-testid="card-accordion-item-button"
+        aria-expanded="true"
+      >Card</button>
+    </div>
+  </div>
+</body>
+</html>

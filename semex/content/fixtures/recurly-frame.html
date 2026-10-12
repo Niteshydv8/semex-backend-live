@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<!--
+  Fixture: Recurly.js Hosted Fields — card field iframe HTML snapshot
+  Source:  js.recurly.com (Recurly.js v4 hosted fields)
+  Purpose: Minimal structural snapshot containing ONLY the element attributes
+           that getSelectors('js.recurly.com') targets.  Attributes beyond the
+           PRIMARY data-recurly anchor are intentionally omitted so that
+           element.matches(selectorList) can pass ONLY via that anchor —
+           never via a fallback id, name, class, or autocomplete attr.
+
+  Recurly.js hosted fields render each card field inside a separate
+  cross-origin iframe (js.recurly.com/recurly.js).  Each iframe contains
+  a single input identified by a stable data-recurly attribute.  This
+  fixture merges all four into one document for selector testing; the
+  fill pipeline handles per-iframe delivery separately.
+
+  Captured: 2026-08-19 (Recurly.js v4 hosted-fields variant).
+
+  PRIMARY anchors tested:
+    input[data-recurly="number"]     — PAN entry iframe
+    input[data-recurly="month"]      — expiry month iframe
+    input[data-recurly="year"]       — expiry year iframe
+    input[data-recurly="cvv"]        — CVV / CVC iframe
+    input[data-recurly="first_name"] — cardholder first name
+-->
+<html lang="en">
+<head><meta charset="utf-8"><title>Recurly.js Hosted Fields (card frame)</title></head>
+<body>
+  <!--
+    Card number iframe — data-recurly="number" ONLY.
+    No id, no name, no class: el.matches(selector) passes only via
+    input[data-recurly="number"].
+  -->
+  <input data-recurly="number" />
+
+  <!--
+    Expiry month iframe — data-recurly="month" ONLY.
+    Passes only via input[data-recurly="month"].
+  -->
+  <input data-recurly="month" />
+
+  <!--
+    Expiry year iframe — data-recurly="year" ONLY.
+    Passes only via input[data-recurly="year"].
+  -->
+  <input data-recurly="year" />
+
+  <!--
+    CVV / security-code iframe — data-recurly="cvv" ONLY.
+    Passes only via input[data-recurly="cvv"].
+  -->
+  <input data-recurly="cvv" />
+
+  <!--
+    Cardholder first name — data-recurly="first_name" ONLY.
+    Passes only via input[data-recurly="first_name"].
+  -->
+  <input data-recurly="first_name" />
+</body>
+</html>

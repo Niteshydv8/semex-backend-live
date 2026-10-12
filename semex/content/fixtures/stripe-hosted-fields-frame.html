@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<!--
+  Fixture: Stripe hosted-fields (Elements) frame HTML snapshot
+  Source:  js.stripe.com/v3/elements-inner-*.html  (classic hosted-fields variant, Field-* IDs)
+  Purpose: Minimal structural snapshot containing ONLY the element IDs that
+           getSelectors() targets.  Attributes beyond `id` are intentionally
+           omitted so that element.matches(selectorList) can pass ONLY via an
+           ID-based selector token — never via a fallback name/autocomplete/class.
+           This makes the Part F tests actually catch stale selector IDs.
+
+  Captured: 2026-08-19 (hosted-fields / Elements variant).
+-->
+<html lang="en">
+<head><meta charset="utf-8"><title>Stripe Hosted Fields (Elements)</title></head>
+<body>
+  <!-- Card number — Field-* naming scheme -->
+  <input id="Field-numberInput" />
+
+  <!-- Expiry -->
+  <input id="Field-expiryInput" />
+
+  <!-- CVC / CVV -->
+  <input id="Field-cvcInput" />
+
+  <!-- Cardholder name -->
+  <input id="Field-nameInput" />
+
+  <!-- Address line 1 -->
+  <input id="Field-addressLine1Input" />
+
+  <!-- Address line 2 -->
+  <input id="Field-addressLine2Input" />
+
+  <!-- Postal code -->
+  <input id="Field-postalCodeInput" />
+
+  <!-- Country -->
+  <select id="Field-countryInput"></select>
+
+  <!-- City -->
+  <input id="Field-localityInput" />
+
+  <!-- Email -->
+  <input id="Field-emailInput" />
+
+  <!-- Phone -->
+  <input id="Field-phoneInput" />
+</body>
+</html>

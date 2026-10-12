@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<!--
+  Fixture: Adyen Checkout Components — inner iframe HTML snapshot
+  Source:  checkoutshopper-live.adyen.com (Adyen Web Components v5/v6)
+  Purpose: Minimal structural snapshot containing ONLY the element attributes that
+           getSelectors('adyen.com') targets.  Attributes beyond the PRIMARY
+           anchor are intentionally omitted so that element.matches(selectorList)
+           can pass ONLY via that anchor — never via a fallback class or id.
+
+           Adyen renders each card field in a SEPARATE cross-origin iframe (one
+           per data-fieldtype).  This fixture merges all four into a single
+           document for selector testing; the fill pipeline handles the per-iframe
+           delivery separately (FILL_FORM_SUBFRAMES path).
+
+  Captured: 2026-08-19 (Adyen Web Components checkout variant).
+
+  PRIMARY anchors tested:
+    input[data-fieldtype="encryptedCardNumber"]   — card number field iframe
+    input[data-fieldtype="encryptedExpiryDate"]   — expiry field iframe
+    input[data-fieldtype="encryptedSecurityCode"] — CVV / security-code iframe
+    input[name="holderName"]                      — cardholder name (main frame)
+-->
+<html lang="en">
+<head><meta charset="utf-8"><title>Adyen Checkout (component frame)</title></head>
+<body>
+  <!--
+    Card number iframe content — the ONLY attribute is data-fieldtype.
+    No id, name, class, or type: el.matches(selector) passes only via
+    input[data-fieldtype="encryptedCardNumber"].
+  -->
+  <input data-fieldtype="encryptedCardNumber" />
+
+  <!--
+    Expiry date iframe content — data-fieldtype only.
+    Passes only via input[data-fieldtype="encryptedExpiryDate"].
+  -->
+  <input data-fieldtype="encryptedExpiryDate" />
+
+  <!--
+    Security-code / CVV iframe content — data-fieldtype only.
+    Passes only via input[data-fieldtype="encryptedSecurityCode"].
+  -->
+  <input data-fieldtype="encryptedSecurityCode" />
+
+  <!--
+    Cardholder name — lives in the main (non-iframe) Adyen form.
+    name="holderName" only; no id, no class.
+    Passes only via input[name="holderName"].
+  -->
+  <input name="holderName" />
+</body>
+</html>

@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<!--
+  Fixture: Checkout.com Frames — card field iframe HTML snapshot
+  Source:  card-acquisition-gateway.checkout.com (Checkout.com Frames v2/v3)
+  Purpose: Minimal structural snapshot containing ONLY the element attributes
+           that getSelectors('checkout.com') targets.  Attributes beyond the
+           PRIMARY name anchor are intentionally omitted so that
+           element.matches(selectorList) can pass ONLY via the name token —
+           never via an id or class fallback.
+
+  Checkout.com Frames renders its card fields inside cross-origin iframes, each
+  containing a single input element identified by a stable name attribute.  The
+  combined document here represents the merged set of those frame bodies.
+
+  Captured: 2026-08-19 (Checkout.com Frames card-acquisition-gateway variant).
+
+  PRIMARY anchors tested:
+    input[name="card-number"]      — PAN entry frame
+    input[name="card-expiry-date"] — expiry entry frame
+    input[name="card-cvv"]         — CVV / CVC entry frame
+    input[name="cardholder-name"]  — name entry frame
+-->
+<html lang="en">
+<head><meta charset="utf-8"><title>Checkout.com Frames (card frame)</title></head>
+<body>
+  <!--
+    PAN frame — name="card-number" ONLY.
+    No id, no class: el.matches(selector) passes only via input[name="card-number"].
+  -->
+  <input name="card-number" />
+
+  <!--
+    Expiry frame — name="card-expiry-date" ONLY.
+    Passes only via input[name="card-expiry-date"].
+  -->
+  <input name="card-expiry-date" />
+
+  <!--
+    CVV frame — name="card-cvv" ONLY.
+    Passes only via input[name="card-cvv"].
+  -->
+  <input name="card-cvv" />
+
+  <!--
+    Cardholder name frame — name="cardholder-name" ONLY.
+    Passes only via input[name="cardholder-name"].
+  -->
+  <input name="cardholder-name" />
+</body>
+</html>

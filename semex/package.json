@@ -1,0 +1,18 @@
+{
+  "name": "semex-extension",
+  "version": "1.0.0",
+  "description": "SEMEX browser extension test suite",
+  "scripts": {
+    "test": "node content/success-ui-probe.test.js && node content/fill-routing.test.js && node content/fill-selectors-and-cache.test.js && node content/fill-pipeline.integration.test.js && node tests/3ds-relay-error-recovery.test.js && node content/braintree-status-parser.test.js && node content/braintree-interceptor-body.test.js && node tests/basistheory-card-replacement.test.js",
+    "test:e2e": "bash build.sh \"${SEMEX_API_URL:-https://api.semxhitter.pw}\" >/dev/null && node tests/fill-e2e.test.js",
+    "test:e2e:newui": "bash build.sh \"${SEMEX_API_URL:-https://api.semxhitter.pw}\" >/dev/null && node tests/fill-e2e-newui.test.js",
+    "test:e2e:live": "bash build.sh \"${SEMEX_API_URL:-https://api.semxhitter.pw}\" >/dev/null && node tests/fill-live-stripe.e2e.js",
+    "test:e2e:braintree": "bash build.sh \"${SEMEX_API_URL:-https://api.semxhitter.pw}\" --plain >/dev/null && node tests/braintree-bypass-e2e.test.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "devDependencies": {
+    "jsdom": "^29.1.1"
+  }
+}

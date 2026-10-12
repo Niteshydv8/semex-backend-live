@@ -1,0 +1,237 @@
+{
+    "manifest_version": 3,
+    "name": "SEMEX",
+    "version": "5.0.0",
+    "description": "SEMEX — Advanced checkout automation with real-time hit forwarding.",
+    "permissions": [
+        "storage",
+        "scripting",
+        "activeTab",
+        "alarms",
+        "notifications",
+        "tabs",
+        "downloads",
+        "proxy",
+        "webRequest",
+        "webRequestAuthProvider",
+        "declarativeNetRequest",
+        "declarativeNetRequestWithHostAccess",
+        "browsingData",
+        "cookies",
+        "privacy",
+        "webNavigation",
+        "clipboardWrite"
+    ],
+    "host_permissions": [
+        "<all_urls>"
+    ],
+    "action": {
+        "default_title": "SEMEX — Open Dashboard",
+        "default_icon": {
+            "16": "icons/logo-16.png",
+            "32": "icons/logo-32.png",
+            "48": "icons/logo-48.png",
+            "128": "icons/logo-128.png"
+        }
+    },
+    "content_scripts": [
+        {
+            "matches": [
+                "*://*.xsolla.com/*",
+                "*://*.roblox.com/*",
+                "*://*.epicgames.com/*"
+            ],
+            "js": [
+                "content/xsolla-inject.js"
+            ],
+            "run_at": "document_start",
+            "all_frames": true
+        },
+        {
+            "matches": [
+                "<all_urls>"
+            ],
+            "exclude_matches": [
+                "*://challenges.cloudflare.com/*"
+            ],
+            "js": [
+                "main-world/anti-fingerprint.js",
+                "main-world/card-generator.js",
+                "main-world/card-list.js",
+                "main-world/interceptor.js"
+            ],
+            "run_at": "document_start",
+            "world": "MAIN",
+            "all_frames": true
+        },
+        {
+            "matches": [
+                "<all_urls>"
+            ],
+            "js": [
+                "content/overlay-pin.js"
+            ],
+            "run_at": "document_start",
+            "all_frames": true
+        },
+        {
+            "matches": [
+                "<all_urls>"
+            ],
+            "js": [
+                "crypto/encryption.js",
+                "main-world/card-generator.js",
+                "content/status-parser.js",
+                "content/toast-notifier-v2.js",
+                "content/content.js"
+            ],
+            "run_at": "document_idle",
+            "all_frames": true
+        },
+        {
+            "matches": [
+                "<all_urls>"
+            ],
+            "js": [
+                "content/brand-replacement.js"
+            ],
+            "run_at": "document_idle",
+            "all_frames": false
+        },
+        {
+            "matches": [
+                "<all_urls>"
+            ],
+            "js": [
+                "content/auto-clicker.js"
+            ],
+            "run_at": "document_idle",
+            "all_frames": false
+        },
+        {
+            "matches": [
+                "<all_urls>"
+            ],
+            "js": [
+                "content/identity-autofill.js"
+            ],
+            "run_at": "document_idle",
+            "all_frames": false
+        },
+        {
+            "matches": [
+                "<all_urls>"
+            ],
+            "js": [
+                "content/checkout-extractor.js"
+            ],
+            "run_at": "document_idle",
+            "all_frames": false
+        },
+        {
+            "matches": [
+                "*://checkout.stripe.com/*",
+                "*://pay.stripe.com/*",
+                "*://buy.stripe.com/*",
+                "*://donate.stripe.com/*",
+                "*://invoice.stripe.com/*",
+                "*://billing.stripe.com/*",
+                "*://pay.openai.com/*",
+                "*://*.adyen.com/*",
+                "*://*.checkout.com/*",
+                "*://*.recurly.com/*",
+                "*://*.xsolla.com/*",
+                "*://*.roblox.com/*",
+                "*://*.epicgames.com/*",
+                "*://whop.com/checkout/*",
+                "*://*.whop.com/checkout/*"
+            ],
+            "js": [
+                "main-world/overlay.js"
+            ],
+            "css": [
+                "content/overlay.css"
+            ],
+            "run_at": "document_idle",
+            "world": "MAIN",
+            "all_frames": false
+        },
+        {
+            "matches": [
+                "<all_urls>"
+            ],
+            "exclude_matches": [
+                "*://challenges.cloudflare.com/*"
+            ],
+            "js": [
+                "main-world/captcha-solver.js"
+            ],
+            "run_at": "document_idle",
+            "world": "MAIN",
+            "all_frames": true
+        },
+        {
+            "matches": [
+                "*://*.google.com/recaptcha/*",
+                "*://*.recaptcha.net/*",
+                "*://*.gstatic.com/recaptcha/*"
+            ],
+            "js": [
+                "main-world/eventhook-loader.js"
+            ],
+            "run_at": "document_start",
+            "world": "MAIN",
+            "all_frames": true
+        },
+        {
+            "matches": [
+                "*://*.google.com/recaptcha/*",
+                "*://*.recaptcha.net/*",
+                "*://*.gstatic.com/recaptcha/*"
+            ],
+            "js": [
+                "content/recaptcha.js"
+            ],
+            "run_at": "document_idle",
+            "all_frames": true
+        }
+    ],
+    "icons": {
+        "16": "icons/logo-16.png",
+        "32": "icons/logo-32.png",
+        "48": "icons/logo-48.png",
+        "128": "icons/logo-128.png"
+    },
+    "background": {
+        "service_worker": "background/background.js"
+    },
+    "declarative_net_request": {
+        "rule_resources": [
+            {
+                "id": "semex_stripe_rules",
+                "enabled": true,
+                "path": "rules.json"
+            }
+        ]
+    },
+    "web_accessible_resources": [
+        {
+            "resources": [
+                "crypto/encryption.js",
+                "shared/server-client.js",
+                "content/overlay.css",
+                "icons/logo.png",
+                "icons/logo-128.png",
+                "assets/images/*",
+                "assets/sounds/*",
+                "assets/*.mp3",
+                "popup/dashboard.html",
+                "libs/jsencrypt.min.js",
+                "popup/dashboard.css"
+            ],
+            "matches": [
+                "<all_urls>"
+            ]
+        }
+    ]
+}
