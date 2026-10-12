@@ -1463,6 +1463,35 @@ const _ServerClient = class _ServerClient {
                             "gateway_rejected",
                             "failed"
                         ]
+                    },
+                    "whop": {
+                        "urlPatterns": [
+                            "whop.com/api/v1/checkout_sessions/"
+                        ],
+                        "statusPaths": [
+                            "status"
+                        ],
+                        "successStatuses": [
+                            "completed"
+                        ],
+                        "failureStatuses": [
+                            "failed",
+                            "expired",
+                            "canceled",
+                            "cancelled"
+                        ],
+                        "skipStatuses": [
+                            "open",
+                            "pending",
+                            "processing"
+                        ],
+                        "ccnIndicators": {
+                            "messagePatterns": [
+                                "insufficient funds",
+                                "insufficient fund",
+                                "not enough funds"
+                            ]
+                        }
                     }
                 },
                 "skipPatterns": {

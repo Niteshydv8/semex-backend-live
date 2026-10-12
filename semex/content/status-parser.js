@@ -601,6 +601,39 @@ const STATUS_PARSER = {
         return { status: "DEAD", message: "Braintree " + _0xbtErrMsg };
       }
     }
+    // ── Whop (checkout_session confirm) ─────────────────────────────────────
+    // Verified live 2026-10-12 on whop.com/checkout/plan_*: the payment result
+    // is POST whop.com/api/v1/checkout_sessions/{chs_id}/confirm returning the
+    // checkout_session object. Success = status "completed"; declines/errors
+    // come back as {"error":{"type","message"}} with a 4xx. Intermediate states
+    // ("open", "pending") are NOT results and must never parse as a hit.
+    // Shapes tunable server-side via paymentTracking.whop session rules.
+    const _0xwhopPat = getPatterns("whop");
+    const _0xwhopUrlPats = (_0xwhopPat.urlPatterns) || ["whop.com/api/v1/checkout_sessions/"];
+    // Defense-in-depth: only the /confirm call is a payment result. A plain
+    // session GET can also carry status "completed" and must never re-fire a hit.
+    const _0xwhopIsGw = _0xwhopUrlPats.some(_0xwhopU => _0x1ce016.includes(_0xwhopU)) && _0x1ce016.includes("/confirm");
+    if (_0xwhopIsGw) {
+      // Error envelope first — a failed confirm is {"error":{...}}, no status.
+      const _0xwhopErr = _0x18ac66.error;
+      if (_0xwhopErr && typeof _0xwhopErr === "object") {
+        const _0xwhopMsg = _0xwhopErr.message || _0xwhopErr.type || "Payment Failed";
+        const _0xwhopCcnPats = ((_0xwhopPat.ccnIndicators) || {}).messagePatterns || ["insufficient funds", "insufficient fund", "not enough funds"];
+        if (_0xwhopCcnPats.some(_0xwhopCp => String(_0xwhopMsg).toLowerCase().includes(_0xwhopCp)))
+          return { status: "CCN_LIVE", message: "Whop " + _0xwhopMsg };
+        return { status: "DEAD", message: "Whop " + _0xwhopMsg };
+      }
+      const _0xwhopSucc = _0xwhopPat.successStatuses || ["completed"];
+      const _0xwhopFail = _0xwhopPat.failureStatuses || ["failed", "expired", "canceled", "cancelled"];
+      const _0xwhopSkip = _0xwhopPat.skipStatuses || ["open", "pending", "processing"];
+      const _0xwhopSt = String(_0x18ac66.status || "").toLowerCase();
+      if (_0xwhopSucc.includes(_0xwhopSt))
+        return { status: "CHARGED", message: "Whop Payment Successful" };
+      if (_0xwhopFail.includes(_0xwhopSt))
+        return { status: "DEAD", message: "Whop " + (_0xwhopSt || "Failed") };
+      if (_0xwhopSkip.includes(_0xwhopSt))
+        return null;
+    }
     return null;
   }, "parse")
 };

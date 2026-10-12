@@ -2654,6 +2654,16 @@ var __name = (_0xc3d4d, _0xc28ed9) => __defProp(_0xc3d4d, "name", {
     if (_0x40247c.includes("/wp-admin/admin-ajax.php")) {
       return true;
     }
+    // Whop: ONLY the checkout-session confirm call carries the payment result
+    // (verified live 2026-10-12). Session GETs, calculate_breakdown,
+    // confirmation_tokens and every other whop.com API call must stay out or
+    // the parser sees non-final "open"/"pending" states as traffic.
+    if (_0x40247c.includes("whop.com/api/v1/checkout_sessions/")) {
+      // Terminal gate: confirm calls are results; every other checkout-session
+      // call (session GETs also carry status "completed") must not fall through
+      // to the session-rules paymentEndpoints matcher below.
+      return _0x40247c.includes("/confirm");
+    }
     if (_0x29b65c(_0x40247c)) {
       return true;
     }
@@ -2675,6 +2685,9 @@ var __name = (_0xc3d4d, _0xc28ed9) => __defProp(_0xc3d4d, "name", {
     }
     if (_0x23d2ad.includes("xsolla.com")) {
       return "xsolla";
+    }
+    if (_0x23d2ad.includes("whop.com/api/v1/checkout_sessions/")) {
+      return "whop";
     }
     const _0x3e6a4a = (_0x3cfc1f = window.SEMEX_SESSION_RULES) == null ? undefined : _0x3cfc1f.paymentTracking;
     if (_0x3e6a4a) {

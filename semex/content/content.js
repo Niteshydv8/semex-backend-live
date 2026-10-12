@@ -262,7 +262,8 @@ const DEFAULT_SETTINGS = {
       checkout: true,
       recurly: true,
       xsolla: true,
-      braintree: true
+      braintree: true,
+      whop: true
     },
     showToast: true,
     onlySuccess: false,
@@ -2630,6 +2631,9 @@ function handleNetworkResponse(_0x3894dd) {
     }
     if (_0xf07be2.includes("api.recurly.com") || _0xf07be2.includes("/recurly/") || _0xf07be2.includes("/create-subscription")) {
       return "recurly";
+    }
+    if (_0xf07be2.includes("whop.com/api/v1/checkout_sessions/")) {
+      return "whop";
     }
     if (_0xf07be2.includes("api.stripe.com")) {
       return "stripe_inbuilt";
