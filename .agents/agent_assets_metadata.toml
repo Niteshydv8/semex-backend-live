@@ -973,3 +973,17 @@ mtime_ms = 1790757362274
 storage_uri = "gcs://replit-rams-assets-pike/rams/assets/repl:a15e5fa0-089d-49e2-816c-bf038725ad77/4e5553f9-9be1-4bf1-b1a1-20cb2f5b71e1/df554e58-e289-4943-b711-1e6c7678e571"
 storage_version_token = "1790757385067915"
 content_type = "application/octet-stream"
+
+[[outputs]]
+id = "NVqj3enI5hSRpOR12Ritq"
+uri = "file://semex-v5.0.1.zip"
+type = "unspecified"
+title = "SEMEX v5.0.1 release zip"
+description = "SEMEX extension v5.0.1 — Whop checkout support (autofill + Basis Theory card replacement). Unzip and load unpacked in Chrome to test."
+logical_id = "268ca6a5-c19c-4dad-a479-edca68248be7"
+content_hash = "sha256:9dd69e3664e64e14bb590bde78851153fd8de009adb630996577524cad3f6a5a"
+size = 1594898
+mtime_ms = 1791780942922
+storage_uri = "gcs://replit-rams-assets-janeway/rams/assets/repl:df068f9e-70e4-4f0d-8a57-d280d312646a/268ca6a5-c19c-4dad-a479-edca68248be7/57c510b3-c3ca-412f-ab29-5a7a91d6a363"
+storage_version_token = "1791780949128507"
+content_type = "application/octet-stream"
