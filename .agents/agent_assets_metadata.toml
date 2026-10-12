@@ -987,3 +987,17 @@ mtime_ms = 1791780942922
 storage_uri = "gcs://replit-rams-assets-janeway/rams/assets/repl:df068f9e-70e4-4f0d-8a57-d280d312646a/268ca6a5-c19c-4dad-a479-edca68248be7/57c510b3-c3ca-412f-ab29-5a7a91d6a363"
 storage_version_token = "1791780949128507"
 content_type = "application/octet-stream"
+
+[[outputs]]
+id = "bnToY9Z6dxLow3Pi8outN"
+uri = "file://semex-v5.0.2.zip"
+type = "unspecified"
+title = "SEMEX v5.0.2 release build"
+description = "Obfuscated production build including the version-check CORS fix and the Basis Theory card-swap e2e-verified code. Publish via the admin panel to mark is_latest and broadcast to users."
+logical_id = "6463806b-e194-4be8-8492-01b62f57c341"
+content_hash = "sha256:f17200ee03fd1478d248066ab4498eb2d7e938c27cebf7c440a05e535c66cd39"
+size = 1597709
+mtime_ms = 1791830003392
+storage_uri = "gcs://replit-rams-assets-janeway/rams/assets/repl:df068f9e-70e4-4f0d-8a57-d280d312646a/6463806b-e194-4be8-8492-01b62f57c341/8163d7c1-b91d-475e-9119-e51cc92b70be"
+storage_version_token = "1791830014481760"
+content_type = "application/octet-stream"

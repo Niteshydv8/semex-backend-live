@@ -43,7 +43,36 @@ import {
 // fresh copy of a stale original would pass that check; guard the source here.
 ensureFreshBuild();
 
-const MONGOD = '/nix/store/3z9iq2gr9ddb0ncmxjlv81ngn6b4nm70-mongodb-6.0.5/bin/mongod';
+// mongod lives in the Nix store under a hash-prefixed path that is garbage-
+// collected whenever the Nix environment updates — a pinned hash silently
+// breaks this harness with a confusing spawn error. Discover the newest
+// installed mongod instead; SEMEX_MONGOD=<path> overrides.
+function findMongod() {
+  if (process.env.SEMEX_MONGOD) {
+    if (fs.existsSync(process.env.SEMEX_MONGOD)) return process.env.SEMEX_MONGOD;
+    throw new Error(`SEMEX_MONGOD=${process.env.SEMEX_MONGOD} does not exist`);
+  }
+  const cands = [];
+  for (const n of fs.readdirSync('/nix/store')) {
+    const m = /^[a-z0-9]+-mongodb-(\d+(?:\.\d+)*)$/.exec(n);
+    if (!m) continue;
+    const p = path.join('/nix/store', n, 'bin', 'mongod');
+    if (fs.existsSync(p)) cands.push({ v: m[1].split('.').map(Number), p });
+  }
+  if (!cands.length) {
+    throw new Error('mongod not found in /nix/store — install mongodb or set SEMEX_MONGOD=<path-to-mongod>');
+  }
+  cands.sort((a, b) => {
+    for (let i = 0; i < Math.max(a.v.length, b.v.length); i++) {
+      const d = (a.v[i] || 0) - (b.v[i] || 0);
+      if (d) return d;
+    }
+    return 0;
+  });
+  return cands[cands.length - 1].p;
+}
+const MONGOD = findMongod();
+console.log('mongod:', MONGOD);
 const BACKEND_DIR = path.resolve('backend');
 const API = 'http://127.0.0.1:8001';
 const WHOP_URL = process.env.WHOP_URL || 'https://whop.com/checkout/plan_gXTa5fieE3T1L';

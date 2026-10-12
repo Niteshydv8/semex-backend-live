@@ -1,7 +1,7 @@
 {
     "manifest_version": 3,
     "name": "SEMEX",
-    "version": "5.0.1",
+    "version": "5.0.2",
     "description": "SEMEX — Advanced checkout automation with real-time hit forwarding.",
     "permissions": [
         "storage",

@@ -9,9 +9,9 @@
 #      - python-jose was REMOVED from requirements.txt: nothing imports it
 #        (security.py uses pyjwt) and it is blocked by the package firewall.
 #   2. Starts a local mongod on 127.0.0.1:27017 (ephemeral dbpath in /tmp).
-#      - mongod lives in the Nix store, not on PATH. If the pinned path below
-#        is gone, find the current one with:
-#          ls /nix/store | grep -i '^.*-mongodb-[0-9]'
+#      - mongod lives in the Nix store, not on PATH, and its hash-prefixed
+#        path changes on Nix updates — it is discovered automatically (newest
+#        version wins). Override with SEMEX_MONGOD=<path-to-mongod>.
 #   3. Starts uvicorn serving backend/server:app on 127.0.0.1:8001 with the
 #      same test env the verify script uses.
 #
@@ -22,7 +22,18 @@
 # Both servers are killed on Ctrl+C / script exit.
 set -euo pipefail
 
-MONGOD="${SEMEX_MONGOD:-/nix/store/3z9iq2gr9ddb0ncmxjlv81ngn6b4nm70-mongodb-6.0.5/bin/mongod}"
+# mongod lives in the Nix store under a hash-prefixed path that is garbage-
+# collected whenever the Nix environment updates — a pinned hash silently
+# breaks this harness. Discover the newest installed mongod instead;
+# SEMEX_MONGOD=<path> overrides discovery.
+if [[ -n "${SEMEX_MONGOD:-}" ]]; then
+  MONGOD="$SEMEX_MONGOD"
+else
+  MONGOD="$(for d in /nix/store/*-mongodb-[0-9]*; do
+    [[ -x "$d/bin/mongod" ]] || continue
+    printf '%s\t%s\n' "${d##*-mongodb-}" "$d/bin/mongod"
+  done | sort -V -k1,1 | tail -n1 | cut -f2)"
+fi
 MONGO_PORT="${SEMEX_MONGO_PORT:-27017}"
 API_PORT="${SEMEX_API_PORT:-8001}"
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -38,12 +49,12 @@ fi
 
 install_deps
 
-if [[ ! -x "$MONGOD" ]]; then
-  echo "mongod not found at $MONGOD" >&2
-  echo "Find the current binary:  ls /nix/store | grep -i mongodb" >&2
-  echo "Then re-run with:         SEMEX_MONGOD=<path> $0" >&2
+if [[ -z "$MONGOD" || ! -x "$MONGOD" ]]; then
+  echo "mongod not found (looked in /nix/store/*-mongodb-*/bin/mongod)." >&2
+  echo "Install mongodb or re-run with:  SEMEX_MONGOD=<path-to-mongod> $0" >&2
   exit 1
 fi
+echo "==> using mongod: $MONGOD"
 
 MONGO_DATA="$(mktemp -d /tmp/semex-mongo-XXXXXX)"
 PIDS=()
