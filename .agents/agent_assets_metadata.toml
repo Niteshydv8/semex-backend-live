@@ -1001,3 +1001,17 @@ mtime_ms = 1791830003392
 storage_uri = "gcs://replit-rams-assets-janeway/rams/assets/repl:df068f9e-70e4-4f0d-8a57-d280d312646a/6463806b-e194-4be8-8492-01b62f57c341/8163d7c1-b91d-475e-9119-e51cc92b70be"
 storage_version_token = "1791830014481760"
 content_type = "application/octet-stream"
+
+[[outputs]]
+id = "gcEuwbXDBC0qQOHK1wIm6"
+uri = "file://screenshots/overlay-preview.jpg"
+type = "image"
+title = "SEMEX overlay — expanded state"
+description = "Static render of the real overlay markup (main-world/overlay.js) with the real overlay.css, in the expanded/full state."
+logical_id = "d7d8073e-46bc-4493-a14d-fe7562f41e25"
+content_hash = "sha256:3bf9cc8bf1512e082adb320289931265890cc398cee7ba4262cf2470f075c062"
+size = 18327
+mtime_ms = 1791869049549
+storage_uri = "gcs://replit-rams-assets-janeway/rams/assets/repl:df068f9e-70e4-4f0d-8a57-d280d312646a/d7d8073e-46bc-4493-a14d-fe7562f41e25/52b0d8d4-3580-4b08-8a25-07a4383c3573"
+storage_version_token = "1791869064887563"
+content_type = "image/jpeg"
