@@ -26,15 +26,24 @@ _MAX_429_WAIT = 5.0  # cap per-retry sleep (seconds)
 # of paying a full handshake on every send_message/send_photo/sendDocument call.
 # The client is lazily created on first use and shared for the process lifetime.
 _tg_http: httpx.AsyncClient | None = None
+_tg_http_loop = None
 
 
 def _get_http() -> httpx.AsyncClient:
-    global _tg_http
-    if _tg_http is None or _tg_http.is_closed:
+    global _tg_http, _tg_http_loop
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = None
+    # Recreate the client when it is closed OR bound to a different/closed
+    # event loop — a keep-alive client created inside one asyncio.run() must
+    # not leak into the next (tests spin a fresh loop per call).
+    if _tg_http is None or _tg_http.is_closed or _tg_http_loop is not loop:
         _tg_http = httpx.AsyncClient(
             timeout=20.0,
             limits=httpx.Limits(max_connections=20, max_keepalive_connections=10),
         )
+        _tg_http_loop = loop
     return _tg_http
 
 

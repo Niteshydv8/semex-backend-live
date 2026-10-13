@@ -75,11 +75,12 @@ echo "==> starting uvicorn on 127.0.0.1:$API_PORT"
   DB_NAME="semex_verify_authed" \
   TELEGRAM_BOT_TOKEN="verify-dummy-token" \
   TELEGRAM_BOT_USERNAME="semex_verify_bot" \
-  ADMIN_TELEGRAM_ID="999000333" \
+  ADMIN_TELEGRAM_ID="999000999" \
   ADMIN_LOG_CHANNEL_ID="-100999" \
   JWT_SECRET="verify-jwt-secret" \
   HMAC_SECRET="verify-hmac-secret" \
   CORS_ORIGINS="*" \
+  PUBLIC_SHOWCASE_CHANNEL_ID="-100888" \
   exec python3 -m uvicorn server:app --host 127.0.0.1 --port "$API_PORT"
 ) &
 PIDS+=($!)
@@ -88,6 +89,6 @@ echo "==> up. Run tests in another shell with:"
 echo "      cd backend && MONGO_URL=mongodb://127.0.0.1:$MONGO_PORT DB_NAME=semex_verify_authed \\"
 echo "        JWT_SECRET=verify-jwt-secret HMAC_SECRET=verify-hmac-secret \\"
 echo "        TELEGRAM_BOT_TOKEN=verify-dummy-token TELEGRAM_BOT_USERNAME=semex_verify_bot \\"
-echo "        ADMIN_TELEGRAM_ID=999000333 ADMIN_LOG_CHANNEL_ID=-100999 \\"
+echo "        ADMIN_TELEGRAM_ID=999000999 ADMIN_LOG_CHANNEL_ID=-100999 \\"
 echo "        python3 -m pytest tests"
 wait

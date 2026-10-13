@@ -6,12 +6,22 @@ from motor.motor_asyncio import AsyncIOMotorClient, AsyncIOMotorDatabase
 from config import settings
 
 _client: AsyncIOMotorClient | None = None
+_client_loop = None
 
 
 def get_client() -> AsyncIOMotorClient:
-    global _client
-    if _client is None:
+    global _client, _client_loop
+    import asyncio
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = None
+    # Recreate the client when it was opened on a different event loop — Motor
+    # binds sockets to the creation-time loop, so a client surviving an
+    # asyncio.run() boundary fails with "Event loop is closed".
+    if _client is None or _client_loop is not loop:
         _client = AsyncIOMotorClient(settings.MONGO_URL)
+        _client_loop = loop
     return _client
 
 

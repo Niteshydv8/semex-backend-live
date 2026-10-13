@@ -28,7 +28,10 @@ FP = "test-fp-000000000000000000000000000000"
 # points at the repo root both locally and on the host.
 import os as _os
 APP_BASE = Path(_os.environ.get("APP_BASE_DIR") or Path(__file__).resolve().parents[2])
-VALID_ZIP = APP_BASE / "semex-v4.0.0-plain.zip"
+# Release zips rotate with each build (semex-vX.Y.Z-plain.zip); use the newest
+# plain build present in the repo root instead of pinning a stale version.
+_plain_zips = sorted(APP_BASE.glob("semex-v*-plain.zip"))
+VALID_ZIP = _plain_zips[-1] if _plain_zips else APP_BASE / "semex-v4.0.0-plain.zip"
 
 
 def _hdr(token: str) -> dict:
@@ -309,15 +312,15 @@ class TestPromoteDeleteBroadcast:
 # ---------- /api/telegram/download/extension ----------
 
 class TestPublicDownload:
+    # NOTE: /api/telegram/download/extension is under a deliberate temporary
+    # build lockdown (commit "Block /get and /download/extension") — it returns
+    # 503 for every request until the lockdown is lifted.
     def test_download_falls_back_to_legacy_when_no_releases(self):
-        # Cleared by autouse fixture. Legacy fallback globs semex*.zip under APP_BASE_DIR.
         r = requests.get(f"{BASE_URL}/api/telegram/download/extension", timeout=30)
-        assert r.status_code == 200
-        assert r.headers.get("content-type", "").startswith("application/zip")
-        assert r.content[:4] == b"PK\x03\x04"
+        assert r.status_code == 503
 
     def test_download_serves_release_and_bumps_count(self, admin_by_id_user, mongo_db):
-        # Publish a release
+        # Publish a release (publish still works; only public download is locked)
         with open(VALID_ZIP, "rb") as f:
             data = f.read()
         r = requests.post(
@@ -328,23 +331,10 @@ class TestPublicDownload:
             timeout=30,
         )
         assert r.status_code == 200
-        rid = r.json()["id"]
-        expected_size = r.json()["sizeBytes"]
 
-        # Download twice
+        # Download is locked down → 503
         r1 = requests.get(f"{BASE_URL}/api/telegram/download/extension", timeout=30)
-        assert r1.status_code == 200
-        assert int(r1.headers.get("content-length", "0")) == expected_size
-        assert len(r1.content) == expected_size
-
-        r2 = requests.get(f"{BASE_URL}/api/telegram/download/extension", timeout=30)
-        assert r2.status_code == 200
-
-        # download_count should be >= 2
-        from bson import ObjectId
-        doc = mongo_db.extension_releases.find_one({"_id": ObjectId(rid)})
-        assert doc is not None
-        assert doc.get("download_count", 0) >= 2
+        assert r1.status_code == 503
 
 
 # ---------- POST /api/telegram/webhook /get uses latest release ----------

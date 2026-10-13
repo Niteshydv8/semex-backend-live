@@ -150,7 +150,9 @@ def test_amount_as_currency_string_passes(active_user):
     assert j.get("dropped") is None, j
 
 
-# amount None + CHARGED → dropped as zero_amount (None → 0.0)
+# amount None + CHARGED → NOT dropped (v5.0.1: only an EXPLICIT zero/negative
+# amount is dropped; a missing amount means the extension couldn't extract it
+# and the hit must still reach Telegram).
 def test_none_amount_dropped(active_user):
     body = {
         "status": "CHARGED",
@@ -164,7 +166,8 @@ def test_none_amount_dropped(active_user):
     r = requests.post(STATUS_URL, json=body, headers=_h(active_user), timeout=15)
     assert r.status_code == 200, r.text
     j = r.json()
-    assert j.get("dropped") == "zero_amount", j
+    assert j.get("dropped") is None, j
+    assert j.get("success") is True, j
 
 
 # Card number 11 digits (just under 12-digit min) → dropped

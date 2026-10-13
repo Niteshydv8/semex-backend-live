@@ -33,6 +33,37 @@ TEST_FP = "test-fp-000000000000000000000000000000"
 TEST_FP_MISMATCH = "test-fp-DIFFERENT000000000000000000000"
 
 
+@pytest.fixture(scope="session", autouse=True)
+def _wait_for_api():
+    """Block the whole suite until the backend HTTP API accepts connections.
+
+    The shell harness probes before starting pytest, but the server can still
+    flap right after (slow import, port rebind); the first test file then dies
+    with ConnectionRefused. Poll here so every test file sees a live API."""
+    import time
+    import urllib.request
+
+    bases = {
+        os.environ.get("REACT_APP_BACKEND_URL", "").rstrip("/"),
+        os.environ.get("SEMEX_TEST_BASE", "").rstrip("/"),
+        "http://127.0.0.1:8001",
+        "http://localhost:8001",
+    }
+    deadline = time.time() + 90
+    while time.time() < deadline:
+        for base in bases:
+            if not base:
+                continue
+            try:
+                with urllib.request.urlopen(base + "/api/health", timeout=3) as r:
+                    if r.status < 500:
+                        return
+            except Exception:
+                pass
+        time.sleep(1)
+    # Don't hard-fail collection — individual tests will report their own errors.
+
+
 @pytest.fixture(scope="session")
 def mongo_db():
     client = MongoClient(settings.MONGO_URL)

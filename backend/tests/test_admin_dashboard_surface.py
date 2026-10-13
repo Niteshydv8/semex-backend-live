@@ -17,7 +17,9 @@ from __future__ import annotations
 import requests
 import pytest
 
-BASE_URL = "http://localhost:8001"
+import os
+
+BASE_URL = os.environ.get("REACT_APP_BACKEND_URL", "http://127.0.0.1:8001").rstrip("/")
 
 
 def _hdr(token: str) -> dict:

@@ -184,7 +184,7 @@ def test_live_routing_admin_log(monkeypatch, status, should_hit_admin_log):
         currency="USD",
     )
 
-    asyncio.get_event_loop().run_until_complete(
+    asyncio.new_event_loop().run_until_complete(
         data_route.submit_status(body, request=_stub_request(), user=user)
     )
 

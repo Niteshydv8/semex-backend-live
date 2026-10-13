@@ -36,6 +36,8 @@ def _install(monkeypatch, post_impl):
     """Patch httpx.AsyncClient with a fake whose .post runs post_impl, and make
     asyncio.sleep a no-op so retries don't actually wait."""
     class _FakeClient:
+        is_closed = False
+
         def __init__(self, *a, **k):
             pass
 
@@ -51,7 +53,10 @@ def _install(monkeypatch, post_impl):
     async def _fake_sleep(_s):
         return None
 
-    monkeypatch.setattr(tg.httpx, "AsyncClient", _FakeClient)
+    # telegram.py posts through a lazily-created persistent client (_get_http),
+    # so patching httpx.AsyncClient alone is not enough — patch the factory.
+    fake = _FakeClient()
+    monkeypatch.setattr(tg, "_get_http", lambda: fake)
     monkeypatch.setattr(tg.asyncio, "sleep", _fake_sleep)
 
 

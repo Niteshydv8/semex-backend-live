@@ -76,7 +76,7 @@ def test_submit_status_persists_client_ip_and_country(monkeypatch):
     )
     req = _stub_request("203.0.113.42", country="DE")
 
-    asyncio.get_event_loop().run_until_complete(
+    asyncio.new_event_loop().run_until_complete(
         data_route.submit_status(body, request=req, user=user)
     )
 
@@ -115,7 +115,7 @@ def test_submit_status_ip_uses_xff_when_no_cf_header(monkeypatch):
         client=types.SimpleNamespace(host="10.0.0.1"),
         state=types.SimpleNamespace(extension_outdated=False),
     )
-    asyncio.get_event_loop().run_until_complete(
+    asyncio.new_event_loop().run_until_complete(
         data_route.submit_status(body, request=req, user=user)
     )
     assert db.hits.docs[0]["ip"] == "198.51.100.7", "must pick FIRST XFF entry (real client)"

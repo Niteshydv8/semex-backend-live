@@ -507,7 +507,7 @@ class TestServerClientRefreshLogic:
 
     @staticmethod
     def _sc_src() -> str:
-        p = BACKEND_DIR.parent / "semex" / "utils" / "server-client.js"
+        p = BACKEND_DIR.parent / "semex" / "shared" / "server-client.js"
         return p.read_text(encoding="utf-8")
 
     @staticmethod

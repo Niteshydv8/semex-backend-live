@@ -48,7 +48,7 @@ async def public_version_info():
     bot_handle = settings.TELEGRAM_BOT_USERNAME
     # SAFE floor when the DB has no publishable rows. Kept in sync with
     # _FALLBACK_MIN_VERSION in data.py. All extensions below this are force-upgraded.
-    default_min = "2.5.0"
+    default_min = "2.5.1"
 
     async def _find_valid(filt: dict) -> str | None:
         cursor = db.extension_releases.find(filt).sort("published_at", -1).limit(5)

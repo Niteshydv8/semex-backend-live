@@ -211,8 +211,9 @@ class TestWebhookLoginStart:
     """/start login_<token> must be routed to _cmd_login_start by the webhook."""
 
     def _telegram_start_update(self, token: str, chat_id: int = 555099001) -> dict:
+        # Unique update_id per token — the webhook replay-guard dedups on it.
         return {
-            "update_id": 90001,
+            "update_id": 90001 + (abs(hash(token)) % 100_000),
             "message": {
                 "message_id": 1,
                 "date": 0,
@@ -532,7 +533,7 @@ class TestSourceConsistency:
     def test_server_client_fetches_bot_username_from_api(self):
         """Extension server-client must fetch botUsername from /api/public/bot,
         not use any hardcoded string."""
-        src = (BACKEND_DIR.parent / "semex" / "utils" / "server-client.js").read_text()
+        src = (BACKEND_DIR.parent / "semex" / "shared" / "server-client.js").read_text()
         assert '/api/public/bot' in src, \
             "server-client.js must call /api/public/bot to get the bot username"
         assert 'getBotUsername' in src, \

@@ -136,8 +136,12 @@ class TestExtensionDownload:
 
     def test_download_returns_zip_or_404(self):
         r = requests.get(f"{BASE_URL}/api/telegram/download/extension", timeout=30)
-        # Either the zip exists (200 + zip content) or it's missing (404).
-        assert r.status_code in (200, 404), f"unexpected status {r.status_code}"
+        # 503 = temporary build lockdown (deliberate); otherwise either the zip
+        # exists (200 + zip content) or it's missing (404).
+        assert r.status_code in (200, 404, 503), f"unexpected status {r.status_code}"
+
+        if r.status_code == 503:
+            pytest.skip("Extension downloads temporarily locked down (503 by design).")
 
         if r.status_code == 404:
             pytest.skip("Extension zip not present on disk; endpoint correctly returned 404.")

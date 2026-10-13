@@ -27,9 +27,8 @@ def _run(coro):
 
 
 def test_buy_command_message_shape(monkeypatch):
-    """_cmd_buy must send a Telegram message with plan tiers + at least one
-    crypto section + owner handle. YEARLY/LIFETIME tiers are hidden when their
-    price env vars are empty (by design), so configure them here."""
+    """_cmd_buy must send a Telegram message with the private-group offer:
+    group tiers (WEEKLY / MONTHLY) + at least one crypto payment section."""
     from routes import telegram_bot as tg
 
     captured = []
@@ -37,22 +36,17 @@ def test_buy_command_message_shape(monkeypatch):
         captured.append((chat_id, text))
         return {"ok": True, "result": {"message_id": 1}}
     monkeypatch.setattr(tg, "send_message", fake_send)
-    monkeypatch.setattr(tg.settings, "PLAN_PRICE_YEARLY", "$500")
-    monkeypatch.setattr(tg.settings, "PLAN_PRICE_LIFETIME", "$1000")
 
     _run(tg._cmd_buy(chat_id=12345, username="alice"))
     assert len(captured) == 1
     text = captured[0][1]
-    # Plan tiers
+    # Group tiers
+    assert "WEEKLY" in text
     assert "MONTHLY" in text
-    assert "YEARLY" in text
-    assert "LIFETIME" in text
     # Payment section
     assert ("USDT" in text) or ("BTC" in text) or ("crypto" in text.lower())
-    # Follow-up handle (owner or bot fallback)
+    # Greeting handle
     assert "@" in text
-    # Premium unlock mention
-    assert "3DS Bypass" in text or "3DS" in text
 
 
 @pytest.mark.parametrize("cmd", ["/buy", "/premium", "/upgrade", "/plans"])
@@ -75,7 +69,8 @@ def test_buy_command_aliases_are_dispatched(monkeypatch, cmd):
     resp = client.post(
         "/api/telegram/webhook",
         json={
-            "update_id": 1,
+            # Unique per alias — the webhook replay-guard dedups on update_id.
+            "update_id": abs(hash(cmd)) % 10_000_000 + 500_000,
             "message": {
                 "message_id": 1,
                 "text": cmd,
