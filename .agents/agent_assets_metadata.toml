@@ -1057,3 +1057,17 @@ mtime_ms = 1791873033349
 storage_uri = "gcs://replit-rams-assets-janeway/rams/assets/repl:df068f9e-70e4-4f0d-8a57-d280d312646a/29a82807-b743-42d0-8b22-fbb60d04fdee/e499fee6-af40-41ca-9b7c-c548c0304cbe"
 storage_version_token = "1791873043779151"
 content_type = "image/jpeg"
+
+[[outputs]]
+id = "4RRvJQUZURMike_XlPrZK"
+uri = "file://screenshots/overlay-preview-v3.jpg"
+type = "image"
+title = "SEMEX overlay preview — new S logo"
+description = "Preview now uses the real geometric-S logo (violet gradient trace) in all four logo spots."
+logical_id = "1cb7346b-6af9-410d-9349-1c95d3cca29c"
+content_hash = "sha256:35c03a997fc8cbeccc9fed9ebb4e8cfc5b2a3711951d4b3161646a9a33e62d9e"
+size = 42179
+mtime_ms = 1791873696537
+storage_uri = "gcs://replit-rams-assets-janeway/rams/assets/repl:df068f9e-70e4-4f0d-8a57-d280d312646a/1cb7346b-6af9-410d-9349-1c95d3cca29c/22a153b6-315c-4ce7-94d6-1aa049cf7af1"
+storage_version_token = "1791873704976440"
+content_type = "image/jpeg"
