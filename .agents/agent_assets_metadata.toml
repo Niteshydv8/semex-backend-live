@@ -1015,3 +1015,17 @@ mtime_ms = 1791869049549
 storage_uri = "gcs://replit-rams-assets-janeway/rams/assets/repl:df068f9e-70e4-4f0d-8a57-d280d312646a/d7d8073e-46bc-4493-a14d-fe7562f41e25/52b0d8d4-3580-4b08-8a25-07a4383c3573"
 storage_version_token = "1791869064887563"
 content_type = "image/jpeg"
+
+[[outputs]]
+id = "zAFerrTO87A9yahfZk5u5"
+uri = "file://screenshots/overlay-preview-real.jpg"
+type = "image"
+title = "SEMEX overlay preview (restored)"
+description = "The real interactive overlay preview page, restored from git after my static approximation overwrote it."
+logical_id = "1910de66-1b49-47cf-a4b5-1cddd2563f57"
+content_hash = "sha256:3f9a438cbd59460acd10f44a55f46ba4ecb41a3adc4a749fc27f6b8afbe3db5a"
+size = 67341
+mtime_ms = 1791870579409
+storage_uri = "gcs://replit-rams-assets-janeway/rams/assets/repl:df068f9e-70e4-4f0d-8a57-d280d312646a/1910de66-1b49-47cf-a4b5-1cddd2563f57/7d60cbd0-18d6-4b83-a2fb-6cdc68c80a25"
+storage_version_token = "1791870593584215"
+content_type = "image/jpeg"
