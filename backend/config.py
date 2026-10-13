@@ -93,6 +93,13 @@ class Settings:
     # Get a token: start @CryptoBot → Apps → Create App → copy token.
     CRYPTO_BOT_TOKEN: str = _env("CRYPTO_BOT_TOKEN", "")
 
+    # ── Extension minimum-version floor ──────────────────────────────────────
+    # Single source of truth for the hardcoded safe floor used by BOTH the
+    # version gate (routes/data.py) and the public bootstrap endpoint
+    # (routes/public.py) when the DB has no valid min-version row. All
+    # extensions below this are force-upgraded. Bump ONLY here.
+    FALLBACK_MIN_VERSION: str = _env("FALLBACK_MIN_VERSION", "2.5.1")
+
     # ── Binance / Gmail auto-detect USDT payment system ──────────────────────
     BINANCE_PAY_ID: str = _env("BINANCE_PAY_ID", "")
     GMAIL_ADDRESS: str = _env("GMAIL_ADDRESS", "")

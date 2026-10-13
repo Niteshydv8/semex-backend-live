@@ -31,7 +31,9 @@ _MIN_EXTENSION_CACHE: dict = {"version": None, "expires": 0.0}
 
 # The version this build was compiled against. Used as the safe floor when
 # the DB has a corrupt/invalid min-version row (e.g. "3" without dots).
-_FALLBACK_MIN_VERSION = "2.5.1"
+# Single source of truth is config.settings.FALLBACK_MIN_VERSION — shared with
+# routes/public.py so the gate and the public bootstrap can never drift.
+_FALLBACK_MIN_VERSION = settings.FALLBACK_MIN_VERSION
 
 # A well-formed extension version must have at least 2 numeric parts joined by
 # dots (e.g. "2.3", "2.3.9", "10.0.1"). Single-integer strings like "3" are

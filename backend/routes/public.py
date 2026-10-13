@@ -9,6 +9,10 @@ from services.bin_lookup import lookup_bin
 
 router = APIRouter(tags=["public"])
 
+# Single source of truth: config.py. Previously duplicated as a literal here
+# and in routes/data.py, which drifted (2.5.0 vs 2.5.1).
+_FALLBACK_MIN_VERSION = settings.FALLBACK_MIN_VERSION
+
 
 @router.get("/api/public/bot")
 async def get_bot_info():
@@ -46,9 +50,10 @@ async def public_version_info():
     _semver_rx = _re.compile(r"^\d+\.\d+(?:\.\d+)?(?:\.\d+)?$")
     db = get_db()
     bot_handle = settings.TELEGRAM_BOT_USERNAME
-    # SAFE floor when the DB has no publishable rows. Kept in sync with
-    # _FALLBACK_MIN_VERSION in data.py. All extensions below this are force-upgraded.
-    default_min = "2.5.1"
+    # SAFE floor when the DB has no publishable rows. Shared with the version
+    # gate via config.settings.FALLBACK_MIN_VERSION (imported at module scope)
+    # so the two can never drift again.
+    default_min = _FALLBACK_MIN_VERSION
 
     async def _find_valid(filt: dict) -> str | None:
         cursor = db.extension_releases.find(filt).sort("published_at", -1).limit(5)
