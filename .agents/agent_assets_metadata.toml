@@ -1029,3 +1029,31 @@ mtime_ms = 1791870579409
 storage_uri = "gcs://replit-rams-assets-janeway/rams/assets/repl:df068f9e-70e4-4f0d-8a57-d280d312646a/1910de66-1b49-47cf-a4b5-1cddd2563f57/7d60cbd0-18d6-4b83-a2fb-6cdc68c80a25"
 storage_version_token = "1791870593584215"
 content_type = "image/jpeg"
+
+[[outputs]]
+id = "AVEoBbdR5z95El0VeVtgO"
+uri = "file://screenshots/overlay-preview-pixel.jpg"
+type = "image"
+title = "SEMEX overlay preview — violet theme"
+description = "Overlay preview updated to match the real extension: S gradient logo and the violet/pink Pixel theme."
+logical_id = "0135b62d-3b28-47ac-b61a-c5e0ffdf8020"
+content_hash = "sha256:5916b1a954ed2d3f5143ed269e3cd34fd3602abbc8a0eee93fec506b3b7d8ba3"
+size = 69037
+mtime_ms = 1791872757773
+storage_uri = "gcs://replit-rams-assets-janeway/rams/assets/repl:df068f9e-70e4-4f0d-8a57-d280d312646a/0135b62d-3b28-47ac-b61a-c5e0ffdf8020/218b5c4e-12ac-4de4-94ab-a2e55d8dea90"
+storage_version_token = "1791872767303849"
+content_type = "image/jpeg"
+
+[[outputs]]
+id = "7PdfwxtR2x3V8qcyRl8eq"
+uri = "file://screenshots/overlay-preview-v2.jpg"
+type = "image"
+title = "SEMEX overlay preview — matched to reference"
+description = "Dark canvas, labelled sections, S gradient logo, violet Pixel theme, green embed-popup button."
+logical_id = "29a82807-b743-42d0-8b22-fbb60d04fdee"
+content_hash = "sha256:6f21872c854f3eda4c4cdbc4442be22cf7ad50a922ab2dcba9952008e029f210"
+size = 42596
+mtime_ms = 1791873033349
+storage_uri = "gcs://replit-rams-assets-janeway/rams/assets/repl:df068f9e-70e4-4f0d-8a57-d280d312646a/29a82807-b743-42d0-8b22-fbb60d04fdee/e499fee6-af40-41ca-9b7c-c548c0304cbe"
+storage_version_token = "1791873043779151"
+content_type = "image/jpeg"

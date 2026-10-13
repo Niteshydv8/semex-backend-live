@@ -8,7 +8,7 @@
 <style>
 /* ─── Reset ─── */
 * { box-sizing: border-box; margin: 0; padding: 0; }
-body { font-family: 'DM Sans', sans-serif; background: #f1f5f9; min-height: 100vh; display: flex; flex-direction: column; }
+body { font-family: 'DM Sans', sans-serif; background: #0a0a0e; min-height: 100vh; display: flex; flex-direction: column; }
 
 /* ─── Top bar ─── */
 .top-bar {
@@ -29,7 +29,21 @@ body { font-family: 'DM Sans', sans-serif; background: #f1f5f9; min-height: 100v
 .top-bar-note { color: #9a9aa6; font-size: 11px; }
 
 /* ─── Main canvas ─── */
-.canvas { flex: 1; display: flex; position: relative; overflow: hidden; }
+.canvas { flex: 1; display: block; position: relative; overflow: auto; padding: 34px 24px 60px; }
+
+/* Preview layout (reference: dark canvas, labelled sections) */
+.preview-row { display: flex; gap: 60px; justify-content: center; align-items: flex-start; flex-wrap: wrap; }
+.preview-col { display: flex; flex-direction: column; align-items: center; gap: 22px; }
+.section-tag {
+  font-size: 11px; font-weight: 700; letter-spacing: .14em; white-space: nowrap;
+  display: flex; align-items: center; gap: 10px;
+}
+.section-tag::before, .section-tag::after { content: ''; width: 34px; height: 1px; background: currentColor; opacity: .4; }
+.section-tag.green { color: #34d399; }
+.section-tag.violet { color: #9D7CFF; }
+.pill-section { margin-top: 44px; display: flex; flex-direction: column; align-items: center; gap: 22px; }
+.bottom-note { margin-top: 30px; text-align: center; font-size: 11px; color: #6b6b78; letter-spacing: .03em; }
+.bottom-note b { color: #9a9aa6; }
 
 /* ─── Mock checkout ─── */
 .checkout-bg { flex: 1; background: #fff; display: flex; position: relative; overflow: hidden; }
@@ -98,9 +112,9 @@ body { font-family: 'DM Sans', sans-serif; background: #f1f5f9; min-height: 100v
 @keyframes sx-in { from { opacity:0; transform:translateY(6px) scale(.97); } to { opacity:1; transform:none; } }
 @keyframes sx-fade-in { from { opacity:0; } to { opacity:1; } }
 
-/* Overlay root */
+/* Overlay root — static inside the preview column */
 .semex-overlay {
-  position: absolute; bottom: 20px; left: 20px; z-index: 999;
+  position: relative; z-index: 999;
   font-family: 'DM Sans', -apple-system, sans-serif;
   font-size: 13px; color: var(--sx-txt); line-height: 1.4;
   user-select: none;
@@ -343,7 +357,7 @@ body { font-family: 'DM Sans', sans-serif; background: #f1f5f9; min-height: 100v
   to   { transform: none; opacity: 1; filter: none; }
 }
 .embed-popup {
-  position: absolute; top: 16px; right: 16px; z-index: 9999;
+  position: relative; z-index: 9999;
   width: 308px;
   font-family: 'DM Sans', -apple-system, sans-serif;
   -webkit-font-smoothing: antialiased;
@@ -416,6 +430,116 @@ body { font-family: 'DM Sans', sans-serif; background: #f1f5f9; min-height: 100v
   font-size: 10px; color: #94a3b8; white-space: nowrap;
   font-family: 'DM Sans', sans-serif; letter-spacing: .02em;
 }
+
+/* ═══════════════════════════════════════
+   PIXEL THEME overrides — match the real extension overlay
+   (violet #7C5CFC / #9D7CFC accent system + "S" gradient logo)
+═══════════════════════════════════════ */
+:root {
+  --sx-accent:  #7C5CFC;
+  --sx-accent2: #9D7CFF;
+  --sx-pink:    #EC4899;
+}
+
+/* "S" letter logo (real overlay uses <span class="logo-letter">S</span>) */
+.logo-letter {
+  font-weight: 800; color: #fff; font-family: 'DM Sans', sans-serif;
+  line-height: 1; user-select: none;
+}
+.full-brand-logo {
+  background: linear-gradient(135deg, var(--sx-accent), var(--sx-pink)) !important;
+  border: none !important;
+  box-shadow: 0 4px 14px rgba(124,92,252,0.4) !important;
+}
+.full-brand-logo .logo-letter { font-size: 16px; }
+.pill-logo-wrap {
+  background: linear-gradient(135deg, var(--sx-accent), var(--sx-pink)) !important;
+  border: none !important;
+  box-shadow: 0 4px 14px rgba(124,92,252,0.4) !important;
+}
+.pill-logo-wrap .logo-letter { font-size: 13px; }
+.ep-icon {
+  background: rgba(52,211,153,0.1) !important;
+  border: 1px solid rgba(52,211,153,0.25) !important;
+  box-shadow: 0 0 12px rgba(52,211,153,0.15) !important;
+  font-size: 14px;
+}
+.top-bar-logo-badge {
+  width: 22px; height: 22px; border-radius: 7px; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--sx-accent), var(--sx-pink));
+  box-shadow: 0 2px 10px rgba(124,92,252,0.4);
+  display: inline-flex; align-items: center; justify-content: center;
+  font-size: 12px;
+}
+
+/* Brand name: white → violet gradient */
+.full-brand-name {
+  background: linear-gradient(135deg, #fff, var(--sx-accent2)) !important;
+  -webkit-background-clip: text !important; background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+/* Version badge stays green */
+.top-bar-badge {
+  background: rgba(52,211,153,0.15) !important; color: #34d399 !important;
+  border-color: rgba(52,211,153,0.3) !important;
+}
+.overlay-full {
+  box-shadow:
+    0 0 0 1px rgba(124,92,252,0.10),
+    0 8px 40px rgba(0,0,0,0.6),
+    inset 0 1px 0 rgba(255,255,255,0.04) !important;
+}
+.overlay-pill { box-shadow: 0 0 0 1px rgba(124,92,252,0.10), 0 4px 24px rgba(0,0,0,0.5) !important; }
+.ep-card { box-shadow: 0 0 0 1px rgba(124,92,252,0.12), 0 16px 48px rgba(0,0,0,0.7) !important; }
+
+/* Header: violet tint like the real overlay */
+.full-header { background: rgba(124,92,252,0.07) !important; }
+.header-btn.active { background: rgba(124,92,252,0.15) !important; color: var(--sx-accent2) !important; }
+.ctrl-btn.lock.active {
+  background: rgba(124,92,252,0.15) !important; color: var(--sx-accent2) !important;
+  border-color: rgba(124,92,252,0.35) !important;
+}
+
+/* Settings active states: green → violet */
+.settings-toggle.on { background: rgba(124,92,252,0.25) !important; }
+.settings-toggle.on::after { background: var(--sx-accent2) !important; }
+.pos-btn.active {
+  border-color: rgba(124,92,252,0.45) !important; color: var(--sx-accent2) !important;
+  background: rgba(124,92,252,0.10) !important;
+}
+
+/* Embed popup: brand row + green primary (matches reference) */
+.ep-btn-primary {
+  background: linear-gradient(135deg, rgba(52,211,153,0.9), rgba(16,185,129,0.85)) !important;
+  border: 1px solid rgba(52,211,153,0.4) !important; color: #0b0b0f !important;
+  box-shadow: 0 4px 16px rgba(52,211,153,0.25) !important;
+}
+.ep-header-text { color: #f5f5f7 !important; }
+.ep-desc .ep-domain { color: #34d399 !important; }
+.ep-hint-icon { color: rgba(52,211,153,0.4) !important; }
+.ep-brand { display: flex; align-items: center; gap: 9px; margin-bottom: 12px; padding-right: 24px; }
+.ep-brand-logo {
+  width: 26px; height: 26px; border-radius: 8px; flex-shrink: 0;
+  background: linear-gradient(135deg, #7C5CFC, #EC4899);
+  box-shadow: 0 4px 14px rgba(124,92,252,0.4);
+  display: flex; align-items: center; justify-content: center;
+}
+.ep-brand-logo .logo-letter { font-size: 13px; }
+.ep-brand-text { display: flex; flex-direction: column; line-height: 1.25; }
+.ep-brand-name {
+  font-weight: 800; font-size: 13px; letter-spacing: .04em;
+  background: linear-gradient(135deg, #fff, #9D7CFF);
+  -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+}
+.ep-brand-tag { font-size: 10px; color: var(--sx-mut); letter-spacing: .02em; }
+
+/* Resume/primary action: violet gradient (real overlay .ctrl-btn.start) */
+.ctrl-btn.resume {
+  background: linear-gradient(180deg, #8E6BFF, #7C5CFC) !important; color: #fff !important;
+  box-shadow: 0 4px 14px rgba(124,92,252,0.40) !important;
+}
+.ctrl-btn.resume:hover { background: linear-gradient(180deg, #9D7CFF, #8E6BFF) !important; }
 </style>
 </head>
 <body>
@@ -423,16 +547,7 @@ body { font-family: 'DM Sans', sans-serif; background: #f1f5f9; min-height: 100v
 <!-- Top bar -->
 <div class="top-bar">
   <div class="top-bar-logo">
-    <svg width="20" height="20" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <path d="M32 3L59.7 19v26L32 61 4.3 45V19z" fill="#040806"/>
-      <path d="M32 3L59.7 19v26L48 52.5" stroke="#34d399" stroke-width="1.8" stroke-linecap="round"/>
-      <path d="M16 52.5L4.3 45V19L32 3" stroke="#34d399" stroke-width="1.8" stroke-linecap="round" opacity="0.5"/>
-      <circle cx="50" cy="50" r="2.2" fill="#34d399" opacity="0.9"/>
-      <line x1="20" y1="21" x2="44" y2="21" stroke="#34d399" stroke-width="1.6" stroke-linecap="round" opacity="0.35"/>
-      <line x1="20" y1="43" x2="44" y2="43" stroke="#34d399" stroke-width="1.6" stroke-linecap="round" opacity="0.35"/>
-      <polyline points="22,25 34,32 22,39" stroke="#34d399" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-      <polyline points="30,25 42,32 30,39" stroke="#34d399" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.45"/>
-    </svg>
+    <span class="top-bar-logo-badge logo-letter">S</span>
     SEMEX
     <span class="top-bar-badge">v5.0.0</span>
   </div>
@@ -442,46 +557,11 @@ body { font-family: 'DM Sans', sans-serif; background: #f1f5f9; min-height: 100v
 
 <!-- Main canvas -->
 <div class="canvas">
-  <div class="checkout-bg">
+  <div class="preview-row">
 
-    <!-- Mock checkout left (product) -->
-    <div class="checkout-left">
-      <div class="merchant-logo">⚡ turboscribe.ai</div>
-      <div>
-        <div class="product-name">TurboScribe Unlimited</div>
-        <div class="product-price">$20.00 <small style="font-size:14px;font-weight:400;color:rgba(255,255,255,0.4)">/mo</small></div>
-        <div class="product-sub">Billed monthly · Cancel anytime</div>
-      </div>
-      <div class="product-divider"></div>
-      <div class="product-line"><span>Subtotal</span><span>$20.00</span></div>
-      <div class="product-line"><span>Tax</span><span>$0.00</span></div>
-      <div class="product-divider"></div>
-      <div class="product-line" style="font-size:15px"><span style="color:#f5f5f7;font-weight:700">Total</span><span style="color:#34d399;font-weight:800">$20.00</span></div>
-    </div>
-
-    <!-- Mock checkout right (form) -->
-    <div class="checkout-right">
-      <div class="wallet-btns">
-        <button class="wallet-btn apple">🍎 Apple Pay</button>
-        <button class="wallet-btn link">⚡ Link</button>
-      </div>
-      <div class="divider">or pay with card</div>
-      <div class="section-label">Contact</div>
-      <div class="field-group">
-        <div class="field" style="color:#94a3b8">fangu5219@gmail.com</div>
-      </div>
-      <div class="section-label">Card details</div>
-      <div class="field-group">
-        <div class="field card-field">4111 1111 1111 1111</div>
-        <div class="field-row">
-          <div class="field card-field">12 / 30</div>
-          <div class="field card-field">000</div>
-        </div>
-        <div class="field" style="color:#94a3b8">United States</div>
-      </div>
-      <button class="pay-btn">Subscribe — $20.00</button>
-      <div class="powered">Powered by <b>Stripe</b> &nbsp;·&nbsp; Terms &nbsp;·&nbsp; Privacy</div>
-    </div>
+    <!-- ═══ Column 1: overlay panel (full state) ═══ -->
+    <div class="preview-col">
+      <div class="section-tag green">OVERLAY PANEL — FULL STATE</div>
 
     <!-- ═══ SEMEX Overlay ═══ -->
     <div class="semex-overlay" id="semexOverlay">
@@ -524,16 +604,7 @@ body { font-family: 'DM Sans', sans-serif; background: #f1f5f9; min-height: 100v
           <div class="full-header">
             <div class="full-brand">
               <div class="full-brand-logo">
-                <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M32 3L59.7 19v26L32 61 4.3 45V19z" fill="#040806"/>
-                  <path d="M32 3L59.7 19v26L48 52.5" stroke="#34d399" stroke-width="1.8" stroke-linecap="round"/>
-                  <path d="M16 52.5L4.3 45V19L32 3" stroke="#34d399" stroke-width="1.8" stroke-linecap="round" opacity="0.5"/>
-                  <circle cx="50" cy="50" r="2.2" fill="#34d399" opacity="0.9"/>
-                  <line x1="20" y1="21" x2="44" y2="21" stroke="#34d399" stroke-width="1.6" stroke-linecap="round" opacity="0.35"/>
-                  <line x1="20" y1="43" x2="44" y2="43" stroke="#34d399" stroke-width="1.6" stroke-linecap="round" opacity="0.35"/>
-                  <polyline points="22,25 34,32 22,39" stroke="#34d399" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-                  <polyline points="30,25 42,32 30,39" stroke="#34d399" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.45"/>
-                </svg>
+                <span class="logo-letter">S</span>
               </div>
               <div class="full-brand-text">
                 <div class="full-brand-name">SEMEX</div>
@@ -612,67 +683,65 @@ body { font-family: 'DM Sans', sans-serif; background: #f1f5f9; min-height: 100v
 
           </div>
         </div>
-        <span class="tab-label">← Full panel</span>
       </div>
     </div>
 
     <!-- Pill state -->
-    <div style="position:absolute;bottom:310px;left:20px;display:flex;align-items:center">
-      <div style="position:relative">
-        <div class="overlay-pill" id="overlayPill" onclick="expandToFull()" style="display:none">
-          <div class="pill-logo-wrap">
-            <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M32 3L59.7 19v26L32 61 4.3 45V19z" fill="#040806"/>
-              <path d="M32 3L59.7 19v26L48 52.5" stroke="#34d399" stroke-width="1.8" stroke-linecap="round"/>
-              <path d="M16 52.5L4.3 45V19L32 3" stroke="#34d399" stroke-width="1.8" stroke-linecap="round" opacity="0.5"/>
-              <polyline points="22,25 34,32 22,39" stroke="#34d399" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-              <polyline points="30,25 42,32 30,39" stroke="#34d399" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.45"/>
-            </svg>
-          </div>
-          <div class="pill-dot" id="pillDot"></div>
-          <span class="pill-text" id="pillText">Processing #1</span>
-          <button class="pill-expand" title="Expand" onclick="event.stopPropagation();expandToFull()">↑</button>
+    <div class="pill-section">
+      <div class="section-tag green">PILL — MINIMISED STATE</div>
+      <div class="overlay-pill" id="overlayPill" onclick="expandToFull()">
+        <div class="pill-logo-wrap">
+          <span class="logo-letter">S</span>
         </div>
-        <span class="pill-tab-label" id="pillLabel" style="display:none">← Pill (click to expand)</span>
+        <div class="pill-dot" id="pillDot"></div>
+        <span class="pill-text" id="pillText">Processing #1</span>
+        <button class="pill-expand" title="Expand" onclick="event.stopPropagation();expandToFull()">↑</button>
       </div>
+      <div class="bottom-note"><b>↑</b> Click <b>−</b> on the panel to collapse &nbsp;·&nbsp; click pill to expand</div>
     </div>
 
-    <!-- Embed checkout popup -->
+    </div><!-- /preview-col -->
+
+    <!-- ═══ Column 2: embed checkout popup ═══ -->
+    <div class="preview-col">
+      <div class="section-tag violet">EMBEDDED CHECKOUT POPUP</div>
+
     <div class="embed-popup" id="embedPopup">
       <div class="ep-card">
         <button class="ep-close" onclick="document.getElementById('embedPopup').style.display='none'" aria-label="Close">✕</button>
-        <div class="ep-header">
-          <div class="ep-icon">
-            <svg viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M32 3L59.7 19v26L32 61 4.3 45V19z" fill="#040806"/>
-              <path d="M32 3L59.7 19v26L48 52.5" stroke="#34d399" stroke-width="1.8" stroke-linecap="round"/>
-              <path d="M16 52.5L4.3 45V19L32 3" stroke="#34d399" stroke-width="1.8" stroke-linecap="round" opacity="0.5"/>
-              <polyline points="22,25 34,32 22,39" stroke="#34d399" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-              <polyline points="30,25 42,32 30,39" stroke="#34d399" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round" fill="none" opacity="0.45"/>
-            </svg>
+        <div class="ep-brand">
+          <div class="ep-brand-logo"><span class="logo-letter">S</span></div>
+          <div class="ep-brand-text">
+            <span class="ep-brand-name">SEMEX</span>
+            <span class="ep-brand-tag">Automation v5.0.0</span>
           </div>
+        </div>
+        <div class="ep-header">
+          <div class="ep-icon">🔗</div>
           <div class="ep-header-text">Embedded Checkout Detected</div>
         </div>
         <div class="ep-desc">
-          <span class="ep-domain">turboscribe.ai</span> uses an embedded Stripe checkout.
-          Open the hosted page for full automation with overlay.
+          <span class="ep-domain">turboscribe.ai</span> uses an embedded Stripe
+          checkout. Open the hosted page for full
+          automation.
         </div>
         <div class="ep-btns">
           <button class="ep-btn-primary">
-            <span>🔗</span> Open Checkout in New Tab
+            Open Checkout in New Tab
           </button>
           <button class="ep-btn-secondary" onclick="document.getElementById('embedPopup').style.display='none'">
-            <span>✓</span> Continue Without Overlay
+            Continue Without Overlay
           </button>
         </div>
         <div class="ep-hint">
-          <span class="ep-hint-icon">ℹ</span>
-          <span>Bypass &amp; tracking still work on this page</span>
+          <span class="ep-hint-icon">ⓘ</span>
+          <span>Bypass &amp; tracking still active on this page</span>
         </div>
       </div>
     </div>
 
-  </div><!-- /checkout-bg -->
+    </div><!-- /preview-col -->
+  </div><!-- /preview-row -->
 </div><!-- /canvas -->
 
 <script>
@@ -707,21 +776,15 @@ function startTimer() {
   }, 1000);
 }
 
-/* ── Collapse / expand ── */
+/* ── Collapse / expand (pill stays visible as its own demo) ── */
 function collapseTopill() {
   closeSettings();
   document.getElementById('overlayFull').style.display = 'none';
-  document.getElementById('semexOverlay').querySelector('.tab-label').style.display = 'none';
-  document.getElementById('overlayPill').style.display = 'inline-flex';
-  document.getElementById('pillLabel').style.display = 'block';
   syncPill();
 }
 
 function expandToFull() {
-  document.getElementById('overlayPill').style.display = 'none';
-  document.getElementById('pillLabel').style.display = 'none';
   document.getElementById('overlayFull').style.display = 'flex';
-  document.getElementById('semexOverlay').querySelector('.tab-label').style.display = 'block';
 }
 
 /* ── Pause / Resume ── */
